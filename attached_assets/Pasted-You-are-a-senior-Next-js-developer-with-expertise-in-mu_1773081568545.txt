@@ -1,0 +1,76 @@
+You are a senior Next.js developer with expertise in multi-part content layouts, rich media controls, and consistent design across categories.
+
+Continue / extend the existing English Islamic stories website (Next.js 14+ App Router, TypeScript, Tailwind v4 + shadcn/ui, protected /admin dashboard).
+
+Now update the article detail pages for Sahaba, Awliya, and History categories to match the exact structure and design as the current Stories page detail view — with multi-part, multi-page support, media controls, and admin enhancements.
+
+Exact Requirements:
+
+1. Design Consistency
+   - All article detail pages (e.g., /sahaba/[slug], /awliya/[slug], /history/[slug] or shared route /articles/[slug]) must now follow the same layout as /stories/[slug].
+   - Support multi-Part structure: Each article has one or more Parts.
+   - Each Part can have multiple Pages.
+   - Load first Part's first Page by default on article open.
+
+2. Part Layout (Every Part)
+   - First Page of each Part:
+     - Main Article Title (H1, large font, centered)
+     - 1-2 line Summary (short paragraph overview of the entire article)
+     - Cover Photo: Kaaba-themed image (or relevant Islamic image) – centered, responsive, only on first page of the Part
+   - Subsequent Pages of the Part:
+     - No cover photo
+     - Main rich content: text, sub-headings, images, quotes (scrollable or paginated like Stories page)
+   - Tech: Use next/image for cover (optimized, responsive sizes)
+
+3. Page Navigation
+   - Next / Previous Page buttons (bottom or top of content)
+   - Part switch: When user clicks next Part, load new Part's first page
+   - Show current Part/Page indicator (e.g., "Part 2 - Page 3/7")
+
+4. Part-Level Media Controls (Above content in every Part)
+   - Two buttons on top of each Part:
+     1. Video Button → Click replaces cover photo area with embedded video player (YouTube/Vimeo)
+     2. Audio Button → Click launches audio player (FM-style voice narration) – play/pause, progress, speed control
+   - Admin uploads video URL and audio file per Part
+
+5. Admin Panel Enhancements
+   - Article CRUD: Add/Edit/Delete/Duplicate full article
+   - Per-Part management:
+     - Add/Edit/Duplicate/Delete individual Parts
+     - For each Part: Title, 1-2 line summary, cover image upload, video URL, audio file upload, multiple pages content
+   - Rich editor (Tiptap or ReactQuill) for page content
+   - Order/reorder Parts and Pages
+
+6. Extra Features (Implement these too)
+   - Bookmark & Continue Reading: Logged-in users bookmark article + resume from last Part/Page
+   - Recommendation Section: At bottom of article — suggest similar articles (same category or related)
+   - Next Part Button: At end of each Part — prominent button to go to next Part
+   - Auto-Play Option: Optional timer-based auto-advance pages (configurable in admin)
+   - Multimedia Support: Allow additional images/audio/video embeds inside pages
+
+Guidelines:
+- Use Server Actions for media uploads, bookmark, views
+- Zod validation on admin forms
+- Responsive & accessible (mobile-friendly reader)
+- Keep calm Islamic aesthetic (green/white/gold tones)
+- Do NOT break existing Stories page or other features
+- Optimize images/videos with next/image & lazy loading
+
+First Step:
+Show detailed implementation plan:
+- Folder/component updates (article/[slug]/page.tsx, admin/articles, new Part model if needed)
+- DB schema changes (add Part model, relations, media fields)
+- Dependencies (if any new, e.g., react-player for audio/video)
+- Key code structure overview (Part layout JSX, media toggle logic)
+
+Once I approve the plan, implement step-by-step:
+1. Update article detail layout (multi-part, first-page title + summary + cover)
+2. Add Next/Prev page navigation + Part switching
+3. Implement Video & Audio buttons per Part
+4. Admin enhancements (Part CRUD, media upload)
+5. Bookmark, continue reading, recommendations
+6. Final polish, responsiveness, accessibility
+
+After each step: "Step X completed. Review? Proceed or changes?"
+
+Start now: Show the complete detailed plan before writing any code.

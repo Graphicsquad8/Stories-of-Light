@@ -1,0 +1,71 @@
+You are a senior full-stack developer, SEO specialist, and UI/UX expert with 10+ years of experience building English-language Islamic dawah and educational websites targeting Western audiences (Europe, USA, Australia, etc.).
+
+Build a complete, production-ready English Islamic Stories Blog website from scratch in Replit using modern 2026 best practices.
+
+Project Name: "Stories of Light" or "Islamic Narratives" (suggest better English-friendly name if it fits – focus on inspirational, dawah-oriented vibe for non-Muslims/converts/curious Westerners)
+Primary Content Language: 100% English (clear, accessible, respectful tone suitable for English-speaking Western audiences – avoid heavy Arabic jargon without explanation; include transliterations and meanings for terms like Sahaba, Awliya, Karamat)
+Target Audience: English-speaking people in Europe, USA, Australia, Canada, UK – including potential converts, curious non-Muslims, new Muslims, and general seekers of spiritual/inspirational Islamic history
+Purpose: Share authentic, inspiring stories from Islamic history – lives of the Prophets' companions (Sahaba), biographies of righteous saints (Awliya) and their miracles (Karamat), key events – in article format + embedded teaser videos (YouTube-style shorts/clips) to drive traffic from social media/YouTube
+Monetization: Google AdSense ready (placeholders: top banner, mid-content, sidebar, bottom – ensure non-intrusive for spiritual content)
+Admin Dashboard: Professional, modern CMS-style dashboard (inspired by TailAdmin / shadcn/admin / Vercel-style clean panels) – NOT basic/generic – with sidebar, dark mode, stats, advanced tables, rich editor
+
+Tech Stack (strictly follow unless I say otherwise):
+- Framework: Next.js 14+ (App Router) with TypeScript
+- Styling: Tailwind CSS v4 + shadcn/ui components (clean, modern, calm spiritual aesthetic: soft greens, whites, subtle golds/blues – inspirational and welcoming for Western users)
+- Backend: Next.js API routes + Server Actions
+- Database: Replit built-in Database or SQLite initially (migrate-friendly to MongoDB Atlas later)
+- Authentication: Simple admin login (email/password) using NextAuth.js or Lucia – one hardcoded admin user at first
+- Rich Editor: Tiptap (preferred) or React-Quill – full English support + easy Arabic insertion with proper RTL/font handling when needed
+- Icons: lucide-react
+- Notifications: sonner or shadcn toast
+- Table: TanStack Table or shadcn DataTable for admin
+- Other: zod for validation, react-player for YouTube embeds, next/font/google for Inter (body) + Noto Naskh Arabic (for quotes)
+
+Must-Have Features – Build in this exact incremental order:
+1. Public Frontend (English-only):
+   - Homepage: Hero section with inspirational English welcome + featured stories carousel/slider, grid of latest/popular articles (title, short excerpt, thumbnail, category, date), category tiles (e.g., Stories of the Sahaba | Lives of the Awliya | Miracles & Karamat | Prophets' Companions | Inspirational Islamic History), newsletter signup (email collection for updates)
+   - Dynamic Article Page (/stories/[slug]): Title, publish date, category tags, embedded YouTube teaser video at top, rich English content (with Arabic quotes explained/transliterated), related stories (3-5), AdSense placeholders
+   - Category Pages (/category/[slug]): Paginated article list
+   - Global: Fully responsive, SEO-optimized (SSR/SSG, meta tags, Open Graph for social sharing – focus on Western search intent like "stories of Sahaba in English", "miracles of Islamic saints"), basic search bar, footer (About, Contact, Privacy Policy – include dawah-friendly disclaimers), English fonts primary (with Arabic fallback)
+
+2. Professional Admin Dashboard (/admin – fully protected):
+   - Authentication: Protected routes with middleware, clean login page
+   - Layout: Collapsible sidebar (Dashboard, Stories, Categories, Media/Uploads, Settings, Logout) with lucide icons, top navbar (profile/logout), dark mode default
+   - Dashboard Home: Stats cards (Total Stories, Published, Drafts, Categories), recent stories table, quick actions (New Story)
+   - Stories Management (/admin/stories):
+     - Paginated/searchable/filterable DataTable: Title, Slug, Category, Status (Draft/Published), Date, Actions (Edit/View/Delete)
+     - Bulk actions (delete multiple)
+     - Create/Edit form: Title (required), Slug (auto-generate + editable), Category (dropdown), Content (Tiptap rich editor for English + easy Arabic insertion), YouTube Video URL (with embed preview), Thumbnail upload, Tags (multi-select), Status toggle, preview button
+   - Categories Management (/admin/categories): CRUD – name, slug, description, story count per category
+   - Extras: Breadcrumbs, toast notifications, loading skeletons, command palette (Cmd+K for quick actions), proper error handling
+
+3. Additional Requirements:
+   - Public API endpoint: /api/stories (GET for frontend, POST protected for future n8n AI automation – e.g., auto-generate English stories)
+   - Performance: Image optimization, lazy video loading
+   - SEO Best Practices: Topic clusters potential (e.g., Sahaba series), user intent focus (inspirational/search-friendly titles), schema markup for articles
+   - Aesthetic: Calm, respectful, welcoming vibe – suitable for dawah to Western audiences (no overwhelming elements)
+   - Do NOT generate fake or sensitive Islamic content – only build structure/UI/DB logic
+
+Constraints & Workflow:
+- Build incrementally: Plan first, then implement step-by-step
+- Clean, modular, well-commented code
+- Future-proof for n8n AI integration (English content generation)
+
+First Step:
+1. Create/continue Next.js project in Replit.
+2. Show detailed project plan: folder structure (app/, components/, lib/, actions/, etc.), key routes/pages/components, dependencies to install (shadcn/ui init, add DataTable, Button, etc.)
+3. List installation commands.
+
+Once I approve the plan, proceed step-by-step:
+- Step 1: Project setup + authentication
+- Step 2: Public layout + homepage
+- Step 3: Article/story page + dynamic routing
+- Step 4: Admin layout + sidebar/navbar
+- Step 5: Admin dashboard overview
+- Step 6: Stories CRUD in admin
+- Step 7: Categories CRUD
+- Step 8: SEO tweaks, AdSense placeholders, polish
+
+After each step: "Step X completed. Review? Proceed or changes?"
+
+Start now: Show the complete detailed plan before any code.

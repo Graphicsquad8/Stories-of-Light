@@ -1,0 +1,87 @@
+Footer Management System (Admin Panel)
+
+All design elements and content of the website’s Footer section should be fully manageable from a dedicated “Footer” option in the Admin Panel.
+
+Through this section, the admin will be able to:
+
+Access footer components
+
+Edit footer content
+
+Update existing elements
+
+Delete unnecessary items
+
+This will allow the entire Footer section to be managed from one centralized location.
+
+Social Media Settings Relocation
+
+The Social Media settings currently located in the Admin Panel’s Settings section should be moved to the Footer Management section.
+
+This means that all social media links and configurations will be managed directly from the Footer section.
+
+Social Icons Placement (Frontend)
+
+In the website’s Footer, Social Media icons will appear below the “Stories of Light” text, aligned horizontally from left to right.
+
+When a user clicks on a Social Media icon, they will be redirected directly to the corresponding social media page.
+
+The Admin Panel should allow the admin to add multiple social media platforms.
+
+When adding a new social media link:
+
+The admin will select the social media platform (e.g., Facebook, X/Twitter, Instagram, YouTube, etc.).
+
+Then the admin will enter the corresponding social media profile or page URL.
+
+After saving the link, the selected social media icon will automatically appear in the website’s Footer.
+
+Footer “About” Section Management
+
+The About section in the Footer (such as About Us, Privacy Policy, etc.) should also be fully manageable from the Admin Panel.
+
+The admin will be able to:
+
+Edit existing pages
+
+Update content
+
+Delete pages
+
+Create new pages
+
+Each page will support article-style content, similar to normal website pages.
+
+This means the admin can create new pages within the About section and add article content inside them, just like standard content pages on the website.
+
+Website Name Management
+
+The website name should also be manageable from the Footer Management section.
+
+The admin will be able to:
+
+Edit the website name
+
+Update it
+
+Replace or delete it if necessary
+
+Admin Login Access Security
+
+The Admin Login button currently visible in the Footer should be removed to prevent public users from easily accessing the Admin Panel.
+
+Instead, a hidden login path will be created for admin access, such as:
+
+/image
+
+This /image path will be used exclusively to access the Admin Panel login page.
+
+The purpose of this hidden route is to improve security, ensuring that normal website visitors cannot easily discover the admin login page.
+
+However, the existing two-step login verification system (entering Email and Password twice) will remain unchanged and continue to function as before.
+
+Overall System Benefit
+
+With this system, the admin will be able to manage Footer design, About pages, Social Media links, Website name, and Admin access security from a centralized and organized interface.
+
+This will make the Admin Panel more structured, secure, and user-friendly for managing the website.

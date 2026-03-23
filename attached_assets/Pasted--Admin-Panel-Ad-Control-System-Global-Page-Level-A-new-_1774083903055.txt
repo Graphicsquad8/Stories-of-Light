@@ -1,0 +1,95 @@
+🔹 Admin Panel – Ad Control System (Global & Page Level)
+
+A new option needs to be added inside the Admin Panel → Settings section, from where the entire website’s Ad System can be fully controlled.
+
+📌 Required Features:
+
+🔘 Global Ad Control:
+
+There will be a Master Toggle (ON/OFF)
+The Admin can enable or disable all ads across the entire website at once
+
+📄 Page-Level Ad Control:
+
+There will be an option to enable/disable ads for each specific page individually
+The Admin can turn off ads on any specific page if needed
+
+🎯 Purpose:
+
+If users feel annoyed due to excessive ads → Admin can easily disable ads
+When needed (for earning purposes) → Ads can be re-enabled anytime
+
+🔹 Google Login System (Dynamic OAuth Integration)
+
+A complete Google Login System needs to be developed, which can be configured from the Admin Panel.
+
+1️⃣ Admin Panel Settings Page
+
+📌 Google OAuth Configuration:
+
+A new section will be added in Settings with the following 3 input fields:
+
+Google Client ID
+Google Client Secret
+Google Redirect URL
+
+🔧 Functionality:
+
+These data must be securely saved in the database
+Admin can update/replace these credentials anytime
+Once credentials are set, the “Continue with Google” login system will be activated
+2️⃣ Backend Setup
+
+📌 Dynamic Configuration:
+
+Google OAuth credentials must be dynamically loaded from the database
+
+🔧 Implementation:
+
+Configure Google OAuth using passport-google-oauth20
+
+📍 Required Routes:
+
+/auth/google → To initiate Google login
+/auth/google/callback → To handle Google redirect
+3️⃣ Authentication Flow
+
+📌 User Flow:
+
+When the user clicks “Continue with Google”, they will be redirected to the Google OAuth page
+After successful login, Google will redirect the user back to the callback URL
+
+📊 Data Handling:
+
+Collect user profile data:
+Email
+Name
+Profile Picture
+If the user does not exist in the database → Save as a new user
+Then create a login session for the user
+4️⃣ Frontend Integration
+
+📌 UI Requirement:
+
+A “Continue with Google” button must be present
+On click, it will redirect to /auth/google
+5️⃣ Security Requirements
+
+🔐 Security Implementation:
+
+Encrypt Google Client Secret before saving in the database
+Use express-session to manage login sessions
+Implement proper error handling
+6️⃣ Optional Feature
+
+⚙️ Google Login Toggle:
+
+A toggle switch will be available in the Admin Panel
+Admin can enable/disable the Google Login feature anytime
+
+✅ Final Goal
+
+Build a complete Dynamic Ad Control System (Global + Page Level)
+Develop a Secure and Scalable Google Login System fully controllable from the Admin Panel
+
+👉 This will make the website more flexible, user-friendly, and professional.

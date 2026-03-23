@@ -1,0 +1,73 @@
+You are a senior Next.js developer with strong experience in UI consistency, user engagement features, and clean code refactoring.
+
+Continue / extend the existing English Islamic stories website (Next.js 14+ App Router, TypeScript, Tailwind v4 + shadcn/ui, protected /admin dashboard, existing /stories page with motivational Islamic stories).
+
+Now apply the following precise updates to the Stories section. Focus ONLY on these changes — do not add or remove unrelated features. Build incrementally and pause after each major part for confirmation.
+
+Exact Update Requirements:
+
+1. Homepage Update
+   - On the Home Page, find the section currently titled “Popular Stories”.
+   - Replace the title text from “Popular Stories” to “Islamic Motivational Stories”.
+   - Keep the rest of the section (cards, layout, data) unchanged unless specified.
+
+2. Stories Page Headline Change
+   - On the /stories page (main list page), update the main header/headline.
+   - Change from “Stories” to “Islamic Motivational Stories”.
+   - Keep subtitle or any other hero text as-is (or suggest a better one if missing).
+
+3. Remove “Popular Stories” Option & Integrate into “Newest” Filter
+   - On the /stories list page:
+     - Completely remove any separate “Popular Stories” section/tab/button/carousel.
+     - Add “Popular” as a sort/filter option inside the existing “Newest” dropdown or filter bar.
+     - When user selects “Popular”, sort stories by views descending (most viewed first).
+     - Ensure filters still include: Newest, Popular, Rating, Category (if already present).
+
+4. Story Detail Page Layout Change
+   - On each story detail page (/stories/[slug]):
+     - Add a clear headline (H1) at the top: use the story title as headline.
+     - Completely remove the “Lesson” sidebar or any left-side lesson/chapter navigation.
+     - Main content should now be full-width (no left sidebar for lessons).
+     - Keep rich text content, views count, rating, bookmark button, etc.
+
+5. Bookmark Feature on Stories
+   - On every story detail page: Add a Bookmark button (heart icon, toggle on/off).
+   - Logged-in users only → save to user's bookmarks (DB: Bookmark table with userId + storyId).
+   - Show success toast on bookmark/unbookmark.
+   - In User Profile/Dashboard (/profile): Show a section “Bookmarked Stories” with list of saved stories (title, link, remove button).
+
+6. Related Story Suggestion
+   - On each story detail page, at the bottom (after main content):
+     - Add a section titled “Related Stories” or “You May Also Like”.
+     - Show 3–5 similar stories: same category or high-rated/recent ones.
+     - Use simple cards (title, short excerpt, category badge).
+     - Fetch server-side (query stories where category matches or exclude current slug).
+
+Guidelines:
+- Use Server Actions for bookmark toggle.
+- Zod validation if forms are involved.
+- Keep calm Islamic aesthetic (green/white/gold tones).
+- Responsive & accessible everywhere.
+- Do NOT break existing features (books, auth, admin).
+- Use existing UI patterns (shadcn/ui components, Tailwind classes) for consistency.
+- Ads: Continue showing AdSense on list & detail pages (as per previous setup).
+
+First Step:
+Show detailed implementation plan:
+- Which files/components will be updated (e.g., app/stories/page.tsx, app/stories/[slug]/page.tsx, homepage, profile page, etc.)
+- Any new DB fields or relations needed (e.g., Bookmark model if not present)
+- Dependencies (if any new)
+- Key code structure overview (hero JSX changes, filter logic, bookmark action)
+
+Once I approve the plan, implement step-by-step:
+1. Homepage title change (“Popular Stories” → “Islamic Motivational Stories”)
+2. Stories page headline update
+3. Remove separate Popular section + add “Popular” sort option
+4. Story detail layout change (remove lesson sidebar, add headline)
+5. Bookmark feature + user profile integration
+6. Related stories suggestion section
+7. Final polish, responsiveness, toasts, accessibility
+
+After each step: "Step X completed. Review? Proceed or changes?"
+
+Start now: Show the complete detailed plan before writing any code.

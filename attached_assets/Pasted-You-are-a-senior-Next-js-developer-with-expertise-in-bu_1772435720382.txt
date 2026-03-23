@@ -1,0 +1,85 @@
+You are a senior Next.js developer with expertise in building content-heavy Islamic dawah websites using Tailwind + shadcn/ui.
+
+Continue / extend the existing "Stories of Light" (or similar English Islamic stories blog) Next.js project.
+
+Implement the following prioritized new features exactly as specified. Build them step-by-step, one at a time, and pause after each major one for my confirmation.
+
+Current Tech Stack Reminder:
+- Next.js 14+ (App Router) + TypeScript
+- Tailwind CSS v4 + shadcn/ui
+- Database: Replit DB / SQLite (or MongoDB if already migrated)
+- Admin: /admin protected route with authentication
+
+New Features to Add (in this order):
+
+1. Audio Narration per Article (High Priority)
+   - Objective: Allow users to listen to articles instead of reading (great for commuting, accessibility, higher engagement/retention).
+   - How it works:
+     - Admin panel: In article create/edit form, add a file upload field for audio (accept="audio/*" – MP3/WAV/OGG supported).
+     - Upload the file using Next.js server actions (or formidable/busboy if needed).
+     - Store file in public/uploads/audio/ (Replit-friendly) or migrate later to Cloudinary/Supabase Storage.
+     - Save the public URL in DB as article.audioUrl (string field).
+     - Frontend: On article page (/stories/[slug]), show a clean audio player below the YouTube embed or at the top.
+   - Player Requirements:
+     - Play/Pause button, progress bar, volume slider, playback speed (0.75x – 2x).
+     - Optional: Download button.
+     - Make it sticky/floating at bottom of screen (persistent across pages if playing – use layout.tsx or context).
+   - Tech Suggestions:
+     - Use react-h5-audio-player (simple & customizable) or native <audio> + shadcn/ui custom controls.
+     - Add loading state + error handling (e.g., "Audio not available").
+   - After implementation: Pause and ask "Audio feature completed. Proceed to next?"
+
+2. Books / Recommended Reads Page (Medium-High Priority)
+   - Objective: Dedicated page for recommended Islamic books (affiliate links) to increase monetization and add value.
+   - How it works:
+     - Add "Books" or "Recommended Reads" link/icon in header navbar (use lucide-react Book icon).
+     - Clicking → goes to /books page.
+     - /books page: Responsive grid of book cards (cover image, title, author, short description, "Buy on Amazon" affiliate button).
+   - Admin Control:
+     - New admin route: /admin/books → full CRUD (list with shadcn DataTable, create/edit form).
+     - Book model fields: title (string), author (string), coverUrl (string – image upload), amazonAffiliateLink (string), description (text), category (optional).
+   - Tech:
+     - New route: app/books/page.tsx
+     - Use shadcn Card + Image component for grid.
+     - Image upload in admin similar to article thumbnail.
+   - After implementation: Pause and ask "Books page & admin CRUD completed. Proceed?"
+
+3. Right Sidebar Ads on Article Pages (High Priority – Revenue Impact)
+   - Objective: Show Google AdSense units in right sidebar during article reading (desktop only) to boost revenue.
+   - How it works:
+     - On article page (/stories/[slug]): Use grid/flex layout.
+     - Desktop (lg+): Main content col-span-3, right sidebar col-span-1 (sticky top-20).
+     - Sidebar content: 1–2 AdSense placeholders (e.g., 300×600 rectangle or responsive).
+     - Mobile: Hide sidebar (hidden lg:block) or move ads to bottom.
+   - Tech:
+     - Layout example:
+       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+         <article className="lg:col-span-3 prose prose-lg max-w-none">…</article>
+         <aside className="hidden lg:block lg:col-span-1 sticky top-20 h-fit space-y-6">
+           <div className="bg-muted p-4 rounded-lg text-center min-h-[600px]">
+             {/* AdSense script + <ins className="adsbygoogle">…</ins> */}
+             AdSense Placeholder – 300×600
+           </div>
+           {/* Optional: Related stories or book recommendations here */}
+         </aside>
+       </div>
+     - Use Tailwind sticky top-20 for positioning.
+     - Add AdSense script globally (if not already) via next/script in layout.tsx.
+   - After implementation: Pause and ask "Sidebar ads implemented. Proceed?"
+
+Additional Guidelines:
+- Keep code clean, modular, well-commented.
+- Use Server Actions for uploads/mutations.
+- Zod validation for forms.
+- Responsive design everywhere.
+- Do NOT break existing features.
+- Aesthetic: Calm, spiritual, welcoming for Western English audience.
+
+First Step:
+Show detailed plan: 
+- Folder structure updates (e.g., app/books/, components/audio-player.tsx, etc.)
+- New DB fields/models
+- Dependencies to add (if any, e.g., react-h5-audio-player)
+- Key code snippets overview
+
+Once I approve, start implementing step 1 (Audio Narration).

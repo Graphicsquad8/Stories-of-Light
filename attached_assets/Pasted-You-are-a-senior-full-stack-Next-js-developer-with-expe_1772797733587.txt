@@ -1,0 +1,91 @@
+You are a senior full-stack Next.js developer with expertise in building inspirational Islamic content platforms, user engagement, and monetization features.
+
+Continue / extend the existing English Islamic stories website (Next.js 14+ App Router, TypeScript, Tailwind v4 + shadcn/ui, protected /admin dashboard, existing books and articles sections).
+
+Now add a brand new page called "Stories" (route: /stories). This page will contain motivational Islamic stories to inspire people toward Islam, daily life rulings, halal business success, and building a complete Islamic lifestyle. Place it in the header navbar after "History" and before "Books".
+
+Page Objective:
+- Motivational Islamic stories for dawah, daily guidance, business ethics, and full Islamic living.
+- Stories should be clean, authentic, and inspirational (no fake content – use placeholders or real examples).
+
+Core Requirements – Implement step-by-step:
+
+1. Navbar Update
+   - In header/navbar component: Add "Stories" link after "History" and before "Books".
+   - Use lucide-react icon (e.g., Lightbulb or BookOpen) for "Stories".
+
+2. Main Stories List Page (/stories)
+   - Hero Section:
+     - Full-width background image: Islamic-themed (mosque silhouette with light rays, Arabic calligraphy, open Quran – serene green/gold tones).
+     - Title: "Stories"
+     - Subtitle: "Motivational Islamic Tales – Inspire Your Faith, Life, and Success"
+     - Responsive next/image with subtle dark gradient overlay for text readability.
+   - Search & Filter Bar:
+     - Search by title/keyword
+     - Category filter (dropdown or pills): Daily Life Guidance, Business & Ethics, Spiritual Motivation, Dawah & Conversion, Islamic Lifestyle
+   - Story Grid:
+     - Responsive cards: Title, short excerpt (2–3 lines), category badge, views count, rating stars (average)
+     - Pagination or infinite scroll (shadcn/ui)
+   - Ads: Show AdSense placeholders (in-content or sidebar) on list page.
+
+3. Story Detail Page (/stories/[slug])
+   - Layout: Left sidebar for sections/lessons (like books page)
+     - Click section → load its content in main viewer
+     - Support multi-page if needed (Next/Prev buttons)
+   - Main Content: Rich text (Tiptap or ReactMarkdown), images if added
+   - Metadata: Views count (increment on load), average rating, total reviews
+   - Features:
+     - Bookmark button (logged-in users only – toggle save)
+     - Continue Reading: Resume from last section/page (store in user profile)
+     - User Review: 5-star + short comment (update averageRating)
+     - Recommendations: "Similar Stories" (same category or high-rated)
+   - Ads: Show AdSense at the bottom of each story (non-intrusive)
+
+4. DB Models
+   - MotivationalStory:
+     - id, title, slug (unique), content (text), category (string), views (Int default 0)
+     - averageRating (Float), totalRatings (Int)
+     - published (Boolean default false), createdAt, updatedAt
+   - Bookmark (relation): userId, storyId
+   - User: Add lastStoryId (relation), lastStorySection/Page (optional)
+
+5. Admin Panel – /admin/stories
+   - Full CRUD: Create, Edit, Duplicate, Delete
+   - List: DataTable with title, category, views, rating, published, actions
+   - Form: Title, slug (auto), category select, rich editor for content, sections/lessons manager
+   - Manage Categories: Simple CRUD (stored in DB or config)
+
+6. Extra Features
+   - Bookmark & Continue Reading: Logged-in users bookmark stories + resume from last point
+   - User Review System: On detail page – 5-star + comment (update average)
+   - Recommendation Engine: Basic – show similar stories on detail page
+   - Popular Stories Section: On list page – top viewed/rated stories carousel or grid
+
+Guidelines:
+- Use Server Actions for mutations (bookmark, rating, views)
+- Zod validation on forms
+- Role-based middleware for admin
+- Responsive, accessible, calm Islamic aesthetic
+- Ads only on list & detail pages (spiritual content – keep respectful)
+- Do NOT break existing features
+- Seed with 3–5 placeholder/demo stories (e.g., "The Power of Patience in Business", "Daily Salah – Key to Success")
+
+First Step:
+Show detailed implementation plan:
+- Folder structure updates (app/stories, admin/stories)
+- New DB models (MotivationalStory, relations)
+- Dependencies needed
+- Key routes & components overview
+
+Once I approve the plan, implement step-by-step:
+1. Navbar update + /stories page with hero & grid
+2. Search/filter + category support
+3. Detail page with sidebar sections + multi-page
+4. Admin CRUD + category management
+5. Bookmark, continue reading, reviews, recommendations
+6. Views tracking + popular section + ads placement
+7. Final polish, SEO, responsiveness
+
+After each step: "Step X completed. Review? Proceed or changes?"
+
+Start now: Show the complete detailed plan before writing any code.
