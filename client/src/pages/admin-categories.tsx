@@ -45,6 +45,7 @@ import {
   Sparkles,
   Moon,
   Layers,
+  Copy,
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -139,6 +140,27 @@ export default function AdminCategoriesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
       toast({ title: "Category deleted" });
+    },
+  });
+
+  const duplicateMutation = useMutation({
+    mutationFn: async (cat: CategoryWithCount) => {
+      const maxOrder = categories?.reduce((m, c) => Math.max(m, c.orderIndex ?? 0), -1) ?? -1;
+      await apiRequest("POST", "/api/categories", {
+        name: `${cat.name} (Copy)`,
+        slug: cat.slug ? `${cat.slug}-copy` : `${cat.name.toLowerCase().replace(/\s+/g, "-")}-copy`,
+        description: cat.description,
+        image: cat.image,
+        type: cat.type,
+        orderIndex: maxOrder + 1,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      toast({ title: "Category duplicated" });
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
     },
   });
 
@@ -312,6 +334,21 @@ export default function AdminCategoriesPage() {
                     <Button size="sm" variant="ghost" onClick={() => openEdit(cat)} data-testid={`button-edit-cat-${cat.slug}`}>
                       <Edit className="w-4 h-4 mr-1" />
                       Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => duplicateMutation.mutate(cat)}
+                      disabled={duplicateMutation.isPending}
+                      data-testid={`button-duplicate-cat-${cat.slug}`}
+                      title="Duplicate category"
+                    >
+                      {duplicateMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                      ) : (
+                        <Copy className="w-4 h-4 mr-1" />
+                      )}
+                      Duplicate
                     </Button>
                     <Button
                       size="sm"

@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
+import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 
 function ThemeToggle() {
@@ -53,32 +54,14 @@ function ThemeToggle() {
   );
 }
 
-const articleSubItems = [
-  {
-    title: "Sahaba",
-    href: "/image/stories/category/sahaba",
-    isActive: (loc: string) => loc === "/image/stories/category/sahaba",
-  },
-  {
-    title: "Awliya",
-    href: "/image/stories/category/awliya",
-    isActive: (loc: string) => loc === "/image/stories/category/awliya",
-  },
-  {
-    title: "Karamat",
-    href: "/image/stories/category/karamat",
-    isActive: (loc: string) => loc === "/image/stories/category/karamat",
-  },
-  {
-    title: "History",
-    href: "/image/stories/category/history",
-    isActive: (loc: string) => loc === "/image/stories/category/history",
-  },
-];
-
 function AdminSidebar() {
   const [location] = useLocation();
   const { logout, isAdmin, isModerator, hasPermission, user } = useAuth();
+
+  const { data: allCategories } = useQuery<any[]>({
+    queryKey: ["/api/categories?type=all"],
+  });
+  const storyCategories = allCategories?.filter(c => c.type === "story") ?? [];
 
   const isOnArticles = location.startsWith("/image/stories");
   const [articlesOpen, setArticlesOpen] = useState(isOnArticles);
@@ -252,16 +235,20 @@ function AdminSidebar() {
                                 </Link>
                               </SidebarMenuSubButton>
                             </SidebarMenuSubItem>
-                            {articleSubItems.map((sub) => (
-                              <SidebarMenuSubItem key={sub.title}>
-                                <SidebarMenuSubButton asChild data-active={sub.isActive(location)}>
-                                  <Link href={sub.href} data-testid={`link-admin-${sub.title.toLowerCase()}`}>
-                                    <FileText className="w-3.5 h-3.5" />
-                                    <span>{sub.title}</span>
-                                  </Link>
-                                </SidebarMenuSubButton>
-                              </SidebarMenuSubItem>
-                            ))}
+                            {storyCategories.map((cat) => {
+                              const catSlug = cat.urlSlug || cat.slug;
+                              const href = `/image/stories/category/${catSlug}`;
+                              return (
+                                <SidebarMenuSubItem key={cat.id}>
+                                  <SidebarMenuSubButton asChild data-active={location === href}>
+                                    <Link href={href} data-testid={`link-admin-${cat.name.toLowerCase()}`}>
+                                      <FileText className="w-3.5 h-3.5" />
+                                      <span>{cat.name}</span>
+                                    </Link>
+                                  </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                              );
+                            })}
                           </SidebarMenuSub>
                         </CollapsibleContent>
                       </SidebarMenuItem>

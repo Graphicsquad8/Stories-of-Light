@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { BookOpen, Search, Menu, X, Sun, Moon, User, Bookmark, LogOut, LayoutDashboard } from "lucide-react";
+import { BookOpen, Search, Menu, X, Sun, Moon, User, Bookmark, LogOut, LayoutDashboard, FolderOpen, Compass, Info, ChevronRight, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -273,21 +273,23 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
-      <footer className="border-t bg-card mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
-                  <BookOpen className="w-4 h-4 text-primary-foreground" />
+      <footer className="border-t bg-card mt-16" data-testid="section-footer">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8">
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+
+            <div className="md:col-span-1 flex flex-col gap-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center shadow-sm">
+                  <BookOpen className="w-4.5 h-4.5 text-primary-foreground" />
                 </div>
-                <span className="font-serif text-lg font-semibold">{siteName}</span>
+                <span className="font-serif text-base font-bold tracking-tight">{siteName}</span>
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+              <p className="text-[13px] text-muted-foreground leading-relaxed">
                 {footerDescription}
               </p>
               {socialLinks.length > 0 && (
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5 pt-1">
                   {socialLinks.map(link => {
                     const Icon = SOCIAL_ICONS[link.platform];
                     if (!Icon) return null;
@@ -297,75 +299,117 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
                         href={link.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-muted-foreground hover:text-foreground transition-colors"
+                        className="w-8 h-8 rounded-md border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground/30 hover:bg-accent transition-all"
                         data-testid={`link-footer-social-${link.platform}`}
                         aria-label={link.platform}
                       >
-                        <Icon className="w-5 h-5" />
+                        <Icon className="w-4 h-4" />
                       </a>
                     );
                   })}
                 </div>
               )}
             </div>
-            <div>
-              <h3 className="font-semibold mb-4">Categories</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
+
+            <div className="rounded-lg border bg-background/50 p-5">
+              <div className="flex items-center gap-2 mb-4 pb-3 border-b">
+                <FolderOpen className="w-4 h-4 text-primary" />
+                <span className="text-sm font-semibold">Categories</span>
+              </div>
+              <ul className="space-y-1.5">
                 {footerCategories.map((cat) => (
                   <li key={cat.id}>
-                    <Link href={`/category/${cat.urlSlug || cat.slug}`} className="transition-colors" data-testid={`link-footer-${cat.urlSlug || cat.slug}`}>
+                    <Link
+                      href={`/category/${cat.urlSlug || cat.slug}`}
+                      className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors group"
+                      data-testid={`link-footer-${cat.urlSlug || cat.slug}`}
+                    >
+                      <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                       {cat.name}
                     </Link>
                   </li>
                 ))}
               </ul>
             </div>
-            <div>
-              <h3 className="font-semibold mb-4">Explore</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>
-                  <Link href="/motivational-stories" className="transition-colors" data-testid="link-footer-explore-stories">
-                    {motivationalPage?.name || "Stories"}
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/duas" className="transition-colors" data-testid="link-footer-explore-duas">
-                    {duaPage?.name || "Dua"}
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/books" className="transition-colors" data-testid="link-footer-explore-books">
-                    {bookPage?.name || "Books"}
-                  </Link>
-                </li>
+
+            <div className="rounded-lg border bg-background/50 p-5">
+              <div className="flex items-center gap-2 mb-4 pb-3 border-b">
+                <Compass className="w-4 h-4 text-primary" />
+                <span className="text-sm font-semibold">Explore</span>
+              </div>
+              <ul className="space-y-1.5">
+                {[
+                  { href: "/motivational-stories", label: motivationalPage?.name || "Stories", testId: "explore-stories" },
+                  { href: "/duas", label: duaPage?.name || "Dua", testId: "explore-duas" },
+                  { href: "/books", label: bookPage?.name || "Books", testId: "explore-books" },
+                ].map(({ href, label, testId }) => (
+                  <li key={testId}>
+                    <Link
+                      href={href}
+                      className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors group"
+                      data-testid={`link-footer-${testId}`}
+                    >
+                      <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                      {label}
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </div>
-            <div>
-              <h3 className="font-semibold mb-4">About</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
+
+            <div className="rounded-lg border bg-background/50 p-5">
+              <div className="flex items-center gap-2 mb-4 pb-3 border-b">
+                <Info className="w-4 h-4 text-primary" />
+                <span className="text-sm font-semibold">About</span>
+              </div>
+              <ul className="space-y-1.5">
                 {footerPagesData.length > 0 ? (
                   footerPagesData.map(page => (
                     <li key={page.id}>
-                      <Link href={`/page/${page.slug}`} data-testid={`link-footer-page-${page.slug}`}>
+                      <Link
+                        href={`/page/${page.slug}`}
+                        className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors group"
+                        data-testid={`link-footer-page-${page.slug}`}
+                      >
+                        <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                         {page.title}
                       </Link>
                     </li>
                   ))
                 ) : (
                   <>
-                    <li><Link href="/page/about-us" data-testid="link-footer-about">About Us</Link></li>
-                    <li><Link href="/page/privacy-policy" data-testid="link-footer-privacy">Privacy Policy</Link></li>
+                    {[
+                      { href: "/page/about-us", label: "About Us", testId: "about" },
+                      { href: "/page/privacy-policy", label: "Privacy Policy", testId: "privacy" },
+                    ].map(({ href, label, testId }) => (
+                      <li key={testId}>
+                        <Link
+                          href={href}
+                          className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors group"
+                          data-testid={`link-footer-${testId}`}
+                        >
+                          <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                          {label}
+                        </Link>
+                      </li>
+                    ))}
                   </>
                 )}
               </ul>
-              <p className="mt-4 text-xs text-muted-foreground">
-                Content is presented with respect and care. All stories are sourced from authentic Islamic scholarship.
+              <p className="mt-4 pt-3 border-t text-[11px] text-muted-foreground/70 leading-relaxed">
+                All stories are sourced from authentic Islamic scholarship.
               </p>
             </div>
+
           </div>
-          <div className="border-t mt-8 pt-8 text-center text-xs text-muted-foreground">
-            {siteName}. All rights reserved.
+
+          <div className="border-t pt-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
+            <span>© {new Date().getFullYear()} {siteName}. All rights reserved.</span>
+            <span className="flex items-center gap-1">
+              Made with <Heart className="w-3 h-3 text-red-400 mx-0.5" /> for the Ummah
+            </span>
           </div>
+
         </div>
       </footer>
       <SocialBarAd />
