@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer } from "ws";
 import { storage } from "./storage";
 import { insertStorySchema, insertCategorySchema, insertBookSchema, insertBookChapterSchema, signupSchema, insertBookRatingSchema, insertMotivationalStorySchema, insertMotivationalLessonSchema, insertStoryPartSchema, insertStoryPageSchema } from "@shared/schema";
 import session from "express-session";
@@ -234,6 +235,53 @@ export async function registerRoutes(
 ): Promise<Server> {
   await seedSectionPages().catch(console.error);
   await backfillCategoryUrlSlugs().catch(console.error);
+
+  // ── WebSocket server for real-time updates ──────────────────────────────────
+  const wss = new WebSocketServer({ noServer: true });
+  const wsClients = new Set<any>();
+
+  wss.on("connection", (ws: any) => {
+    wsClients.add(ws);
+    ws.on("close", () => wsClients.delete(ws));
+    ws.on("error", () => wsClients.delete(ws));
+  });
+
+  httpServer.on("upgrade", (req: any, socket: any, head: any) => {
+    if (req.url === "/ws") {
+      wss.handleUpgrade(req, socket, head, (ws) => {
+        wss.emit("connection", ws, req);
+      });
+    }
+  });
+
+  function broadcast(payload: object) {
+    const msg = JSON.stringify(payload);
+    wsClients.forEach((client: any) => {
+      if (client.readyState === 1) client.send(msg);
+    });
+  }
+
+  // Broadcast invalidation events after any successful admin mutation
+  app.use((req: any, res: any, next: any) => {
+    if (!["POST", "PATCH", "DELETE", "PUT"].includes(req.method)) return next();
+    const origJson = res.json.bind(res);
+    res.json = function (body: any) {
+      if (res.statusCode < 400) {
+        const p = req.path;
+        let keys: string[] = [];
+        if (p.startsWith("/api/stories")) keys = ["/api/stories"];
+        else if (p.startsWith("/api/books")) keys = ["/api/books"];
+        else if (p.startsWith("/api/categories")) keys = ["/api/categories"];
+        else if (p.startsWith("/api/duas")) keys = ["/api/duas"];
+        else if (p.startsWith("/api/motivational-stories")) keys = ["/api/motivational-stories"];
+        else if (p.startsWith("/api/admin/footer-pages")) keys = ["/api/admin/footer-pages"];
+        if (keys.length) broadcast({ type: "invalidate", keys });
+      }
+      return origJson(body);
+    };
+    next();
+  });
+  // ────────────────────────────────────────────────────────────────────────────
 
   const MemoryStore = memorystore(session);
 
@@ -1590,6 +1638,18 @@ export async function registerRoutes(
     if (!dua || !dua.published) return res.status(404).json({ message: "Dua not found" });
     await storage.incrementDuaViews(dua.id);
     res.json(dua);
+  });
+
+  app.get("/api/duas/:id/related", async (req, res) => {
+    const dua = await storage.getDuaById(req.params.id);
+    if (!dua) return res.status(404).json({ message: "Dua not found" });
+    const { duas } = await storage.getDuas({
+      category: dua.category ?? undefined,
+      published: true,
+      limit: 5,
+    });
+    const related = duas.filter((d) => d.id !== dua.id).slice(0, 4);
+    res.json(related);
   });
 
   // Admin Duas

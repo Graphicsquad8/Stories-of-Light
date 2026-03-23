@@ -93,6 +93,20 @@ Key architectural decisions include:
 - **Soft Delete / Trash System**: All DELETE operations on categories, stories, books, and motivational stories now set a `deletedAt` timestamp (soft delete) instead of permanently removing records. Soft-deleted items are hidden from all public and admin list queries. Admin Trash page (`/admin/trash`) displays them grouped by type with Restore and Permanent Delete actions. API routes: `GET /api/admin/trash`, `POST /api/admin/trash/restore/:type/:id`, `DELETE /api/admin/trash/permanent/:type/:id`.
 - **Dynamic Header Navigation**: The public site header (`public-layout.tsx`) replaces hardcoded category links with a live `useQuery` against `/api/categories`. The footer category list is also dynamically rendered. Categories always reflect what's in the database (in `orderIndex` order), including any new categories admins create.
 
+## Real-Time Updates (WebSocket)
+- **WebSocket server**: A `WebSocketServer` (from `ws` package) runs attached to the HTTP server at path `/ws` (using `noServer: true` to coexist with Vite HMR on `/vite-hmr`).
+- **Broadcast middleware**: A response interceptor in `server/routes.ts` watches all successful POST/PATCH/DELETE/PUT mutations. After any mutation to stories, books, categories, duas, or motivational-stories, it broadcasts `{ type: "invalidate", keys: [...] }` to all connected WebSocket clients.
+- **Client hook**: `client/src/hooks/use-realtime.ts` connects to the `/ws` WebSocket endpoint, listens for `invalidate` events, and calls `queryClient.invalidateQueries()` for each key. Auto-reconnects every 3 seconds on disconnect.
+- **Integration**: `useRealtime()` is called inside the `Router` component in `App.tsx`, making it active for the entire app session.
+- **Effect**: Any admin change (adding a story, editing a book, updating a category, etc.) is immediately reflected in real-time on all open browser tabs/windows, with no page refresh required.
+
+## Suggested Content (Related Items)
+- **Stories**: `RelatedStories` component on `story.tsx` fetches `/api/stories/:id/related` — returns stories in the same category.
+- **Motivational Stories**: Related section on `motivational-story-detail.tsx` fetches `/api/motivational-stories/:id/related`.
+- **Books**: "You May Also Like" section on `book-detail.tsx` fetches `/api/books/:id/recommendations` — returns books in same category.
+- **Duas**: `RelatedDuas` component on `dua-detail.tsx` fetches `/api/duas/:id/related` (new endpoint) — returns duas in the same category. If no category match, returns empty (no section shown).
+- **Dynamic categories**: Since all content types have a `category` field and the related endpoints filter by it, any new admin-created categories automatically produce relevant suggested content for their articles.
+
 ## External Dependencies
 - **PostgreSQL**: Primary database for all application data.
 - **Passport.js**: Authentication middleware for Express.js.

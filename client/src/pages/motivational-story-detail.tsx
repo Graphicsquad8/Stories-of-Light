@@ -129,6 +129,7 @@ export default function MotivationalStoryDetailPage() {
     mutationFn: () => apiRequest("POST", `/api/motivational-stories/${story!.id}/bookmark`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/motivational-stories", story?.id, "bookmark"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user/motivational-bookmarks"] });
     },
   });
 

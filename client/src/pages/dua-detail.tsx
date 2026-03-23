@@ -3,14 +3,64 @@ import { useParams, Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { PublicLayout } from "@/components/public-layout";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronLeft, ChevronRight, BookOpen, ArrowLeft, BookmarkIcon } from "lucide-react";
 import { AdSlot } from "@/components/ad-slot";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/lib/auth";
-import type { DuaWithParts, DuaPart } from "@shared/schema";
+import type { DuaWithParts, DuaPart, Dua } from "@shared/schema";
 
 type Page = { label: string };
+
+function RelatedDuas({ duaId }: { duaId: string }) {
+  const { data: related, isLoading } = useQuery<Dua[]>({
+    queryKey: ["/api/duas", duaId, "related"],
+    queryFn: async () => {
+      const res = await fetch(`/api/duas/${duaId}/related`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!duaId,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+        {[1, 2].map((i) => (
+          <Card key={i} className="p-4">
+            <Skeleton className="h-5 w-3/4 mb-2" />
+            <Skeleton className="h-4 w-1/2" />
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (!related || related.length === 0) return null;
+
+  return (
+    <section className="mt-10" data-testid="section-related-duas">
+      <h2 className="font-serif text-xl font-bold mb-4">Related Duas</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {related.map((d) => (
+          <Link key={d.id} href={`/duas/${d.slug}`}>
+            <Card className="group overflow-hidden cursor-pointer hover-elevate p-4" data-testid={`card-related-dua-${d.id}`}>
+              {d.category && (
+                <Badge variant="secondary" className="mb-2">{d.category}</Badge>
+              )}
+              <h3 className="font-serif font-semibold line-clamp-2">{d.title}</h3>
+              {d.description && (
+                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{d.description}</p>
+              )}
+            </Card>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 function getPages(part: DuaPart): Page[] {
   const pages: Page[] = [];
@@ -280,6 +330,9 @@ export default function DuaDetailPage() {
             <AdSlot slot="banner" className="w-full" />
           </div>
         )}
+
+        {/* ── Related Duas ── */}
+        <RelatedDuas duaId={dua.id} />
       </div>
     </PublicLayout>
   );
