@@ -125,26 +125,6 @@ function OverviewSection({ dashboard, onNavigate }: { dashboard: any; onNavigate
         <StatCard icon={FolderOpen} label="Categories Explored" value={dashboard.stats?.categoriesExplored || 0} color="bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400" />
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {[
-          { label: "Bookmarks", section: "bookmarks" as Section, count: dashboard.stats?.totalBookmarks || 0, icon: BookmarkIcon, color: "text-emerald-600" },
-          { label: "Saved Stories", section: "saved-stories" as Section, count: motivationalBookmarksData?.length ?? 0, icon: Lightbulb, color: "text-amber-500" },
-          { label: "Dua", section: "duas" as Section, count: duaBookmarksData?.length ?? 0, icon: Moon, color: "text-teal-600" },
-          { label: "My Books", section: "books" as Section, count: dashboard.stats?.bookBookmarks || 0, icon: BookOpen, color: "text-purple-600" },
-        ].map(({ label, section, count, icon: Icon, color }) => (
-          <Card key={section} className="p-4 hover:shadow-md transition-shadow cursor-pointer group" onClick={() => onNavigate(section)} data-testid={`card-quick-${section}`}>
-            <div className="flex items-center justify-between mb-2">
-              <Icon className={`w-5 h-5 ${color}`} />
-              <Badge variant="secondary" className="text-xs">{count}</Badge>
-            </div>
-            <p className="font-medium text-sm">{label}</p>
-            <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1 group-hover:text-primary transition-colors">
-              View all <ArrowRight className="w-3 h-3" />
-            </p>
-          </Card>
-        ))}
-      </div>
-
       {hasContinueReading && (
         <Card className="p-5 border-primary/20 bg-primary/5" data-testid="card-continue-reading">
           <div className="flex items-center gap-2 text-sm font-medium text-primary mb-4">
@@ -203,6 +183,26 @@ function OverviewSection({ dashboard, onNavigate }: { dashboard: any; onNavigate
           </div>
         </Card>
       )}
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {[
+          { label: "Bookmarks", section: "bookmarks" as Section, count: dashboard.stats?.totalBookmarks || 0, icon: BookmarkIcon, color: "text-emerald-600" },
+          { label: "Saved Stories", section: "saved-stories" as Section, count: motivationalBookmarksData?.length ?? 0, icon: Lightbulb, color: "text-amber-500" },
+          { label: "Dua", section: "duas" as Section, count: duaBookmarksData?.length ?? 0, icon: Moon, color: "text-teal-600" },
+          { label: "My Books", section: "books" as Section, count: dashboard.stats?.bookBookmarks || 0, icon: BookOpen, color: "text-purple-600" },
+        ].map(({ label, section, count, icon: Icon, color }) => (
+          <Card key={section} className="p-4 hover:shadow-md transition-shadow cursor-pointer group" onClick={() => onNavigate(section)} data-testid={`card-quick-${section}`}>
+            <div className="flex items-center justify-between mb-2">
+              <Icon className={`w-5 h-5 ${color}`} />
+              <Badge variant="secondary" className="text-xs">{count}</Badge>
+            </div>
+            <p className="font-medium text-sm">{label}</p>
+            <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1 group-hover:text-primary transition-colors">
+              View all <ArrowRight className="w-3 h-3" />
+            </p>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }

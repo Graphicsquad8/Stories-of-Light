@@ -1,10 +1,10 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
-import { storage } from "./storage";
+import { storage, pool } from "./storage";
 import { insertStorySchema, insertCategorySchema, insertBookSchema, insertBookChapterSchema, signupSchema, insertBookRatingSchema, insertMotivationalStorySchema, insertMotivationalLessonSchema, insertStoryPartSchema, insertStoryPageSchema } from "@shared/schema";
 import session from "express-session";
-import memorystore from "memorystore";
+import connectPgSimple from "connect-pg-simple";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { scrypt, randomBytes, timingSafeEqual, createCipheriv, createDecipheriv, createHash } from "crypto";
@@ -283,15 +283,24 @@ export async function registerRoutes(
   });
   // ────────────────────────────────────────────────────────────────────────────
 
-  const MemoryStore = memorystore(session);
+  const PgSession = connectPgSimple(session);
 
   app.use(
     session({
       secret: process.env.SESSION_SECRET || "stories-of-light-secret",
       resave: false,
       saveUninitialized: false,
-      store: new MemoryStore({ checkPeriod: 86400000 }),
-      cookie: { maxAge: 24 * 60 * 60 * 1000 },
+      rolling: true,
+      store: new PgSession({
+        pool,
+        createTableIfMissing: true,
+        tableName: "user_sessions",
+      }),
+      cookie: {
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+        httpOnly: true,
+        sameSite: "lax",
+      },
     })
   );
 
