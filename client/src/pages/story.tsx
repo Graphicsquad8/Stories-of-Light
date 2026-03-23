@@ -43,6 +43,7 @@ function BookmarkButton({ storyId }: { storyId: string }) {
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/bookmarks", storyId] });
       queryClient.invalidateQueries({ queryKey: ["/api/profile"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/profile/dashboard"] });
       toast({ title: data.bookmarked ? "Bookmarked" : "Bookmark removed" });
     },
   });

@@ -131,6 +131,7 @@ export default function BookDetailPage() {
     mutationFn: () => apiRequest("POST", `/api/books/${book!.id}/bookmark`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/books", book?.id, "bookmark"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/profile/dashboard"] });
     },
   });
 

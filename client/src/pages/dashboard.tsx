@@ -72,6 +72,13 @@ function OverviewSection({ dashboard, onNavigate }: { dashboard: any; onNavigate
     ? format(new Date(dashboard.user.createdAt), "MMMM yyyy")
     : "Recently joined";
 
+  const { data: duaBookmarksData } = useQuery<any[]>({ queryKey: ["/api/user/dua-bookmarks"] });
+  const { data: motivationalBookmarksData } = useQuery<any[]>({ queryKey: ["/api/user/motivational-bookmarks"] });
+
+  const mostRecentBookmark = dashboard.recentBookmarks?.[0];
+  const bookProgress = dashboard.bookProgress || [];
+  const hasContinueReading = !!mostRecentBookmark || bookProgress.length > 0;
+
   return (
     <div className="space-y-6 max-w-4xl">
       <Card className="p-6" data-testid="card-profile-overview">
@@ -118,29 +125,53 @@ function OverviewSection({ dashboard, onNavigate }: { dashboard: any; onNavigate
         <StatCard icon={FolderOpen} label="Categories Explored" value={dashboard.stats?.categoriesExplored || 0} color="bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400" />
       </div>
 
-      {(dashboard.lastReadStory || (dashboard.bookProgress && dashboard.bookProgress.length > 0)) && (
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {[
+          { label: "Bookmarks", section: "bookmarks" as Section, count: dashboard.stats?.totalBookmarks || 0, icon: BookmarkIcon, color: "text-emerald-600" },
+          { label: "Saved Stories", section: "saved-stories" as Section, count: motivationalBookmarksData?.length ?? 0, icon: Lightbulb, color: "text-amber-500" },
+          { label: "Dua", section: "duas" as Section, count: duaBookmarksData?.length ?? 0, icon: Moon, color: "text-teal-600" },
+          { label: "My Books", section: "books" as Section, count: dashboard.stats?.bookBookmarks || 0, icon: BookOpen, color: "text-purple-600" },
+        ].map(({ label, section, count, icon: Icon, color }) => (
+          <Card key={section} className="p-4 hover:shadow-md transition-shadow cursor-pointer group" onClick={() => onNavigate(section)} data-testid={`card-quick-${section}`}>
+            <div className="flex items-center justify-between mb-2">
+              <Icon className={`w-5 h-5 ${color}`} />
+              <Badge variant="secondary" className="text-xs">{count}</Badge>
+            </div>
+            <p className="font-medium text-sm">{label}</p>
+            <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1 group-hover:text-primary transition-colors">
+              View all <ArrowRight className="w-3 h-3" />
+            </p>
+          </Card>
+        ))}
+      </div>
+
+      {hasContinueReading && (
         <Card className="p-5 border-primary/20 bg-primary/5" data-testid="card-continue-reading">
           <div className="flex items-center gap-2 text-sm font-medium text-primary mb-4">
             <Clock className="w-4 h-4" />
             Continue Reading
           </div>
           <div className="space-y-4">
-            {dashboard.lastReadStory && (
-              <Link href={`/stories/${dashboard.lastReadStory.slug}`}>
+            {mostRecentBookmark && (
+              <Link href={`/stories/${mostRecentBookmark.story.slug}`}>
                 <div className="flex items-center gap-4 group cursor-pointer">
-                  {dashboard.lastReadStory.thumbnail && (
-                    <img src={dashboard.lastReadStory.thumbnail} alt={dashboard.lastReadStory.title} className="w-20 h-14 rounded-lg object-cover shrink-0" />
+                  {mostRecentBookmark.story.thumbnail ? (
+                    <img src={mostRecentBookmark.story.thumbnail} alt={mostRecentBookmark.story.title} className="w-20 h-14 rounded-lg object-cover shrink-0" />
+                  ) : (
+                    <div className="w-20 h-14 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                      <BookOpen className="w-5 h-5 text-muted-foreground/40" />
+                    </div>
                   )}
                   <div className="flex-1 min-w-0">
                     <h3 className="font-serif font-semibold group-hover:text-primary transition-colors truncate" data-testid="text-last-story">
-                      {dashboard.lastReadStory.title}
+                      {mostRecentBookmark.story.title}
                     </h3>
-                    {dashboard.lastReadStory.category && (
-                      <Badge variant="secondary" className="text-xs mt-1">{dashboard.lastReadStory.category.name}</Badge>
+                    {mostRecentBookmark.story.category && (
+                      <Badge variant="secondary" className="text-xs mt-1">{mostRecentBookmark.story.category.name}</Badge>
                     )}
-                    {dashboard.lastReadStory.readAt && (
+                    {mostRecentBookmark.createdAt && (
                       <p className="text-xs text-muted-foreground mt-1">
-                        Last read {format(new Date(dashboard.lastReadStory.readAt), "MMM d, yyyy 'at' h:mm a")}
+                        Bookmarked {format(new Date(mostRecentBookmark.createdAt), "MMM d, yyyy 'at' h:mm a")}
                       </p>
                     )}
                   </div>
@@ -148,7 +179,7 @@ function OverviewSection({ dashboard, onNavigate }: { dashboard: any; onNavigate
                 </div>
               </Link>
             )}
-            {dashboard.bookProgress?.map((p: any) => (
+            {bookProgress.map((p: any) => (
               <Link key={p.bookId} href={`/books/${p.book.slug}/read`}>
                 <div className="flex items-center gap-4 group cursor-pointer" data-testid={`continue-book-${p.bookId}`}>
                   {p.book.coverUrl ? (
@@ -172,26 +203,6 @@ function OverviewSection({ dashboard, onNavigate }: { dashboard: any; onNavigate
           </div>
         </Card>
       )}
-
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {[
-          { label: "Bookmarks", section: "bookmarks" as Section, count: dashboard.stats?.totalBookmarks || 0, icon: BookmarkIcon, color: "text-emerald-600" },
-          { label: "Saved Stories", section: "saved-stories" as Section, count: dashboard.motivationalBookmarks?.length || 0, icon: Lightbulb, color: "text-amber-500" },
-          { label: "Dua", section: "duas" as Section, count: dashboard.duaBookmarks?.length || 0, icon: Moon, color: "text-teal-600" },
-          { label: "My Books", section: "books" as Section, count: dashboard.stats?.bookBookmarks || 0, icon: BookOpen, color: "text-purple-600" },
-        ].map(({ label, section, count, icon: Icon, color }) => (
-          <Card key={section} className="p-4 hover:shadow-md transition-shadow cursor-pointer group" onClick={() => onNavigate(section)} data-testid={`card-quick-${section}`}>
-            <div className="flex items-center justify-between mb-2">
-              <Icon className={`w-5 h-5 ${color}`} />
-              <Badge variant="secondary" className="text-xs">{count}</Badge>
-            </div>
-            <p className="font-medium text-sm">{label}</p>
-            <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1 group-hover:text-primary transition-colors">
-              View all <ArrowRight className="w-3 h-3" />
-            </p>
-          </Card>
-        ))}
-      </div>
     </div>
   );
 }

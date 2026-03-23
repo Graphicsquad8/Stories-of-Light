@@ -103,6 +103,7 @@ export default function DuaDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/duas", dua?.id, "bookmark"] });
       queryClient.invalidateQueries({ queryKey: ["/api/user/dua-bookmarks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/profile/dashboard"] });
     },
   });
 

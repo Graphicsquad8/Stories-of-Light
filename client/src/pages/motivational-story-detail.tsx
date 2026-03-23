@@ -130,6 +130,7 @@ export default function MotivationalStoryDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/motivational-stories", story?.id, "bookmark"] });
       queryClient.invalidateQueries({ queryKey: ["/api/user/motivational-bookmarks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/profile/dashboard"] });
     },
   });
 
