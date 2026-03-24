@@ -19,9 +19,7 @@ function AdBand({ slot, label }: { slot: AdSlotType; label: string }) {
   );
 }
 
-function HeroSection({ storyCategories }: { storyCategories?: (Category & { storyCount: number })[] }) {
-  const cats = storyCategories?.filter(c => c.type === "story") ?? [];
-
+function HeroSection() {
   return (
     <section className="relative overflow-hidden" data-testid="section-hero">
       <div className="absolute inset-0">
@@ -41,43 +39,19 @@ function HeroSection({ storyCategories }: { storyCategories?: (Category & { stor
           <p className="text-lg text-white/80 leading-relaxed max-w-xl mx-auto mb-6">
             Explore biographies of the Sahaba, Awliya, and great figures of Islamic history — with audio narrations, free online books, and curated reading recommendations.
           </p>
-          {cats.length > 0 ? (
-            <div className="flex flex-wrap gap-2 justify-center" data-testid="hero-category-buttons">
-              {cats.map((cat, i) => (
-                <Link key={cat.id} href={`/category/${cat.urlSlug || cat.slug}`}>
-                  {i === 0 ? (
-                    <Button size="lg" data-testid={`button-hero-cat-${cat.urlSlug || cat.slug}`}>
-                      {cat.name}
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      className="bg-white/10 backdrop-blur border-white/30 text-white hover:bg-white/20"
-                      data-testid={`button-hero-cat-${cat.urlSlug || cat.slug}`}
-                    >
-                      {cat.name}
-                    </Button>
-                  )}
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-wrap gap-3 justify-center">
-              <Link href="/category/sahaba">
-                <Button size="lg" data-testid="button-explore-stories">
-                  Explore Stories
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </Link>
-              <Link href="/category/awliya">
-                <Button variant="outline" size="lg" className="bg-white/10 backdrop-blur border-white/20 text-white" data-testid="button-browse-categories">
-                  Browse Categories
-                </Button>
-              </Link>
-            </div>
-          )}
+          <div className="flex flex-wrap gap-3 justify-center">
+            <Link href="/category/sahaba">
+              <Button size="lg" data-testid="button-explore-stories">
+                Explore Stories
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
+            <Link href="/category/awliya">
+              <Button variant="outline" size="lg" className="bg-white/10 backdrop-blur border-white/20 text-white" data-testid="button-browse-categories">
+                Browse Categories
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     </section>
@@ -393,7 +367,7 @@ export default function HomePage() {
 
   return (
     <PublicLayout>
-      <HeroSection storyCategories={categories} />
+      <HeroSection />
       <AdBand slot="banner" label="top-banner" />
 
       {catsLoading ? (
