@@ -208,19 +208,27 @@ export default function DuaDetailPage() {
                     const MAX = 90;
                     const hasMore = dua.description.length > MAX;
                     const preview = hasMore ? dua.description.slice(0, MAX) + "…" : dua.description;
+                    const rest = hasMore ? dua.description.slice(MAX) : "";
                     return (
-                      <div className="flex items-center gap-2 max-w-xl" data-testid="text-dua-desc">
-                        <p className="text-sm text-muted-foreground truncate flex-1">
-                          {descExpanded ? dua.description : preview}
-                        </p>
-                        {hasMore && (
-                          <button
-                            onClick={() => setDescExpanded(v => !v)}
-                            className="text-sm text-primary font-medium hover:underline focus:outline-none shrink-0"
-                            data-testid="button-desc-learn-more"
-                          >
-                            {descExpanded ? "Show less" : "Learn More"}
-                          </button>
+                      <div className="max-w-xl" data-testid="text-dua-desc">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm text-muted-foreground truncate flex-1">
+                            {preview}
+                          </p>
+                          {hasMore && (
+                            <button
+                              onClick={() => setDescExpanded(v => !v)}
+                              className="text-sm text-primary font-medium hover:underline focus:outline-none shrink-0"
+                              data-testid="button-desc-learn-more"
+                            >
+                              {descExpanded ? "Show less" : "Learn More"}
+                            </button>
+                          )}
+                        </div>
+                        {descExpanded && rest && (
+                          <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                            {rest}
+                          </p>
                         )}
                       </div>
                     );

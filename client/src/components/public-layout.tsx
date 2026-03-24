@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { BookOpen, Search, Menu, X, Sun, Moon, User, Bookmark, LogOut, LayoutDashboard, FolderOpen, Compass, Info, ChevronRight, Heart } from "lucide-react";
+import { BookOpen, Search, Menu, X, Sun, Moon, User, Bookmark, LogOut, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -276,20 +276,21 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
       <footer className="border-t bg-card mt-16" data-testid="section-footer">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8">
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
 
+            {/* Col 1: Brand */}
             <div className="md:col-span-1 flex flex-col gap-4">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center shadow-sm">
-                  <BookOpen className="w-4.5 h-4.5 text-primary-foreground" />
+                <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
+                  <BookOpen className="w-4 h-4 text-primary-foreground" />
                 </div>
-                <span className="font-serif text-base font-bold tracking-tight">{siteName}</span>
+                <span className="font-serif text-base font-semibold tracking-tight">{siteName}</span>
               </div>
               <p className="text-[13px] text-muted-foreground leading-relaxed">
                 {footerDescription}
               </p>
               {socialLinks.length > 0 && (
-                <div className="flex items-center gap-2.5 pt-1">
+                <div className="flex items-center gap-2 pt-1">
                   {socialLinks.map(link => {
                     const Icon = SOCIAL_ICONS[link.platform];
                     if (!Icon) return null;
@@ -299,7 +300,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
                         href={link.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-8 h-8 rounded-md border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground/30 hover:bg-accent transition-all"
+                        className="text-muted-foreground hover:text-foreground transition-colors"
                         data-testid={`link-footer-social-${link.platform}`}
                         aria-label={link.platform}
                       >
@@ -311,20 +312,17 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
               )}
             </div>
 
-            <div className="rounded-lg border bg-background/50 p-5">
-              <div className="flex items-center gap-2 mb-4 pb-3 border-b">
-                <FolderOpen className="w-4 h-4 text-primary" />
-                <span className="text-sm font-semibold">Categories</span>
-              </div>
-              <ul className="space-y-1.5">
+            {/* Col 2: Categories */}
+            <div>
+              <h3 className="font-semibold text-sm mb-4">Categories</h3>
+              <ul className="space-y-2">
                 {footerCategories.map((cat) => (
                   <li key={cat.id}>
                     <Link
                       href={`/category/${cat.urlSlug || cat.slug}`}
-                      className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors group"
+                      className="text-[13px] text-muted-foreground hover:text-foreground transition-colors"
                       data-testid={`link-footer-${cat.urlSlug || cat.slug}`}
                     >
-                      <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                       {cat.name}
                     </Link>
                   </li>
@@ -332,12 +330,10 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
               </ul>
             </div>
 
-            <div className="rounded-lg border bg-background/50 p-5">
-              <div className="flex items-center gap-2 mb-4 pb-3 border-b">
-                <Compass className="w-4 h-4 text-primary" />
-                <span className="text-sm font-semibold">Explore</span>
-              </div>
-              <ul className="space-y-1.5">
+            {/* Col 3: Explore */}
+            <div>
+              <h3 className="font-semibold text-sm mb-4">Explore</h3>
+              <ul className="space-y-2">
                 {[
                   { href: "/motivational-stories", label: motivationalPage?.name || "Stories", testId: "explore-stories" },
                   { href: "/duas", label: duaPage?.name || "Dua", testId: "explore-duas" },
@@ -346,10 +342,9 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
                   <li key={testId}>
                     <Link
                       href={href}
-                      className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors group"
+                      className="text-[13px] text-muted-foreground hover:text-foreground transition-colors"
                       data-testid={`link-footer-${testId}`}
                     >
-                      <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                       {label}
                     </Link>
                   </li>
@@ -357,57 +352,46 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
               </ul>
             </div>
 
-            <div className="rounded-lg border bg-background/50 p-5">
-              <div className="flex items-center gap-2 mb-4 pb-3 border-b">
-                <Info className="w-4 h-4 text-primary" />
-                <span className="text-sm font-semibold">About</span>
-              </div>
-              <ul className="space-y-1.5">
+            {/* Col 4: About */}
+            <div>
+              <h3 className="font-semibold text-sm mb-4">About</h3>
+              <ul className="space-y-2">
                 {footerPagesData.length > 0 ? (
                   footerPagesData.map(page => (
                     <li key={page.id}>
                       <Link
                         href={`/page/${page.slug}`}
-                        className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors group"
+                        className="text-[13px] text-muted-foreground hover:text-foreground transition-colors"
                         data-testid={`link-footer-page-${page.slug}`}
                       >
-                        <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                         {page.title}
                       </Link>
                     </li>
                   ))
                 ) : (
                   <>
-                    {[
-                      { href: "/page/about-us", label: "About Us", testId: "about" },
-                      { href: "/page/privacy-policy", label: "Privacy Policy", testId: "privacy" },
-                    ].map(({ href, label, testId }) => (
-                      <li key={testId}>
-                        <Link
-                          href={href}
-                          className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors group"
-                          data-testid={`link-footer-${testId}`}
-                        >
-                          <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                          {label}
-                        </Link>
-                      </li>
-                    ))}
+                    <li>
+                      <Link href="/page/about-us" className="text-[13px] text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-about">
+                        About Us
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/page/privacy-policy" className="text-[13px] text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-privacy">
+                        Privacy Policy
+                      </Link>
+                    </li>
                   </>
                 )}
               </ul>
-              <p className="mt-4 pt-3 border-t text-[11px] text-muted-foreground/70 leading-relaxed">
-                All stories are sourced from authentic Islamic scholarship.
+              <p className="mt-4 text-[12px] text-muted-foreground leading-relaxed">
+                Content is presented with respect and care. All stories are sourced from authentic Islamic scholarship.
               </p>
             </div>
 
           </div>
 
-          <div className="border-t pt-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
-            <span>© {new Date().getFullYear()} {siteName}. All rights reserved.</span>
-            <span className="flex items-center gap-1">
-              Made with <Heart className="w-3 h-3 text-red-400 mx-0.5" /> for the Ummah
-            </span>
+          <div className="border-t pt-6 text-center text-xs text-muted-foreground">
+            <span>{siteName}. All rights reserved.</span>
           </div>
 
         </div>
