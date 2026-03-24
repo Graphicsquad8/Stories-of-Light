@@ -205,22 +205,24 @@ export default function DuaDetailPage() {
                     )}
                   </div>
                   {dua.description && (() => {
-                    const sentences = dua.description.split(/\.\s+/);
-                    const firstLine = sentences[0] + (sentences.length > 1 ? "." : "");
-                    const rest = sentences.length > 1 ? " " + sentences.slice(1).join(". ") : "";
+                    const MAX = 90;
+                    const hasMore = dua.description.length > MAX;
+                    const preview = hasMore ? dua.description.slice(0, MAX) + "…" : dua.description;
                     return (
-                      <p className="text-sm text-muted-foreground max-w-xl" data-testid="text-dua-desc">
-                        {descExpanded ? dua.description : firstLine}
-                        {rest && (
+                      <div className="flex items-center gap-2 max-w-xl" data-testid="text-dua-desc">
+                        <p className="text-sm text-muted-foreground truncate flex-1">
+                          {descExpanded ? dua.description : preview}
+                        </p>
+                        {hasMore && (
                           <button
                             onClick={() => setDescExpanded(v => !v)}
-                            className="ml-1.5 text-primary font-medium hover:underline focus:outline-none"
+                            className="text-sm text-primary font-medium hover:underline focus:outline-none shrink-0"
                             data-testid="button-desc-learn-more"
                           >
                             {descExpanded ? "Show less" : "Learn More"}
                           </button>
                         )}
-                      </p>
+                      </div>
                     );
                   })()}
                 </div>

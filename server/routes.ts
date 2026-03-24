@@ -1652,12 +1652,23 @@ export async function registerRoutes(
   app.get("/api/duas/:id/related", async (req, res) => {
     const dua = await storage.getDuaById(req.params.id);
     if (!dua) return res.status(404).json({ message: "Dua not found" });
-    const { duas } = await storage.getDuas({
+    const { duas: sameCat } = await storage.getDuas({
       category: dua.category ?? undefined,
       published: true,
       limit: 5,
     });
-    const related = duas.filter((d) => d.id !== dua.id).slice(0, 3);
+    const related = sameCat.filter((d) => d.id !== dua.id).slice(0, 3);
+    if (related.length < 3) {
+      const needed = 3 - related.length;
+      const excluded = new Set([dua.id, ...related.map((r) => r.id)]);
+      const { duas: topViewed } = await storage.getDuas({
+        published: true,
+        sort: "most-viewed",
+        limit: needed + excluded.size + 2,
+      });
+      const filler = topViewed.filter((d) => !excluded.has(d.id)).slice(0, needed);
+      related.push(...filler);
+    }
     res.json(related);
   });
 
