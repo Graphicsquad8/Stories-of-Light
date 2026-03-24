@@ -888,8 +888,8 @@ export default function AdminSettingsPage() {
             saving={saving}
             onSave={handleSave}
             fields={[
-              { key: "homeHeroTitle", label: "Hero Banner Title", placeholder: "Stories of Light", hint: "The large heading shown on the homepage banner." },
-              { key: "homeHeroSubtitle", label: "Hero Banner Subtitle", placeholder: "Discover inspiring Islamic stories...", type: "textarea", hint: "The subtitle text beneath the homepage hero title." },
+              { key: "homeHeroTitle", label: "Hero Banner Title", placeholder: "Islamic Stories, Biographies & Books", type: "textarea", hint: "HTML is supported. Use <br /> for line breaks. Example: First line<br />Second line" },
+              { key: "homeHeroSubtitle", label: "Hero Banner Subtitle", placeholder: "Discover inspiring Islamic stories...", type: "textarea", hint: "HTML is supported. Use <br /> for line breaks and <strong> for bold text." },
             ]}
           />
         </AccordionSection>

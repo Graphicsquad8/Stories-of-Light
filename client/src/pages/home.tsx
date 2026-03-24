@@ -19,7 +19,18 @@ function AdBand({ slot, label }: { slot: AdSlotType; label: string }) {
   );
 }
 
+const DEFAULT_HERO_TITLE = "Islamic Stories, Biographies &amp; Books —<br />Read, Listen and Learn";
+const DEFAULT_HERO_SUBTITLE = "Explore biographies of the Sahaba, Awliya, and great figures of Islamic history — with audio narrations, free online books, and curated reading recommendations.";
+
 function HeroSection() {
+  const { data: publicSettings = {} } = useQuery<Record<string, string>>({
+    queryKey: ["/api/settings/public"],
+  });
+
+  const heroTitle = publicSettings["homeHeroTitle"] || DEFAULT_HERO_TITLE;
+  const heroSubtitle = publicSettings["homeHeroSubtitle"] || DEFAULT_HERO_SUBTITLE;
+  const siteName = publicSettings["siteName"] || "Stories of Light";
+
   return (
     <section className="relative overflow-hidden" data-testid="section-hero">
       <div className="absolute inset-0">
@@ -30,15 +41,18 @@ function HeroSection() {
         <div className="max-w-2xl mx-auto text-center">
           <Badge variant="secondary" className="mb-4" data-testid="badge-hero">
             <Sparkles className="w-3 h-3 mr-1" />
-            Stories of Light
+            {siteName}
           </Badge>
-          <h1 className="font-serif text-3xl sm:text-4xl lg:text-[2.75rem] font-bold text-white leading-tight mb-4" data-testid="text-hero-title">
-            Islamic Stories, Biographies & Books —<br />
-            Read, Listen and Learn
-          </h1>
-          <p className="text-lg text-white/80 leading-relaxed max-w-xl mx-auto mb-6">
-            Explore biographies of the Sahaba, Awliya, and great figures of Islamic history — with audio narrations, free online books, and curated reading recommendations.
-          </p>
+          <h1
+            className="font-serif text-3xl sm:text-4xl lg:text-[2.75rem] font-bold text-white leading-tight mb-4"
+            data-testid="text-hero-title"
+            dangerouslySetInnerHTML={{ __html: heroTitle }}
+          />
+          <p
+            className="text-lg text-white/80 leading-relaxed max-w-xl mx-auto mb-6"
+            data-testid="text-hero-subtitle"
+            dangerouslySetInnerHTML={{ __html: heroSubtitle }}
+          />
           <div className="flex flex-wrap gap-3 justify-center">
             <Link href="/motivational-stories">
               <Button size="lg" data-testid="button-explore-stories">

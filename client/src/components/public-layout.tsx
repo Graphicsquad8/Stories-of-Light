@@ -145,7 +145,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
   });
 
   const siteName = publicSettings["siteName"] ?? "Stories of Light";
-  const footerDescription = publicSettings["footerDescription"] ?? "Sharing authentic, inspiring stories from Islamic history. Our mission is to make the rich heritage of Islamic civilization accessible and engaging for English-speaking audiences worldwide.";
+  const footerDescription = publicSettings["footerText"] ?? publicSettings["footerDescription"] ?? "Sharing authentic, inspiring stories from Islamic history. Our mission is to make the rich heritage of Islamic civilization accessible and engaging for English-speaking audiences worldwide.";
   let socialLinks: { platform: string; url: string }[] = [];
   try { socialLinks = JSON.parse(publicSettings["socialLinks"] ?? "[]"); } catch { socialLinks = []; }
   let footerCategoryIds: string[] = [];
