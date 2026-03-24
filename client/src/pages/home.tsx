@@ -132,12 +132,8 @@ function StoryCard({ story }: { story: StoryWithCategory }) {
               </span>
             )}
           </div>
-          <h3 className="font-serif text-lg font-semibold mb-2 line-clamp-2 leading-snug" data-testid={`text-title-${story.slug}`}>
-            {story.title}
-          </h3>
-          <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
-            {story.excerpt}
-          </p>
+          <h3 className="font-serif text-lg font-semibold mb-2 line-clamp-2 leading-snug" data-testid={`text-title-${story.slug}`} dangerouslySetInnerHTML={{ __html: story.title }} />
+          <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed" dangerouslySetInnerHTML={{ __html: story.excerpt || "" }} />
         </div>
       </Card>
     </Link>
@@ -233,7 +229,7 @@ function FeaturedFreeBooks({ books }: { books: Book[] }) {
                 <Badge className="absolute top-2 right-2 bg-emerald-500 hover:bg-emerald-600 text-xs">Free</Badge>
               </div>
               <div className="p-3">
-                <h3 className="font-serif font-semibold text-sm line-clamp-2">{book.title}</h3>
+                <h3 className="font-serif font-semibold text-sm line-clamp-2" dangerouslySetInnerHTML={{ __html: book.title }} />
                 <p className="text-xs text-muted-foreground mt-0.5">{book.author}</p>
                 {(book.averageRating || 0) > 0 && (
                   <div className="flex items-center gap-0.5 mt-1">
@@ -274,12 +270,8 @@ function PopularMotivational({ stories }: { stories: MotivationalStory[] }) {
           <Link key={story.id} href={`/motivational-stories/${story.slug}`}>
             <Card className="group h-full p-5 cursor-pointer hover-elevate" data-testid={`card-motivational-${story.slug}`}>
               <Badge variant="secondary" className="mb-3 text-xs">{story.category}</Badge>
-              <h3 className="font-serif text-base font-semibold mb-2 line-clamp-2 leading-snug">
-                {story.title}
-              </h3>
-              <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed mb-3">
-                {story.description}
-              </p>
+              <h3 className="font-serif text-base font-semibold mb-2 line-clamp-2 leading-snug" dangerouslySetInnerHTML={{ __html: story.title }} />
+              <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed mb-3" dangerouslySetInnerHTML={{ __html: story.description || "" }} />
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Eye className="w-3 h-3" />
@@ -328,13 +320,9 @@ function PopularDuas({ duas }: { duas: Dua[] }) {
               {dua.category && (
                 <Badge variant="secondary" className="mb-3 text-xs">{dua.category}</Badge>
               )}
-              <h3 className="font-serif text-base font-semibold mb-2 line-clamp-2 leading-snug">
-                {dua.title}
-              </h3>
+              <h3 className="font-serif text-base font-semibold mb-2 line-clamp-2 leading-snug" dangerouslySetInnerHTML={{ __html: dua.title }} />
               {dua.description && (
-                <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed mb-3">
-                  {dua.description}
-                </p>
+                <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed mb-3" dangerouslySetInnerHTML={{ __html: dua.description }} />
               )}
               <div className="flex items-center gap-3 text-xs text-muted-foreground mt-auto pt-2">
                 <span className="flex items-center gap-1">

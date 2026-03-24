@@ -213,9 +213,7 @@ export default function MotivationalStoryDetailPage() {
                 )}
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <h1 className="font-serif text-lg sm:text-xl font-bold truncate" data-testid="text-story-title">
-                      {story.title}
-                    </h1>
+                    <h1 className="font-serif text-lg sm:text-xl font-bold truncate" data-testid="text-story-title" dangerouslySetInnerHTML={{ __html: story.title }} />
                     {story.category && (
                       <Badge variant="secondary" data-testid="badge-story-category">{story.category}</Badge>
                     )}
@@ -411,12 +409,12 @@ export default function MotivationalStoryDetailPage() {
                         <Link key={rel.id} href={`/motivational-stories/${rel.slug}`}>
                           <Card className="overflow-hidden group cursor-pointer hover-elevate" data-testid={`related-story-${rel.id}`}>
                             <div className="p-4">
-                              <h4 className="font-medium text-sm line-clamp-2 mb-1">{rel.title}</h4>
+                              <h4 className="font-medium text-sm line-clamp-2 mb-1" dangerouslySetInnerHTML={{ __html: rel.title }} />
                               {rel.category && (
                                 <Badge variant="secondary" className="text-xs">{rel.category}</Badge>
                               )}
                               {rel.description && (
-                                <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{rel.description}</p>
+                                <p className="text-xs text-muted-foreground mt-2 line-clamp-2" dangerouslySetInnerHTML={{ __html: rel.description }} />
                               )}
                             </div>
                           </Card>

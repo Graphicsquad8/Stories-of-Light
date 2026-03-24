@@ -116,7 +116,7 @@ function RelatedStories({ storyId }: { storyId: string }) {
                 {story.category && (
                   <Badge variant="secondary" className="mb-2">{story.category.name}</Badge>
                 )}
-                <h3 className="font-serif font-semibold line-clamp-2">{story.title}</h3>
+                <h3 className="font-serif font-semibold line-clamp-2" dangerouslySetInnerHTML={{ __html: story.title }} />
               </div>
             </Card>
           </Link>
@@ -245,9 +245,7 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
                 {sidebarOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
               </Button>
               <div className="min-w-0">
-                <h1 className="font-serif text-lg sm:text-xl font-bold truncate" data-testid="text-story-title">
-                  {story.title}
-                </h1>
+                <h1 className="font-serif text-lg sm:text-xl font-bold truncate" data-testid="text-story-title" dangerouslySetInnerHTML={{ __html: story.title }} />
                 <div className="flex items-center gap-3 text-sm flex-wrap">
                   {story.category && (
                     <Link href={`/category/${(story.category as any).urlSlug || story.category.slug}`}>
@@ -308,7 +306,7 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
                       data-testid={`sidebar-part-${part.id}`}
                     >
                       <span className="text-xs opacity-60 mr-1.5">{i + 1}.</span>
-                      {part.title}
+                      <span dangerouslySetInnerHTML={{ __html: part.title }} />
                     </button>
                   ))}
                 </div>
@@ -538,13 +536,9 @@ function LegacyView({ story }: { story: StoryWithCategory }) {
                   </span>
                 )}
               </div>
-              <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-4 text-white" data-testid="text-story-title">
-                {story.title}
-              </h1>
+              <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-4 text-white" data-testid="text-story-title" dangerouslySetInnerHTML={{ __html: story.title }} />
               {story.excerpt && (
-                <p className="text-lg text-white/80 leading-relaxed max-w-2xl" data-testid="text-story-excerpt">
-                  {story.excerpt}
-                </p>
+                <p className="text-lg text-white/80 leading-relaxed max-w-2xl" data-testid="text-story-excerpt" dangerouslySetInnerHTML={{ __html: story.excerpt }} />
               )}
             </div>
           </div>
@@ -571,13 +565,9 @@ function LegacyView({ story }: { story: StoryWithCategory }) {
                 </span>
               )}
             </div>
-            <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-4" data-testid="text-story-title">
-              {story.title}
-            </h1>
+            <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-4" data-testid="text-story-title" dangerouslySetInnerHTML={{ __html: story.title }} />
             {story.excerpt && (
-              <p className="text-lg text-muted-foreground leading-relaxed" data-testid="text-story-excerpt">
-                {story.excerpt}
-              </p>
+              <p className="text-lg text-muted-foreground leading-relaxed" data-testid="text-story-excerpt" dangerouslySetInnerHTML={{ __html: story.excerpt }} />
             )}
           </header>
         </div>

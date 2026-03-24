@@ -47,13 +47,10 @@ function DuaCard({ dua }: { dua: Dua }) {
           <h3
             className="font-serif font-semibold line-clamp-2 leading-snug"
             data-testid={`text-dua-title-${dua.id}`}
-          >
-            {dua.title}
-          </h3>
+            dangerouslySetInnerHTML={{ __html: dua.title }}
+          />
           {dua.description && (
-            <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed flex-1">
-              {dua.description}
-            </p>
+            <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed flex-1" dangerouslySetInnerHTML={{ __html: dua.description }} />
           )}
           <div className="flex items-center justify-between gap-2 flex-wrap mt-auto pt-2">
             <StarRating rating={0} />

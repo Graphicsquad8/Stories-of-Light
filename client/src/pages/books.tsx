@@ -42,7 +42,7 @@ function BookCard({ book }: { book: Book }) {
         </div>
         <div className="p-4 space-y-2">
           {book.category && <Badge variant="secondary" className="text-xs">{book.category}</Badge>}
-          <h3 className="font-serif font-semibold line-clamp-2" data-testid={`text-book-title-${book.id}`}>{book.title}</h3>
+          <h3 className="font-serif font-semibold line-clamp-2" data-testid={`text-book-title-${book.id}`} dangerouslySetInnerHTML={{ __html: book.title }} />
           <p className="text-sm text-muted-foreground">{book.author}</p>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1">

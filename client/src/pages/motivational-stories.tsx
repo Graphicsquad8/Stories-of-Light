@@ -52,13 +52,10 @@ function StoryCard({ story }: { story: MotivationalStory }) {
           <h3
             className="font-serif font-semibold line-clamp-2 leading-snug"
             data-testid={`text-story-title-${story.id}`}
-          >
-            {story.title}
-          </h3>
+            dangerouslySetInnerHTML={{ __html: story.title }}
+          />
           {story.description && (
-            <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed flex-1">
-              {story.description}
-            </p>
+            <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed flex-1" dangerouslySetInnerHTML={{ __html: story.description }} />
           )}
           <div className="flex items-center justify-between gap-2 flex-wrap mt-auto pt-2">
             <StarRating rating={story.averageRating || 0} />

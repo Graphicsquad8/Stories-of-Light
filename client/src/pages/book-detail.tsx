@@ -208,7 +208,7 @@ export default function BookDetailPage() {
                     {book.type === "free" ? "Free" : "Paid"}
                   </Badge>
                 </div>
-                <h1 className="font-serif text-3xl font-bold mb-1" data-testid="text-book-title">{book.title}</h1>
+                <h1 className="font-serif text-3xl font-bold mb-1" data-testid="text-book-title" dangerouslySetInnerHTML={{ __html: book.title }} />
                 <p className="text-lg text-muted-foreground" data-testid="text-book-author">by {book.author}</p>
               </div>
               {user && (
@@ -237,7 +237,7 @@ export default function BookDetailPage() {
             </div>
 
             {book.description && (
-              <p className="text-muted-foreground leading-relaxed" data-testid="text-book-description">{book.description}</p>
+              <p className="text-muted-foreground leading-relaxed" data-testid="text-book-description" dangerouslySetInnerHTML={{ __html: book.description || "" }} />
             )}
 
             {book.price && book.type === "paid" && (

@@ -197,9 +197,7 @@ export default function DuaDetailPage() {
                 )}
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                    <h1 className="font-serif text-lg sm:text-xl font-bold truncate" data-testid="text-dua-title">
-                      {dua.title}
-                    </h1>
+                    <h1 className="font-serif text-lg sm:text-xl font-bold truncate" data-testid="text-dua-title" dangerouslySetInnerHTML={{ __html: dua.title }} />
                     {dua.category && (
                       <Badge variant="secondary" data-testid="badge-dua-category">{dua.category}</Badge>
                     )}
@@ -288,7 +286,7 @@ export default function DuaDetailPage() {
                           data-testid={`sidebar-part-${part.id}`}
                         >
                           <span className="text-xs opacity-60 mr-2">{i + 1}.</span>
-                          {part.title}
+                          <span dangerouslySetInnerHTML={{ __html: part.title }} />
                         </button>
                       ))}
                     </div>
