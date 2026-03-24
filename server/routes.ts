@@ -1657,7 +1657,7 @@ export async function registerRoutes(
       published: true,
       limit: 5,
     });
-    const related = duas.filter((d) => d.id !== dua.id).slice(0, 4);
+    const related = duas.filter((d) => d.id !== dua.id).slice(0, 3);
     res.json(related);
   });
 

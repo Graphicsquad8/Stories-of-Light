@@ -45,8 +45,8 @@ function RelatedDuas({ duaId }: { duaId: string }) {
   return (
     <section className="mt-10" data-testid="section-related-duas">
       <h2 className="font-serif text-lg font-semibold mb-4">Related Duas</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-        {related.slice(0, 4).map((d) => (
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {related.slice(0, 3).map((d) => (
           <Link key={d.id} href={`/duas/${d.slug}`}>
             <Card className="group overflow-hidden cursor-pointer hover-elevate p-4" data-testid={`card-related-dua-${d.id}`}>
               {d.category && (
@@ -77,6 +77,7 @@ export default function DuaDetailPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activePartId, setActivePartId] = useState<string | null>(null);
   const [selectedPageIndex, setSelectedPageIndex] = useState(0);
+  const [descExpanded, setDescExpanded] = useState(false);
 
   const { data: dua, isLoading, isError } = useQuery<DuaWithParts>({
     queryKey: ["/api/duas", slug],
@@ -203,11 +204,25 @@ export default function DuaDetailPage() {
                       <Badge variant="secondary" data-testid="badge-dua-category">{dua.category}</Badge>
                     )}
                   </div>
-                  {dua.description && (
-                    <p className="text-sm text-muted-foreground truncate max-w-xl" data-testid="text-dua-desc">
-                      {dua.description}
-                    </p>
-                  )}
+                  {dua.description && (() => {
+                    const sentences = dua.description.split(/\.\s+/);
+                    const firstLine = sentences[0] + (sentences.length > 1 ? "." : "");
+                    const rest = sentences.length > 1 ? " " + sentences.slice(1).join(". ") : "";
+                    return (
+                      <p className="text-sm text-muted-foreground max-w-xl" data-testid="text-dua-desc">
+                        {descExpanded ? dua.description : firstLine}
+                        {rest && (
+                          <button
+                            onClick={() => setDescExpanded(v => !v)}
+                            className="ml-1.5 text-primary font-medium hover:underline focus:outline-none"
+                            data-testid="button-desc-learn-more"
+                          >
+                            {descExpanded ? "Show less" : "Learn More"}
+                          </button>
+                        )}
+                      </p>
+                    );
+                  })()}
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
