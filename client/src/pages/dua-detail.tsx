@@ -64,11 +64,19 @@ function RelatedDuas({ duaId }: { duaId: string }) {
   );
 }
 
+function getPartPages(part: { arabicText?: string | null; transliteration?: string | null; translation?: string | null; explanation?: string | null }) {
+  const pages: string[] = [];
+  if (part.arabicText || part.transliteration || part.translation) pages.push("Dua & Translation");
+  if (part.explanation) pages.push("Explanation & Virtues");
+  return pages.length > 0 ? pages : ["Content"];
+}
+
 export default function DuaDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activePartId, setActivePartId] = useState<string | null>(null);
+  const [selectedPageIndex, setSelectedPageIndex] = useState(0);
 
   const { data: dua, isLoading, isError } = useQuery<DuaWithParts>({
     queryKey: ["/api/duas", slug],
@@ -108,16 +116,33 @@ export default function DuaDetailPage() {
     },
   });
 
+  const pages = activePart ? getPartPages(activePart) : [];
+  const isFirst = activePartIndex === 0 && selectedPageIndex === 0;
+  const isLast = activePartIndex === sortedParts.length - 1 && selectedPageIndex === pages.length - 1;
+
   const selectPart = useCallback((partId: string) => {
     setActivePartId(partId);
+    setSelectedPageIndex(0);
   }, []);
 
-  const goToPreviousPart = () => {
-    if (activePartIndex > 0) selectPart(sortedParts[activePartIndex - 1].id);
+  const goToPreviousPage = () => {
+    if (selectedPageIndex > 0) {
+      setSelectedPageIndex(i => i - 1);
+    } else if (activePartIndex > 0) {
+      const prevPart = sortedParts[activePartIndex - 1];
+      const prevPages = getPartPages(prevPart);
+      setActivePartId(prevPart.id);
+      setSelectedPageIndex(prevPages.length - 1);
+    }
   };
 
-  const goToNextPart = () => {
-    if (activePartIndex < sortedParts.length - 1) selectPart(sortedParts[activePartIndex + 1].id);
+  const goToNextPage = () => {
+    if (selectedPageIndex < pages.length - 1) {
+      setSelectedPageIndex(i => i + 1);
+    } else if (activePartIndex < sortedParts.length - 1) {
+      setActivePartId(sortedParts[activePartIndex + 1].id);
+      setSelectedPageIndex(0);
+    }
   };
 
   if (isLoading) {
@@ -260,80 +285,92 @@ export default function DuaDetailPage() {
 
                 {activePart && (
                   <article data-testid="dua-content">
-                    <h2 className="font-serif text-2xl font-bold mb-6" data-testid="text-part-title">
+                    <h2 className="font-serif text-2xl font-bold mb-3" data-testid="text-part-title">
                       {activePart.title}
                     </h2>
 
-                    <div className="space-y-5">
-                      {/* Arabic */}
-                      {activePart.arabicText && (
-                        <div className="border rounded-xl p-8 bg-card shadow-sm" data-testid="box-arabic">
-                          <p
-                            className="text-3xl leading-[3.5rem] text-right"
-                            dir="rtl"
-                            lang="ar"
-                            data-testid="text-arabic"
-                            style={{ fontFamily: "'Amiri', 'Noto Naskh Arabic', serif" }}
-                          >
-                            {activePart.arabicText}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Transliteration */}
-                      {activePart.transliteration && (
-                        <div className="border rounded-xl px-6 py-5 bg-muted/30" data-testid="box-transliteration">
-                          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Transliteration</p>
-                          <p className="text-base leading-relaxed text-foreground/80 italic font-medium tracking-wide" data-testid="text-transliteration">
-                            {activePart.transliteration}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Translation */}
-                      {activePart.translation && (
-                        <div className="border rounded-xl px-6 py-5 bg-card" data-testid="box-translation">
-                          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Translation</p>
-                          <p className="text-base leading-relaxed text-foreground/80 italic" data-testid="text-translation">
-                            {activePart.translation}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Explanation */}
-                      {activePart.explanation && (
-                        <div className="border rounded-xl px-6 py-6 bg-card" data-testid="box-explanation">
-                          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-4">Explanation & Virtues</p>
-                          <div
-                            className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-serif prose-p:leading-relaxed prose-p:text-foreground/90"
-                            data-testid="text-explanation"
-                          >
-                            {activePart.explanation.split("\n").filter(Boolean).map((para, i) => (
-                              <p key={i} className="mb-4">{para}</p>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                    {/* Page tab buttons */}
+                    <div className="flex gap-2 flex-wrap mb-5">
+                      {pages.map((label, idx) => (
+                        <Button
+                          key={idx}
+                          size="sm"
+                          variant={selectedPageIndex === idx ? "default" : "outline"}
+                          onClick={() => setSelectedPageIndex(idx)}
+                          data-testid={`button-dua-page-${idx}`}
+                        >
+                          {label}
+                        </Button>
+                      ))}
                     </div>
+
+                    {/* Page 0: Dua & Translation */}
+                    {selectedPageIndex === 0 && (
+                      <div className="space-y-5">
+                        {activePart.arabicText && (
+                          <div className="border rounded-xl p-8 bg-card shadow-sm" data-testid="box-arabic">
+                            <p
+                              className="text-3xl leading-[3.5rem] text-right"
+                              dir="rtl"
+                              lang="ar"
+                              data-testid="text-arabic"
+                              style={{ fontFamily: "'Amiri', 'Noto Naskh Arabic', serif" }}
+                            >
+                              {activePart.arabicText}
+                            </p>
+                          </div>
+                        )}
+                        {activePart.transliteration && (
+                          <div className="border rounded-xl px-6 py-5 bg-muted/30" data-testid="box-transliteration">
+                            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Transliteration</p>
+                            <p className="text-base leading-relaxed text-foreground/80 italic font-medium tracking-wide" data-testid="text-transliteration">
+                              {activePart.transliteration}
+                            </p>
+                          </div>
+                        )}
+                        {activePart.translation && (
+                          <div className="border rounded-xl px-6 py-5 bg-card" data-testid="box-translation">
+                            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Translation</p>
+                            <p className="text-base leading-relaxed text-foreground/80 italic" data-testid="text-translation">
+                              {activePart.translation}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Page 1: Explanation & Virtues */}
+                    {selectedPageIndex === 1 && activePart.explanation && (
+                      <div className="border rounded-xl p-6 bg-card min-h-[200px]">
+                        <div
+                          className="prose prose-neutral dark:prose-invert max-w-none text-base leading-relaxed"
+                          data-testid="text-explanation"
+                        >
+                          {activePart.explanation.split("\n").filter(Boolean).map((para, i) => (
+                            <p key={i} className="mb-4">{para}</p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Navigation */}
                     {sortedParts.length > 0 && (
                       <div className="flex items-center justify-between gap-4 mt-8 pt-6 border-t" data-testid="dua-navigation">
                         <Button
                           variant="outline"
-                          disabled={activePartIndex <= 0}
-                          onClick={goToPreviousPart}
+                          disabled={isFirst}
+                          onClick={goToPreviousPage}
                           data-testid="button-prev-part"
                         >
                           <ChevronLeft className="w-4 h-4 mr-1" /> Previous
                         </Button>
                         <span className="text-sm text-muted-foreground" data-testid="text-part-progress">
-                          {activePartIndex + 1} / {sortedParts.length}
+                          Dua {activePartIndex + 1} of {sortedParts.length} · Page {selectedPageIndex + 1} of {pages.length}
                         </span>
                         <Button
                           variant="outline"
-                          disabled={activePartIndex >= sortedParts.length - 1}
-                          onClick={goToNextPart}
+                          disabled={isLast}
+                          onClick={goToNextPage}
                           data-testid="button-next-part"
                         >
                           Next <ChevronRight className="w-4 h-4 ml-1" />
