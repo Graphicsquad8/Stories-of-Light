@@ -40,7 +40,7 @@ function HeroSection() {
             Explore biographies of the Sahaba, Awliya, and great figures of Islamic history — with audio narrations, free online books, and curated reading recommendations.
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
-            <Link href="/category/sahaba">
+            <Link href="/motivational-stories">
               <Button size="lg" data-testid="button-explore-stories">
                 Explore Stories
                 <ArrowRight className="w-4 h-4 ml-2" />
