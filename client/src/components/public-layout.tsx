@@ -286,7 +286,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
                 </div>
                 <span className="font-serif text-base font-semibold tracking-tight">{siteName}</span>
               </div>
-              <p className="text-[13px] text-muted-foreground leading-relaxed">
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 {footerDescription}
               </p>
               {socialLinks.length > 0 && (
@@ -314,13 +314,13 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
 
             {/* Col 2: Categories */}
             <div>
-              <h3 className="font-semibold text-sm mb-4">Categories</h3>
+              <h3 className="font-semibold text-base mb-4">Categories</h3>
               <ul className="space-y-2">
                 {footerCategories.map((cat) => (
                   <li key={cat.id}>
                     <Link
                       href={`/category/${cat.urlSlug || cat.slug}`}
-                      className="text-[13px] text-muted-foreground hover:text-foreground transition-colors"
+                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                       data-testid={`link-footer-${cat.urlSlug || cat.slug}`}
                     >
                       {cat.name}
@@ -332,7 +332,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
 
             {/* Col 3: Explore */}
             <div>
-              <h3 className="font-semibold text-sm mb-4">Explore</h3>
+              <h3 className="font-semibold text-base mb-4">Explore</h3>
               <ul className="space-y-2">
                 {[
                   { href: "/motivational-stories", label: motivationalPage?.name || "Stories", testId: "explore-stories" },
@@ -342,7 +342,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
                   <li key={testId}>
                     <Link
                       href={href}
-                      className="text-[13px] text-muted-foreground hover:text-foreground transition-colors"
+                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                       data-testid={`link-footer-${testId}`}
                     >
                       {label}
@@ -354,14 +354,14 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
 
             {/* Col 4: About */}
             <div>
-              <h3 className="font-semibold text-sm mb-4">About</h3>
+              <h3 className="font-semibold text-base mb-4">About</h3>
               <ul className="space-y-2">
                 {footerPagesData.length > 0 ? (
                   footerPagesData.map(page => (
                     <li key={page.id}>
                       <Link
                         href={`/page/${page.slug}`}
-                        className="text-[13px] text-muted-foreground hover:text-foreground transition-colors"
+                        className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                         data-testid={`link-footer-page-${page.slug}`}
                       >
                         {page.title}
@@ -371,19 +371,19 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
                 ) : (
                   <>
                     <li>
-                      <Link href="/page/about-us" className="text-[13px] text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-about">
+                      <Link href="/page/about-us" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-about">
                         About Us
                       </Link>
                     </li>
                     <li>
-                      <Link href="/page/privacy-policy" className="text-[13px] text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-privacy">
+                      <Link href="/page/privacy-policy" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-privacy">
                         Privacy Policy
                       </Link>
                     </li>
                   </>
                 )}
               </ul>
-              <p className="mt-4 text-[12px] text-muted-foreground leading-relaxed">
+              <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
                 Content is presented with respect and care. All stories are sourced from authentic Islamic scholarship.
               </p>
             </div>
