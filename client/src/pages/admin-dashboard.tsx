@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useRef, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -112,19 +113,19 @@ function StatCard({
   label: string; value?: number | string; sub?: string; icon: any; color: string; href?: string; isLoading: boolean;
 }) {
   const content = (
-    <Card className="p-5 hover:shadow-md transition-shadow" data-testid={`card-stat-${label.toLowerCase().replace(/\s+/g, "-")}`}>
+    <Card className="p-4 hover:shadow-md transition-shadow" data-testid={`card-stat-${label.toLowerCase().replace(/\s+/g, "-")}`}>
       {isLoading ? (
         <div className="space-y-3"><Skeleton className="h-4 w-24" /><Skeleton className="h-8 w-16" /></div>
       ) : (
         <>
-          <div className="flex items-center justify-between gap-4 mb-3">
-            <span className="text-sm text-muted-foreground font-medium">{label}</span>
-            <div className={`p-2 rounded-lg bg-muted/60`}>
-              <Icon className={`w-4 h-4 ${color}`} />
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <span className="text-xs text-muted-foreground font-medium truncate">{label}</span>
+            <div className={`p-1.5 rounded-lg bg-muted/60 shrink-0`}>
+              <Icon className={`w-3.5 h-3.5 ${color}`} />
             </div>
           </div>
-          <p className="text-3xl font-bold tracking-tight">{(value ?? 0).toLocaleString()}</p>
-          {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
+          <p className="text-2xl font-bold tracking-tight">{(value ?? 0).toLocaleString()}</p>
+          {sub && <p className="text-[11px] text-muted-foreground mt-1 line-clamp-1">{sub}</p>}
         </>
       )}
     </Card>
@@ -154,13 +155,13 @@ function TrendingCard({ item, category }: {
 }) {
   const cat = item.category_name || item.category || "—";
   return (
-    <div className="border rounded-xl p-4 hover:shadow-sm transition-all bg-card flex flex-col gap-3">
-      <div className={`h-1 w-12 rounded-full ${CATEGORY_COLORS[category]}`} />
-      <p className="text-sm font-semibold line-clamp-2 leading-snug flex-1">{item.title}</p>
+    <div className="border rounded-xl p-5 hover:shadow-md transition-all bg-card flex flex-col gap-4 min-h-[140px]">
+      <div className={`h-1.5 w-14 rounded-full ${CATEGORY_COLORS[category]}`} />
+      <p className="text-sm font-semibold line-clamp-3 leading-snug flex-1">{item.title}</p>
       <div className="flex items-center justify-between mt-auto">
-        <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full truncate max-w-[80px]">{cat}</span>
+        <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full truncate max-w-[90px]">{cat}</span>
         <span className="text-xs flex items-center gap-1 text-muted-foreground shrink-0">
-          <Eye className="w-3 h-3" />{item.views ?? 0}
+          <Eye className="w-3.5 h-3.5" />{item.views ?? 0}
         </span>
       </div>
     </div>
@@ -170,7 +171,18 @@ function TrendingCard({ item, category }: {
 function TrendingSection({ data, isLoading }: { data?: DashboardData; isLoading: boolean }) {
   const [category, setCategory] = useState<TrendingCategory>("stories");
   const [sliderIndex, setSliderIndex] = useState(0);
-  const [showPicker, setShowPicker] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    }
+    if (showDropdown) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showDropdown]);
 
   const getItems = (cat: TrendingCategory) => {
     const map: Record<TrendingCategory, any[]> = {
@@ -190,57 +202,63 @@ function TrendingSection({ data, isLoading }: { data?: DashboardData; isLoading:
   const handleCategoryChange = (cat: TrendingCategory) => {
     setCategory(cat);
     setSliderIndex(0);
-    setShowPicker(false);
+    setShowDropdown(false);
   };
 
   return (
     <Card className="p-5">
-      <div className="flex items-center justify-between mb-1">
+      <div className="flex items-center justify-between mb-4">
         <h2 className="font-semibold flex items-center gap-2 text-base">
           <TrendingUp className="w-4 h-4 text-primary" /> Trending Content
         </h2>
         <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="text-xs font-medium cursor-pointer" onClick={() => setShowPicker(!showPicker)}>
+          <Badge variant="secondary" className="text-xs font-medium">
             {CATEGORY_LABELS[category]}
           </Badge>
-          <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => setShowPicker(!showPicker)} data-testid="button-view-all-trending">
-            View All <ChevronDown className="w-3 h-3" />
-          </Button>
+          <div className="relative" ref={dropdownRef}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1"
+              onClick={() => setShowDropdown((v) => !v)}
+              data-testid="button-view-all-trending"
+            >
+              View All <ChevronDown className="w-3 h-3" />
+            </Button>
+            {showDropdown && (
+              <div className="absolute right-0 top-full mt-1 z-50 bg-popover border rounded-lg shadow-md py-1 min-w-[140px]">
+                {(Object.keys(CATEGORY_LABELS) as TrendingCategory[]).map((cat) => (
+                  <button
+                    key={cat}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors flex items-center justify-between ${category === cat ? "font-semibold text-primary" : ""}`}
+                    onClick={() => handleCategoryChange(cat)}
+                    data-testid={`button-trending-${cat}`}
+                  >
+                    {CATEGORY_LABELS[cat]}
+                    {category === cat && <span className="w-1.5 h-1.5 rounded-full bg-primary ml-2" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {showPicker && (
-        <div className="flex gap-2 mt-3 mb-4 flex-wrap p-3 bg-muted/40 rounded-lg">
-          {(Object.keys(CATEGORY_LABELS) as TrendingCategory[]).map((cat) => (
-            <Button
-              key={cat}
-              size="sm"
-              variant={category === cat ? "default" : "outline"}
-              className="h-7 text-xs"
-              onClick={() => handleCategoryChange(cat)}
-              data-testid={`button-trending-${cat}`}
-            >
-              {CATEGORY_LABELS[cat]}
-            </Button>
-          ))}
-        </div>
-      )}
-
-      <div className="mt-4">
+      <div className="mt-2">
         {isLoading ? (
-          <div className="grid grid-cols-3 gap-3">
-            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-28 w-full rounded-xl" />)}
+          <div className="grid grid-cols-3 gap-4">
+            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-36 w-full rounded-xl" />)}
           </div>
         ) : items.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-8">No content yet in this category</p>
         ) : (
           <>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-4">
               {visible.map((item) => (
                 <TrendingCard key={item.id} item={item} category={category} />
               ))}
               {visible.length < 3 && Array.from({ length: 3 - visible.length }).map((_, i) => (
-                <div key={`empty-${i}`} className="border border-dashed rounded-xl" />
+                <div key={`empty-${i}`} className="border border-dashed rounded-xl min-h-[140px]" />
               ))}
             </div>
             {items.length > 3 && (
@@ -474,8 +492,8 @@ function MostBookmarkedSection({ data, isLoading }: { data?: DashboardData; isLo
 
 function NormalView({ data, isLoading }: { data?: DashboardData; isLoading: boolean }) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div className="lg:col-span-2 space-y-6">
+    <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-6">
+      <div className="space-y-6">
         <TrendingSection data={data} isLoading={isLoading} />
         <RecentActivitySection data={data} isLoading={isLoading} />
         <MostBookmarkedSection data={data} isLoading={isLoading} />
@@ -784,7 +802,7 @@ export default function AdminDashboardPage() {
   const { data, isLoading } = useQuery<DashboardData>({
     queryKey: ["/api/admin/dashboard"],
     staleTime: 0,
-    refetchInterval: 30 * 1000,
+    refetchInterval: 10 * 1000,
     refetchOnWindowFocus: true,
   });
 
@@ -796,6 +814,30 @@ export default function AdminDashboardPage() {
       icon: FileText,
       color: "text-primary",
       href: "/image/stories",
+    },
+    {
+      label: "Duas",
+      value: data.content.duas.total,
+      sub: `${data.content.duas.published} published`,
+      icon: MessageSquare,
+      color: "text-violet-600 dark:text-violet-400",
+      href: "/image/duas",
+    },
+    {
+      label: "Books",
+      value: data.content.books.total,
+      sub: `${data.content.books.free} free · ${data.content.books.paid} paid`,
+      icon: BookOpen,
+      color: "text-amber-600 dark:text-amber-400",
+      href: "/image/books",
+    },
+    {
+      label: "Motivational",
+      value: data.content.motivational.total,
+      sub: `${data.content.motivational.published} published`,
+      icon: Star,
+      color: "text-emerald-600 dark:text-emerald-400",
+      href: "/image/motivational",
     },
     {
       label: "Users",
@@ -812,19 +854,11 @@ export default function AdminDashboardPage() {
       icon: Eye,
       color: "text-teal-600 dark:text-teal-400",
     },
-    {
-      label: "Catalog",
-      value: data.content.books.total + data.content.duas.total + data.content.motivational.total,
-      sub: `${data.content.books.total} books · ${data.content.duas.total} duas · ${data.content.motivational.total} motivational`,
-      icon: BookOpen,
-      color: "text-amber-600 dark:text-amber-400",
-      href: "/image/books",
-    },
-  ] : Array.from({ length: 4 }).map((_, i) => ({
-    label: ["Articles", "Users", "Total Views", "Catalog"][i],
+  ] : Array.from({ length: 6 }).map((_, i) => ({
+    label: ["Articles", "Duas", "Books", "Motivational", "Users", "Total Views"][i],
     value: undefined,
-    icon: [FileText, Users, Eye, BookOpen][i],
-    color: ["text-primary", "text-blue-600", "text-teal-600", "text-amber-600"][i],
+    icon: [FileText, MessageSquare, BookOpen, Star, Users, Eye][i],
+    color: ["text-primary", "text-violet-600", "text-amber-600", "text-emerald-600", "text-blue-600", "text-teal-600"][i],
     href: undefined,
     sub: undefined,
   }));
@@ -860,7 +894,7 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
         {statCards.map((card) => (
           <StatCard key={card.label} {...card} isLoading={isLoading} />
         ))}
