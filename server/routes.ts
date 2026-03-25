@@ -911,7 +911,7 @@ export async function registerRoutes(
              bookmarkedStoriesRes, bookmarkedDuasRes, categoryBreakdownRes,
              userGrowthRes, recentActivityRes] = await Promise.all([
         pool.query(`SELECT COUNT(*) FROM users`),
-        pool.query(`SELECT s.id, s.title, s.views, s.average_rating, c.name as category_name FROM stories s LEFT JOIN categories c ON s.category_id = c.id WHERE s.deleted_at IS NULL ORDER BY s.views DESC LIMIT 5`),
+        pool.query(`SELECT s.id, s.title, COALESCE(COUNT(b.id), 0) as views, c.name as category_name FROM stories s LEFT JOIN categories c ON s.category_id = c.id LEFT JOIN bookmarks b ON b.story_id = s.id WHERE s.deleted_at IS NULL GROUP BY s.id, s.title, c.name ORDER BY views DESC LIMIT 5`),
         pool.query(`SELECT id, title, views, category FROM duas WHERE deleted_at IS NULL ORDER BY views DESC LIMIT 5`),
         pool.query(`SELECT id, title, views, average_rating, category FROM books WHERE deleted_at IS NULL ORDER BY views DESC LIMIT 5`),
         pool.query(`SELECT id, title, views, average_rating, category FROM motivational_stories WHERE deleted_at IS NULL ORDER BY views DESC LIMIT 5`),

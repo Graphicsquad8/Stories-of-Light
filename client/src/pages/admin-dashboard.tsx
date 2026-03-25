@@ -517,7 +517,9 @@ export default function AdminDashboardPage() {
 
   const { data, isLoading } = useQuery<DashboardData>({
     queryKey: ["/api/admin/dashboard"],
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
+    refetchInterval: 30 * 1000,
+    refetchOnWindowFocus: true,
   });
 
   const statCards = data ? [

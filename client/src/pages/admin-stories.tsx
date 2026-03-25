@@ -8,13 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -30,63 +23,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import type { StoryWithCategory, Category } from "@shared/schema";
 import { format } from "date-fns";
-
-function RecentArticlesSidebar() {
-  const { data: recent, isLoading } = useQuery<StoryWithCategory[]>({
-    queryKey: ["/api/stories?limit=8"],
-    staleTime: 2 * 60 * 1000,
-  });
-
-  return (
-    <Card className="shrink-0 w-72 self-start sticky top-4">
-      <div className="flex items-center gap-2 p-4 border-b">
-        <Clock className="w-4 h-4 text-muted-foreground" />
-        <h2 className="font-semibold text-sm">Recent Articles</h2>
-      </div>
-      <div className="divide-y">
-        {isLoading ? (
-          Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="p-3 space-y-1.5">
-              <Skeleton className="h-3.5 w-full" />
-              <Skeleton className="h-3 w-24" />
-            </div>
-          ))
-        ) : recent && recent.length > 0 ? (
-          recent.map((story) => (
-            <div key={story.id} className="p-3 hover:bg-muted/40 transition-colors group">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium line-clamp-2 leading-snug">{story.title}</p>
-                  <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                    {story.category && (
-                      <Badge variant="secondary" className="text-[10px] h-4 px-1.5">{story.category.name}</Badge>
-                    )}
-                    <Badge variant={story.status === "published" ? "default" : "outline"} className="text-[10px] h-4 px-1.5">
-                      {story.status}
-                    </Badge>
-                  </div>
-                  {story.createdAt && (
-                    <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
-                      <Clock className="w-2.5 h-2.5" />
-                      {format(new Date(story.createdAt), "MMM d, yyyy")}
-                    </p>
-                  )}
-                </div>
-                <Link href={`/image/stories/${story.id}/edit`}>
-                  <Button size="icon" variant="ghost" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" data-testid={`sidebar-edit-${story.id}`}>
-                    <Edit className="w-3 h-3" />
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          ))
-        ) : (
-          <p className="p-4 text-xs text-muted-foreground text-center">No articles yet</p>
-        )}
-      </div>
-    </Card>
-  );
-}
 
 export default function AdminStoriesPage() {
   const { toast } = useToast();
@@ -108,7 +44,8 @@ export default function AdminStoriesPage() {
 
   const queryParams = new URLSearchParams();
   if (search) queryParams.set("search", search);
-  if (statusFilter && statusFilter !== "all") queryParams.set("status", statusFilter);
+  if (statusFilter && statusFilter !== "all" && statusFilter !== "recent") queryParams.set("status", statusFilter);
+  if (statusFilter === "recent") queryParams.set("limit", "20");
   if (activeCategory?.id) queryParams.set("categoryId", activeCategory.id);
   const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
 
@@ -200,8 +137,6 @@ export default function AdminStoriesPage() {
         </Link>
       </div>
 
-      <div className="flex gap-6 items-start">
-      <div className="flex-1 min-w-0">
       <Card>
         <div className="flex items-center gap-3 p-4 border-b flex-wrap">
           <div className="relative flex-1 min-w-48">
@@ -214,16 +149,25 @@ export default function AdminStoriesPage() {
               data-testid="input-search-stories"
             />
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-36" data-testid="select-status-filter">
-              <SelectValue placeholder="All Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="published">Published</SelectItem>
-              <SelectItem value="draft">Draft</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex gap-1 flex-wrap">
+            {[
+              { value: "all", label: "All Status" },
+              { value: "published", label: "Published" },
+              { value: "draft", label: "Draft" },
+              { value: "recent", label: "Recent Article" },
+            ].map(({ value, label }) => (
+              <Button
+                key={value}
+                variant={statusFilter === value ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStatusFilter(value)}
+                data-testid={`button-filter-${value}`}
+              >
+                {value === "recent" && <Clock className="w-3.5 h-3.5 mr-1.5" />}
+                {label}
+              </Button>
+            ))}
+          </div>
           {selectedIds.size > 0 && (
             <Button
               variant="destructive"
@@ -353,9 +297,6 @@ export default function AdminStoriesPage() {
           </table>
         </div>
       </Card>
-      </div>
-      <RecentArticlesSidebar />
-      </div>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
