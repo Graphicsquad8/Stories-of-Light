@@ -91,18 +91,18 @@ interface DashboardData {
   };
   totalViews: number;
   topContent: {
-    stories: Array<{ id: string; title: string; views: number; average_rating: string; category_name: string }>;
-    duas: Array<{ id: string; title: string; views: number; category: string }>;
-    books: Array<{ id: string; title: string; views: number; average_rating: string; category: string }>;
-    motivational: Array<{ id: string; title: string; views: number; average_rating: string; category: string }>;
+    stories: Array<{ id: string; title: string; excerpt: string | null; views: number; average_rating: string; category_name: string }>;
+    duas: Array<{ id: string; title: string; description: string | null; views: number; category: string }>;
+    books: Array<{ id: string; title: string; description: string | null; views: number; average_rating: string; category: string }>;
+    motivational: Array<{ id: string; title: string; description: string | null; views: number; average_rating: string; category: string }>;
   };
   bookmarked: {
-    stories: Array<{ id: string; title: string; bookmark_count: string }>;
-    duas: Array<{ id: string; title: string; bookmark_count: string }>;
+    stories: Array<{ id: string; title: string; excerpt: string | null; bookmark_count: string }>;
+    duas: Array<{ id: string; title: string; description: string | null; bookmark_count: string }>;
   };
   categories: Array<{ name: string; url_slug: string; story_count: string }>;
   userGrowth: Array<{ month: string; year_month: string; count: string }>;
-  recentActivity: Array<{ id: string; title: string; status: string; updated_at: string; category_name: string }>;
+  recentActivity: Array<{ id: string; title: string; excerpt: string | null; status: string; updated_at: string; category_name: string }>;
   topContributors: Contributor[];
   activeUsers: ActiveUser[];
 }
@@ -150,14 +150,18 @@ const CATEGORY_COLORS: Record<TrendingCategory, string> = {
 };
 
 function TrendingCard({ item, category }: {
-  item: { id: string; title: string; views: number; category_name?: string; category?: string };
+  item: { id: string; title: string; views: number; excerpt?: string | null; description?: string | null; category_name?: string; category?: string };
   category: TrendingCategory;
 }) {
   const cat = item.category_name || item.category || "—";
+  const blurb = item.excerpt || item.description || null;
   return (
-    <div className="border rounded-xl p-5 hover:shadow-md transition-all bg-card flex flex-col gap-4 min-h-[140px]">
+    <div className="border rounded-xl p-5 hover:shadow-md transition-all bg-card flex flex-col gap-3 min-h-[160px]">
       <div className={`h-1.5 w-14 rounded-full ${CATEGORY_COLORS[category]}`} />
-      <p className="text-sm font-semibold line-clamp-3 leading-snug flex-1">{item.title}</p>
+      <div className="flex-1 flex flex-col gap-1.5">
+        <p className="text-sm font-semibold line-clamp-2 leading-snug">{item.title}</p>
+        {blurb && <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">{blurb}</p>}
+      </div>
       <div className="flex items-center justify-between mt-auto">
         <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full truncate max-w-[90px]">{cat}</span>
         <span className="text-xs flex items-center gap-1 text-muted-foreground shrink-0">
@@ -485,9 +489,12 @@ function RecentActivitySection({ data, isLoading }: { data?: DashboardData; isLo
           <>
             <div className="grid grid-cols-3 gap-4">
               {visible.map((item) => (
-                <div key={item.id} className="border rounded-xl p-5 hover:shadow-md transition-all bg-card flex flex-col gap-4 min-h-[140px]">
+                <div key={item.id} className="border rounded-xl p-5 hover:shadow-md transition-all bg-card flex flex-col gap-3 min-h-[160px]">
                   <div className="h-1.5 w-14 rounded-full bg-primary" />
-                  <p className="text-sm font-semibold line-clamp-3 leading-snug flex-1">{item.title}</p>
+                  <div className="flex-1 flex flex-col gap-1.5">
+                    <p className="text-sm font-semibold line-clamp-2 leading-snug">{item.title}</p>
+                    {item.excerpt && <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">{item.excerpt}</p>}
+                  </div>
                   <div className="flex items-center justify-between mt-auto">
                     <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full truncate max-w-[80px]">
                       {item.category_name || "—"}
@@ -603,20 +610,26 @@ function MostBookmarkedSection({ data, isLoading }: { data?: DashboardData; isLo
         ) : (
           <>
             <div className="grid grid-cols-3 gap-4">
-              {visible.map((item, i) => (
-                <div key={item.id} className="border rounded-xl p-5 hover:shadow-md transition-all bg-card flex flex-col gap-4 min-h-[140px]">
-                  <div className="h-1.5 w-14 rounded-full bg-violet-500" />
-                  <p className="text-sm font-semibold line-clamp-3 leading-snug flex-1">{item.title}</p>
-                  <div className="flex items-center justify-between mt-auto">
-                    <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full shrink-0">
-                      #{sliderIndex + i + 1}
-                    </span>
-                    <span className="text-xs flex items-center gap-1 text-muted-foreground shrink-0">
-                      <Bookmark className="w-3.5 h-3.5" />{item.bookmark_count}
-                    </span>
+              {visible.map((item, i) => {
+                const blurb = (item as any).excerpt || (item as any).description || null;
+                return (
+                  <div key={item.id} className="border rounded-xl p-5 hover:shadow-md transition-all bg-card flex flex-col gap-3 min-h-[160px]">
+                    <div className="h-1.5 w-14 rounded-full bg-violet-500" />
+                    <div className="flex-1 flex flex-col gap-1.5">
+                      <p className="text-sm font-semibold line-clamp-2 leading-snug">{item.title}</p>
+                      {blurb && <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">{blurb}</p>}
+                    </div>
+                    <div className="flex items-center justify-between mt-auto">
+                      <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full shrink-0">
+                        #{sliderIndex + i + 1}
+                      </span>
+                      <span className="text-xs flex items-center gap-1 text-muted-foreground shrink-0">
+                        <Bookmark className="w-3.5 h-3.5" />{item.bookmark_count}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               {visible.length < 3 && Array.from({ length: 3 - visible.length }).map((_, i) => (
                 <div key={`empty-${i}`} className="border border-dashed rounded-xl min-h-[140px]" />
               ))}
