@@ -887,6 +887,69 @@ export async function registerRoutes(
     res.json({ total, published, drafts, categories: cats.length });
   });
 
+  app.get("/api/admin/dashboard", requireStaff, async (_req, res) => {
+    try {
+      const [totalStories, publishedStories, draftStories] = await Promise.all([
+        storage.getStoryCount(),
+        storage.getStoryCount("published"),
+        storage.getStoryCount("draft"),
+      ]);
+      const [totalMotivational, publishedMotivational] = await Promise.all([
+        storage.getMotivationalStoryCount(),
+        storage.getMotivationalStoryCount(true),
+      ]);
+      const [duasAll, duasPublished] = await Promise.all([
+        storage.getDuas({ limit: 1 }),
+        storage.getDuas({ published: true, limit: 1 }),
+      ]);
+      const allBooks = await storage.getBooks();
+      const totalBooks = allBooks.length;
+      const freeBooks = allBooks.filter((b: any) => b.type === "free").length;
+      const paidBooks = allBooks.filter((b: any) => b.type === "paid").length;
+
+      const [usersRes, topStoriesRes, topDuasRes, topBooksRes, topMotivRes,
+             bookmarkedStoriesRes, bookmarkedDuasRes, categoryBreakdownRes,
+             userGrowthRes, recentActivityRes] = await Promise.all([
+        pool.query(`SELECT COUNT(*) FROM users`),
+        pool.query(`SELECT s.id, s.title, s.views, s.average_rating, c.name as category_name FROM stories s LEFT JOIN categories c ON s.category_id = c.id WHERE s.deleted_at IS NULL ORDER BY s.views DESC LIMIT 5`),
+        pool.query(`SELECT id, title, views, category FROM duas WHERE deleted_at IS NULL ORDER BY views DESC LIMIT 5`),
+        pool.query(`SELECT id, title, views, average_rating, category FROM books WHERE deleted_at IS NULL ORDER BY views DESC LIMIT 5`),
+        pool.query(`SELECT id, title, views, average_rating, category FROM motivational_stories WHERE deleted_at IS NULL ORDER BY views DESC LIMIT 5`),
+        pool.query(`SELECT s.id, s.title, COUNT(b.id) as bookmark_count FROM stories s JOIN bookmarks b ON b.story_id = s.id WHERE s.deleted_at IS NULL GROUP BY s.id, s.title ORDER BY bookmark_count DESC LIMIT 5`),
+        pool.query(`SELECT d.id, d.title, COUNT(db.id) as bookmark_count FROM duas d JOIN dua_bookmarks db ON db.dua_id = d.id WHERE d.deleted_at IS NULL GROUP BY d.id, d.title ORDER BY bookmark_count DESC LIMIT 5`),
+        pool.query(`SELECT c.name, c.url_slug, COUNT(s.id) as story_count FROM categories c LEFT JOIN stories s ON s.category_id = c.id AND s.deleted_at IS NULL AND s.status = 'published' WHERE c.type = 'story' AND c.deleted_at IS NULL GROUP BY c.id, c.name, c.url_slug ORDER BY story_count DESC`),
+        pool.query(`SELECT TO_CHAR(DATE_TRUNC('month', created_at), 'Mon YY') as month, TO_CHAR(DATE_TRUNC('month', created_at), 'YYYY-MM') as year_month, COUNT(*) as count FROM users WHERE created_at >= NOW() - INTERVAL '6 months' GROUP BY year_month, month ORDER BY year_month`),
+        pool.query(`SELECT s.id, s.title, s.status, s.updated_at, c.name as category_name FROM stories s LEFT JOIN categories c ON s.category_id = c.id WHERE s.deleted_at IS NULL ORDER BY s.updated_at DESC LIMIT 8`),
+      ]);
+
+      res.json({
+        content: {
+          stories: { total: totalStories, published: publishedStories, drafts: draftStories },
+          motivational: { total: totalMotivational, published: publishedMotivational },
+          duas: { total: duasAll.total, published: duasPublished.total },
+          books: { total: totalBooks, free: freeBooks, paid: paidBooks },
+          users: { total: parseInt(usersRes.rows[0].count) },
+        },
+        topContent: {
+          stories: topStoriesRes.rows,
+          duas: topDuasRes.rows,
+          books: topBooksRes.rows,
+          motivational: topMotivRes.rows,
+        },
+        bookmarked: {
+          stories: bookmarkedStoriesRes.rows,
+          duas: bookmarkedDuasRes.rows,
+        },
+        categories: categoryBreakdownRes.rows,
+        userGrowth: userGrowthRes.rows,
+        recentActivity: recentActivityRes.rows,
+      });
+    } catch (error) {
+      console.error("Dashboard error:", error);
+      res.status(500).json({ message: "Failed to load dashboard data" });
+    }
+  });
+
   app.get("/api/stories/by-slug/:slug", async (req, res) => {
     const story = await storage.getStoryBySlug(req.params.slug);
     if (!story) return res.status(404).json({ message: "Story not found" });

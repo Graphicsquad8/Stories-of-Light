@@ -1,5 +1,15 @@
 # Stories of Light - Islamic Stories Blog
 
+## Admin Dashboard (v2 — Analytics)
+- **Route**: `/image` — comprehensive analytics dashboard replacing simple stats+recent stories
+- **Toggle**: Normal View / Graph View switcher in the top header
+- **Stat Cards**: 5 cards — Total Articles, Total Duas, Total Books, Motivational, Total Users (clickable, link to sections)
+- **Normal View**: Top Performing Content (tabs: Articles/Duas/Books/Motivational, by views), Most Bookmarked (Articles/Duas), Category Breakdown (horizontal bar progress), Recent Activity (8 latest articles), User Growth table (last 6 months with trend indicators)
+- **Graph View**: Content Overview chart (Bar/Line/Pie switchable), Articles by Category bar chart, Top Content by Views (Bar/Line/Pie, tabs per content type), User Growth line chart, Most Bookmarked bar chart
+- **Charts**: Uses `recharts` (already installed) — `BarChart`, `LineChart`, `PieChart`, `ResponsiveContainer`
+- **Backend**: New `/api/admin/dashboard` endpoint (requireStaff) — queries content counts, top content by views, bookmarked counts, category breakdown, user growth (6 months), recent activity
+- **All Articles page**: Added `RecentArticlesSidebar` (w-72 sticky right panel) showing 8 most recent articles with category badges, status, date and hover edit button
+
 ## Overview
 "Stories of Light" is an English-language Islamic stories blog designed for Western audiences. Its primary purpose is to offer inspiring Islamic narratives through a public-facing platform, user accounts, and an administrative dashboard. The project aims to provide a rich content experience, including a comprehensive "Books" section offering both free online reading and affiliate links for paid books. The platform emphasizes user engagement through features like bookmarking and reading progress tracking, while enabling robust content management for administrators.
 
