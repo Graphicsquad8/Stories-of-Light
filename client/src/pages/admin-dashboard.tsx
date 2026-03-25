@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Select,
   SelectContent,
@@ -13,6 +13,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   FileText,
   BookOpen,
@@ -28,6 +34,10 @@ import {
   MessageSquare,
   Clock,
   Layers,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  CalendarDays,
 } from "lucide-react";
 import {
   BarChart,
@@ -49,6 +59,27 @@ import { format } from "date-fns";
 
 const COLORS = ["#6366f1", "#10b981", "#f59e0b", "#ef4444", "#3b82f6", "#8b5cf6", "#14b8a6"];
 
+interface Contributor {
+  id: string;
+  username: string;
+  name: string;
+  email: string;
+  role: string;
+  avatar_url: string | null;
+  created_at: string;
+}
+
+interface ActiveUser {
+  id: string;
+  username: string;
+  name: string;
+  email: string;
+  avatar_url: string | null;
+  created_at: string;
+  bookmark_count: string;
+  reading_count: string;
+}
+
 interface DashboardData {
   content: {
     stories: { total: number; published: number; drafts: number };
@@ -57,6 +88,7 @@ interface DashboardData {
     books: { total: number; free: number; paid: number };
     users: { total: number };
   };
+  totalViews: number;
   topContent: {
     stories: Array<{ id: string; title: string; views: number; average_rating: string; category_name: string }>;
     duas: Array<{ id: string; title: string; views: number; category: string }>;
@@ -70,6 +102,8 @@ interface DashboardData {
   categories: Array<{ name: string; url_slug: string; story_count: string }>;
   userGrowth: Array<{ month: string; year_month: string; count: string }>;
   recentActivity: Array<{ id: string; title: string; status: string; updated_at: string; category_name: string }>;
+  topContributors: Contributor[];
+  activeUsers: ActiveUser[];
 }
 
 function StatCard({
@@ -84,10 +118,12 @@ function StatCard({
       ) : (
         <>
           <div className="flex items-center justify-between gap-4 mb-3">
-            <span className="text-sm text-muted-foreground">{label}</span>
-            <Icon className={`w-5 h-5 ${color}`} />
+            <span className="text-sm text-muted-foreground font-medium">{label}</span>
+            <div className={`p-2 rounded-lg bg-muted/60`}>
+              <Icon className={`w-4 h-4 ${color}`} />
+            </div>
           </div>
-          <p className="text-3xl font-bold">{value ?? 0}</p>
+          <p className="text-3xl font-bold tracking-tight">{(value ?? 0).toLocaleString()}</p>
           {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
         </>
       )}
@@ -96,105 +132,376 @@ function StatCard({
   return href ? <Link href={href}>{content}</Link> : content;
 }
 
-function TopContentTable({ items, type }: {
-  items: Array<{ id: string; title: string; views: number; average_rating?: string; category_name?: string; category?: string; bookmark_count?: string }>;
-  type: "views" | "bookmarks";
+type TrendingCategory = "stories" | "duas" | "books" | "motivational";
+
+const CATEGORY_LABELS: Record<TrendingCategory, string> = {
+  stories: "Articles",
+  duas: "Duas",
+  books: "Books",
+  motivational: "Motivational",
+};
+
+const CATEGORY_COLORS: Record<TrendingCategory, string> = {
+  stories: "bg-primary",
+  duas: "bg-violet-500",
+  books: "bg-amber-500",
+  motivational: "bg-emerald-500",
+};
+
+function TrendingCard({ item, category }: {
+  item: { id: string; title: string; views: number; category_name?: string; category?: string };
+  category: TrendingCategory;
 }) {
-  if (!items || items.length === 0) {
-    return <p className="text-sm text-muted-foreground py-6 text-center">No data yet</p>;
-  }
+  const cat = item.category_name || item.category || "—";
   return (
-    <div className="space-y-2">
-      {items.map((item, i) => (
-        <div key={item.id} className="flex items-center gap-3 py-2 border-b last:border-0">
-          <span className="text-lg font-bold text-muted-foreground w-6 shrink-0 text-center">{i + 1}</span>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium line-clamp-1">{item.title}</p>
-            {(item.category_name || item.category) && (
-              <p className="text-xs text-muted-foreground">{item.category_name || item.category}</p>
-            )}
-          </div>
-          <div className="flex items-center gap-1 text-sm text-muted-foreground shrink-0">
-            {type === "views" ? (
-              <><Eye className="w-3.5 h-3.5" /><span>{item.views ?? 0}</span></>
-            ) : (
-              <><Bookmark className="w-3.5 h-3.5" /><span>{item.bookmark_count ?? 0}</span></>
-            )}
-          </div>
-        </div>
-      ))}
+    <div className="border rounded-xl p-4 hover:shadow-sm transition-all bg-card flex flex-col gap-3">
+      <div className={`h-1 w-12 rounded-full ${CATEGORY_COLORS[category]}`} />
+      <p className="text-sm font-semibold line-clamp-2 leading-snug flex-1">{item.title}</p>
+      <div className="flex items-center justify-between mt-auto">
+        <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full truncate max-w-[80px]">{cat}</span>
+        <span className="text-xs flex items-center gap-1 text-muted-foreground shrink-0">
+          <Eye className="w-3 h-3" />{item.views ?? 0}
+        </span>
+      </div>
     </div>
   );
 }
 
-function NormalView({ data, isLoading }: { data?: DashboardData; isLoading: boolean }) {
-  const [topTab, setTopTab] = useState("stories");
-  const [bookmarkTab, setBookmarkTab] = useState("stories");
+function TrendingSection({ data, isLoading }: { data?: DashboardData; isLoading: boolean }) {
+  const [category, setCategory] = useState<TrendingCategory>("stories");
+  const [sliderIndex, setSliderIndex] = useState(0);
+  const [showPicker, setShowPicker] = useState(false);
+
+  const getItems = (cat: TrendingCategory) => {
+    const map: Record<TrendingCategory, any[]> = {
+      stories: data?.topContent.stories ?? [],
+      duas: data?.topContent.duas ?? [],
+      books: data?.topContent.books ?? [],
+      motivational: data?.topContent.motivational ?? [],
+    };
+    return map[cat];
+  };
+
+  const items = getItems(category);
+  const visible = items.slice(sliderIndex, sliderIndex + 3);
+  const canBack = sliderIndex > 0;
+  const canForward = sliderIndex + 3 < items.length;
+
+  const handleCategoryChange = (cat: TrendingCategory) => {
+    setCategory(cat);
+    setSliderIndex(0);
+    setShowPicker(false);
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 p-5">
-          <h2 className="font-semibold mb-4 flex items-center gap-2"><TrendingUp className="w-4 h-4" /> Top Performing Content</h2>
-          <Tabs value={topTab} onValueChange={setTopTab}>
-            <TabsList className="mb-4">
-              <TabsTrigger value="stories">Articles</TabsTrigger>
-              <TabsTrigger value="duas">Duas</TabsTrigger>
-              <TabsTrigger value="books">Books</TabsTrigger>
-              <TabsTrigger value="motivational">Motivational</TabsTrigger>
-            </TabsList>
-            <TabsContent value="stories">
-              {isLoading ? <Skeleton className="h-40 w-full" /> : <TopContentTable items={data?.topContent.stories ?? []} type="views" />}
-            </TabsContent>
-            <TabsContent value="duas">
-              {isLoading ? <Skeleton className="h-40 w-full" /> : <TopContentTable items={data?.topContent.duas ?? []} type="views" />}
-            </TabsContent>
-            <TabsContent value="books">
-              {isLoading ? <Skeleton className="h-40 w-full" /> : <TopContentTable items={data?.topContent.books ?? []} type="views" />}
-            </TabsContent>
-            <TabsContent value="motivational">
-              {isLoading ? <Skeleton className="h-40 w-full" /> : <TopContentTable items={data?.topContent.motivational ?? []} type="views" />}
-            </TabsContent>
-          </Tabs>
-        </Card>
-
-        <Card className="p-5">
-          <h2 className="font-semibold mb-4 flex items-center gap-2"><Bookmark className="w-4 h-4" /> Most Bookmarked</h2>
-          <Tabs value={bookmarkTab} onValueChange={setBookmarkTab}>
-            <TabsList className="mb-4 w-full">
-              <TabsTrigger value="stories" className="flex-1">Articles</TabsTrigger>
-              <TabsTrigger value="duas" className="flex-1">Duas</TabsTrigger>
-            </TabsList>
-            <TabsContent value="stories">
-              {isLoading ? <Skeleton className="h-40 w-full" /> : <TopContentTable items={data?.bookmarked.stories ?? []} type="bookmarks" />}
-            </TabsContent>
-            <TabsContent value="duas">
-              {isLoading ? <Skeleton className="h-40 w-full" /> : <TopContentTable items={data?.bookmarked.duas ?? []} type="bookmarks" />}
-            </TabsContent>
-          </Tabs>
-        </Card>
+    <Card className="p-5">
+      <div className="flex items-center justify-between mb-1">
+        <h2 className="font-semibold flex items-center gap-2 text-base">
+          <TrendingUp className="w-4 h-4 text-primary" /> Trending Content
+        </h2>
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="text-xs font-medium cursor-pointer" onClick={() => setShowPicker(!showPicker)}>
+            {CATEGORY_LABELS[category]}
+          </Badge>
+          <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => setShowPicker(!showPicker)} data-testid="button-view-all-trending">
+            View All <ChevronDown className="w-3 h-3" />
+          </Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {showPicker && (
+        <div className="flex gap-2 mt-3 mb-4 flex-wrap p-3 bg-muted/40 rounded-lg">
+          {(Object.keys(CATEGORY_LABELS) as TrendingCategory[]).map((cat) => (
+            <Button
+              key={cat}
+              size="sm"
+              variant={category === cat ? "default" : "outline"}
+              className="h-7 text-xs"
+              onClick={() => handleCategoryChange(cat)}
+              data-testid={`button-trending-${cat}`}
+            >
+              {CATEGORY_LABELS[cat]}
+            </Button>
+          ))}
+        </div>
+      )}
+
+      <div className="mt-4">
+        {isLoading ? (
+          <div className="grid grid-cols-3 gap-3">
+            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-28 w-full rounded-xl" />)}
+          </div>
+        ) : items.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-8">No content yet in this category</p>
+        ) : (
+          <>
+            <div className="grid grid-cols-3 gap-3">
+              {visible.map((item) => (
+                <TrendingCard key={item.id} item={item} category={category} />
+              ))}
+              {visible.length < 3 && Array.from({ length: 3 - visible.length }).map((_, i) => (
+                <div key={`empty-${i}`} className="border border-dashed rounded-xl" />
+              ))}
+            </div>
+            {items.length > 3 && (
+              <div className="flex items-center justify-center gap-2 mt-4">
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="h-7 w-7"
+                  onClick={() => setSliderIndex((s) => Math.max(0, s - 1))}
+                  disabled={!canBack}
+                  data-testid="button-trending-prev"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <div className="flex gap-1">
+                  {Array.from({ length: Math.max(0, items.length - 2) }).map((_, i) => (
+                    <div key={i} className={`w-1.5 h-1.5 rounded-full transition-colors ${i === sliderIndex ? "bg-primary" : "bg-muted-foreground/30"}`} />
+                  ))}
+                </div>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="h-7 w-7"
+                  onClick={() => setSliderIndex((s) => s + 1)}
+                  disabled={!canForward}
+                  data-testid="button-trending-next"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function ContributorDetail({ contributor, onClose }: { contributor: Contributor; onClose: () => void }) {
+  return (
+    <DialogContent className="sm:max-w-md">
+      <DialogHeader>
+        <DialogTitle>Contributor Profile</DialogTitle>
+      </DialogHeader>
+      <div className="flex flex-col items-center gap-4 pt-2">
+        <Avatar className="h-16 w-16">
+          <AvatarImage src={contributor.avatar_url ?? ""} alt={contributor.name || contributor.username} />
+          <AvatarFallback className="text-xl">
+            {(contributor.name || contributor.username).slice(0, 2).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+        <div className="text-center">
+          <p className="font-semibold text-lg">{contributor.name || contributor.username}</p>
+          <p className="text-sm text-muted-foreground">@{contributor.username}</p>
+          <Badge variant="secondary" className="mt-1 capitalize">{contributor.role}</Badge>
+        </div>
+        <div className="w-full divide-y rounded-lg border">
+          <div className="flex items-center justify-between px-4 py-3">
+            <span className="text-sm text-muted-foreground flex items-center gap-2"><CalendarDays className="w-4 h-4" /> Join Date</span>
+            <span className="text-sm font-medium">{format(new Date(contributor.created_at), "d MMM yyyy")}</span>
+          </div>
+          <div className="flex items-center justify-between px-4 py-3">
+            <span className="text-sm text-muted-foreground flex items-center gap-2"><MessageSquare className="w-4 h-4" /> Email</span>
+            <span className="text-sm font-medium truncate max-w-[180px]">{contributor.email || "—"}</span>
+          </div>
+          <div className="flex items-center justify-between px-4 py-3">
+            <span className="text-sm text-muted-foreground flex items-center gap-2"><Users className="w-4 h-4" /> Role</span>
+            <span className="text-sm font-medium capitalize">{contributor.role}</span>
+          </div>
+        </div>
+      </div>
+    </DialogContent>
+  );
+}
+
+function TopContributors({ contributors, isLoading }: { contributors: Contributor[]; isLoading: boolean }) {
+  const [selected, setSelected] = useState<Contributor | null>(null);
+
+  return (
+    <>
+      <Card className="p-5">
+        <h2 className="font-semibold mb-4 flex items-center gap-2 text-base">
+          <Star className="w-4 h-4 text-amber-500" /> Top Contributors
+        </h2>
+        {isLoading ? (
+          <div className="space-y-3">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+        ) : contributors.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-4">No staff members found</p>
+        ) : (
+          <div className="space-y-1">
+            {contributors.map((c) => (
+              <button
+                key={c.id}
+                className="w-full flex items-center gap-3 py-2.5 px-2 rounded-lg hover:bg-muted/60 transition-colors text-left"
+                onClick={() => setSelected(c)}
+                data-testid={`button-contributor-${c.id}`}
+              >
+                <Avatar className="h-9 w-9 shrink-0">
+                  <AvatarImage src={c.avatar_url ?? ""} alt={c.name || c.username} />
+                  <AvatarFallback className="text-xs">
+                    {(c.name || c.username).slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{c.name || c.username}</p>
+                  <p className="text-xs text-muted-foreground capitalize">{c.role}</p>
+                </div>
+                <span className="text-xs text-muted-foreground flex items-center gap-1 shrink-0">
+                  <CalendarDays className="w-3 h-3" />
+                  {format(new Date(c.created_at), "d MMM yy")}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </Card>
+      <Dialog open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
+        {selected && <ContributorDetail contributor={selected} onClose={() => setSelected(null)} />}
+      </Dialog>
+    </>
+  );
+}
+
+function ActiveUsers({ users, isLoading }: { users: ActiveUser[]; isLoading: boolean }) {
+  return (
+    <Card className="p-5">
+      <h2 className="font-semibold mb-4 flex items-center gap-2 text-base">
+        <Activity className="w-4 h-4 text-emerald-500" /> Active Users
+      </h2>
+      {isLoading ? (
+        <div className="space-y-3">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+      ) : users.length === 0 ? (
+        <p className="text-sm text-muted-foreground text-center py-4">No active users yet</p>
+      ) : (
+        <div className="space-y-1">
+          {users.map((u) => {
+            const totalActivity = parseInt(u.bookmark_count) + parseInt(u.reading_count);
+            return (
+              <div key={u.id} className="flex items-center gap-3 py-2.5 px-2 rounded-lg hover:bg-muted/40 transition-colors" data-testid={`row-active-user-${u.id}`}>
+                <Avatar className="h-9 w-9 shrink-0">
+                  <AvatarImage src={u.avatar_url ?? ""} alt={u.name || u.username} />
+                  <AvatarFallback className="text-xs">
+                    {(u.name || u.username).slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{u.name || u.username}</p>
+                  <p className="text-xs text-muted-foreground truncate">{u.email || "@" + u.username}</p>
+                </div>
+                <div className="text-xs text-right shrink-0">
+                  <p className="font-semibold text-primary">{totalActivity}</p>
+                  <p className="text-muted-foreground">actions</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function RecentActivitySection({ data, isLoading }: { data?: DashboardData; isLoading: boolean }) {
+  return (
+    <Card className="p-5">
+      <h2 className="font-semibold mb-4 flex items-center gap-2 text-base">
+        <Activity className="w-4 h-4 text-primary" /> Recent Activity
+      </h2>
+      {isLoading ? (
+        <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
+      ) : (
+        <div className="space-y-0.5">
+          {(data?.recentActivity ?? []).length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">No recent activity</p>
+          ) : (data?.recentActivity ?? []).map((item) => (
+            <div key={item.id} className="flex items-center gap-3 py-2.5 border-b last:border-0">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium line-clamp-1">{item.title}</p>
+                <span className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                  <Clock className="w-3 h-3" />
+                  {item.updated_at ? format(new Date(item.updated_at), "MMM d, yyyy") : "-"}
+                  {item.category_name && <span>· {item.category_name}</span>}
+                </span>
+              </div>
+              <Badge variant={item.status === "published" ? "default" : "secondary"} className="shrink-0 text-xs">
+                {item.status}
+              </Badge>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function MostBookmarkedSection({ data, isLoading }: { data?: DashboardData; isLoading: boolean }) {
+  const [tab, setTab] = useState<"stories" | "duas">("stories");
+  const items = tab === "stories" ? (data?.bookmarked.stories ?? []) : (data?.bookmarked.duas ?? []);
+
+  return (
+    <Card className="p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-semibold flex items-center gap-2 text-base">
+          <Bookmark className="w-4 h-4 text-violet-500" /> Most Bookmarked
+        </h2>
+        <div className="flex gap-1">
+          <Button size="sm" variant={tab === "stories" ? "default" : "outline"} className="h-7 text-xs" onClick={() => setTab("stories")}>Articles</Button>
+          <Button size="sm" variant={tab === "duas" ? "default" : "outline"} className="h-7 text-xs" onClick={() => setTab("duas")}>Duas</Button>
+        </div>
+      </div>
+      {isLoading ? (
+        <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
+      ) : items.length === 0 ? (
+        <p className="text-sm text-muted-foreground text-center py-6">No bookmarks yet</p>
+      ) : (
+        <div className="space-y-0.5">
+          {items.map((item, i) => (
+            <div key={item.id} className="flex items-center gap-3 py-2.5 border-b last:border-0">
+              <span className="text-sm font-bold text-muted-foreground w-5 text-center shrink-0">{i + 1}</span>
+              <p className="text-sm font-medium flex-1 line-clamp-1">{item.title}</p>
+              <span className="text-xs flex items-center gap-1 text-muted-foreground shrink-0">
+                <Bookmark className="w-3 h-3" />{item.bookmark_count}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function NormalView({ data, isLoading }: { data?: DashboardData; isLoading: boolean }) {
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-2 space-y-6">
+        <TrendingSection data={data} isLoading={isLoading} />
+        <RecentActivitySection data={data} isLoading={isLoading} />
+        <MostBookmarkedSection data={data} isLoading={isLoading} />
+      </div>
+      <div className="space-y-6">
+        <TopContributors contributors={data?.topContributors ?? []} isLoading={isLoading} />
+        <ActiveUsers users={data?.activeUsers ?? []} isLoading={isLoading} />
         <Card className="p-5">
-          <h2 className="font-semibold mb-4 flex items-center gap-2"><Layers className="w-4 h-4" /> Category Breakdown</h2>
+          <h2 className="font-semibold mb-4 flex items-center gap-2 text-base">
+            <Layers className="w-4 h-4 text-blue-500" /> Category Breakdown
+          </h2>
           {isLoading ? (
             <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {(data?.categories ?? []).map((cat) => (
-                <div key={cat.name} className="flex items-center gap-3">
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium">{cat.name}</span>
-                      <span className="text-sm text-muted-foreground">{cat.story_count} articles</span>
-                    </div>
-                    <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-primary rounded-full transition-all"
-                        style={{ width: `${Math.min(100, (parseInt(cat.story_count) / Math.max(1, parseInt(data?.categories?.[0]?.story_count ?? "1"))) * 100)}%` }}
-                      />
-                    </div>
+                <div key={cat.name}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium">{cat.name}</span>
+                    <span className="text-xs text-muted-foreground">{cat.story_count}</span>
+                  </div>
+                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full"
+                      style={{ width: `${Math.min(100, (parseInt(cat.story_count) / Math.max(1, parseInt(data?.categories?.[0]?.story_count ?? "1"))) * 100)}%` }}
+                    />
                   </div>
                 </div>
               ))}
@@ -204,76 +511,36 @@ function NormalView({ data, isLoading }: { data?: DashboardData; isLoading: bool
             </div>
           )}
         </Card>
-
         <Card className="p-5">
-          <h2 className="font-semibold mb-4 flex items-center gap-2"><Activity className="w-4 h-4" /> Recent Activity</h2>
+          <h2 className="font-semibold mb-4 flex items-center gap-2 text-base">
+            <Users className="w-4 h-4 text-blue-500" /> User Growth (6 Months)
+          </h2>
           {isLoading ? (
-            <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
+            <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
           ) : (
-            <div className="space-y-2">
-              {(data?.recentActivity ?? []).map((item) => (
-                <div key={item.id} className="flex items-center gap-3 py-1.5 border-b last:border-0">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium line-clamp-1">{item.title}</p>
-                    <span className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                      <Clock className="w-3 h-3" />
-                      {item.updated_at ? format(new Date(item.updated_at), "MMM d, yyyy") : "-"}
-                    </span>
+            <div className="space-y-0.5">
+              {(data?.userGrowth ?? []).length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">No data yet</p>
+              ) : (data?.userGrowth ?? []).map((row, i) => {
+                const prev = i > 0 ? parseInt((data?.userGrowth ?? [])[i - 1].count) : null;
+                const curr = parseInt(row.count);
+                const trend = prev === null ? null : curr > prev ? "up" : curr < prev ? "down" : "same";
+                return (
+                  <div key={row.year_month} className="flex items-center justify-between py-2 border-b last:border-0">
+                    <span className="text-sm font-medium">{row.month}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">{row.count}</span>
+                      {trend === "up" && <span className="text-emerald-600 text-xs">▲{curr - (prev ?? 0)}</span>}
+                      {trend === "down" && <span className="text-red-500 text-xs">▼{(prev ?? 0) - curr}</span>}
+                      {!trend && <span className="text-muted-foreground text-xs">—</span>}
+                    </div>
                   </div>
-                  <Badge variant={item.status === "published" ? "default" : "secondary"} className="shrink-0 text-xs">
-                    {item.status}
-                  </Badge>
-                </div>
-              ))}
-              {(!data?.recentActivity || data.recentActivity.length === 0) && (
-                <p className="text-sm text-muted-foreground text-center py-4">No recent activity</p>
-              )}
+                );
+              })}
             </div>
           )}
         </Card>
       </div>
-
-      <Card className="p-5">
-        <h2 className="font-semibold mb-4 flex items-center gap-2"><Users className="w-4 h-4" /> User Growth (Last 6 Months)</h2>
-        {isLoading ? (
-          <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/30">
-                  <th className="text-left p-3 font-medium">Month</th>
-                  <th className="text-left p-3 font-medium">New Users</th>
-                  <th className="text-left p-3 font-medium">Trend</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(data?.userGrowth ?? []).length === 0 ? (
-                  <tr><td colSpan={3} className="p-6 text-center text-muted-foreground">No user registration data available</td></tr>
-                ) : (
-                  (data?.userGrowth ?? []).map((row, i) => {
-                    const prev = i > 0 ? parseInt((data?.userGrowth ?? [])[i - 1].count) : null;
-                    const curr = parseInt(row.count);
-                    const trend = prev === null ? null : curr > prev ? "up" : curr < prev ? "down" : "same";
-                    return (
-                      <tr key={row.year_month} className="border-b last:border-0">
-                        <td className="p-3 font-medium">{row.month}</td>
-                        <td className="p-3">{row.count}</td>
-                        <td className="p-3">
-                          {trend === "up" && <span className="text-emerald-600 text-xs font-medium">▲ +{curr - (prev ?? 0)}</span>}
-                          {trend === "down" && <span className="text-red-500 text-xs font-medium">▼ -{(prev ?? 0) - curr}</span>}
-                          {trend === "same" && <span className="text-muted-foreground text-xs">—</span>}
-                          {trend === null && <span className="text-muted-foreground text-xs">—</span>}
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
     </div>
   );
 }
@@ -283,7 +550,7 @@ type ChartType = "bar" | "line" | "pie";
 function GraphView({ data, isLoading }: { data?: DashboardData; isLoading: boolean }) {
   const [overviewChart, setOverviewChart] = useState<ChartType>("bar");
   const [topChart, setTopChart] = useState<ChartType>("bar");
-  const [topTab, setTopTab] = useState("stories");
+  const [topTab, setTopTab] = useState<TrendingCategory>("stories");
 
   const contentOverviewData = data ? [
     { name: "Articles", total: data.content.stories.total, published: data.content.stories.published, drafts: data.content.stories.drafts },
@@ -464,14 +731,13 @@ function GraphView({ data, isLoading }: { data?: DashboardData; isLoading: boole
         <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
           <h2 className="font-semibold flex items-center gap-2"><TrendingUp className="w-4 h-4" /> Top Content by Views</h2>
           <div className="flex items-center gap-3">
-            <Tabs value={topTab} onValueChange={setTopTab}>
-              <TabsList>
-                <TabsTrigger value="stories">Articles</TabsTrigger>
-                <TabsTrigger value="duas">Duas</TabsTrigger>
-                <TabsTrigger value="books">Books</TabsTrigger>
-                <TabsTrigger value="motivational">Motivational</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <div className="flex gap-1">
+              {(Object.keys(CATEGORY_LABELS) as TrendingCategory[]).map((cat) => (
+                <Button key={cat} size="sm" variant={topTab === cat ? "default" : "outline"} className="h-7 text-xs" onClick={() => setTopTab(cat)}>
+                  {CATEGORY_LABELS[cat]}
+                </Button>
+              ))}
+            </div>
             <ChartToggle value={topChart} onChange={setTopChart} />
           </div>
         </div>
@@ -524,7 +790,7 @@ export default function AdminDashboardPage() {
 
   const statCards = data ? [
     {
-      label: "Total Articles",
+      label: "Articles",
       value: data.content.stories.total,
       sub: `${data.content.stories.published} published · ${data.content.stories.drafts} drafts`,
       icon: FileText,
@@ -532,41 +798,33 @@ export default function AdminDashboardPage() {
       href: "/image/stories",
     },
     {
-      label: "Total Duas",
-      value: data.content.duas.total,
-      sub: `${data.content.duas.published} published`,
-      icon: MessageSquare,
-      color: "text-violet-600 dark:text-violet-400",
-      href: "/image/duas",
-    },
-    {
-      label: "Total Books",
-      value: data.content.books.total,
-      sub: `${data.content.books.free} free · ${data.content.books.paid} paid`,
-      icon: BookOpen,
-      color: "text-amber-600 dark:text-amber-400",
-      href: "/image/books",
-    },
-    {
-      label: "Motivational",
-      value: data.content.motivational.total,
-      sub: `${data.content.motivational.published} published`,
-      icon: Star,
-      color: "text-emerald-600 dark:text-emerald-400",
-      href: "/image/motivational-stories",
-    },
-    {
-      label: "Total Users",
+      label: "Users",
       value: data.content.users.total,
+      sub: "registered accounts",
       icon: Users,
       color: "text-blue-600 dark:text-blue-400",
       href: "/image/users",
     },
-  ] : Array.from({ length: 5 }).map((_, i) => ({
-    label: ["Total Articles", "Total Duas", "Total Books", "Motivational", "Total Users"][i],
+    {
+      label: "Total Views",
+      value: data.totalViews,
+      sub: "across all content",
+      icon: Eye,
+      color: "text-teal-600 dark:text-teal-400",
+    },
+    {
+      label: "Catalog",
+      value: data.content.books.total + data.content.duas.total + data.content.motivational.total,
+      sub: `${data.content.books.total} books · ${data.content.duas.total} duas · ${data.content.motivational.total} motivational`,
+      icon: BookOpen,
+      color: "text-amber-600 dark:text-amber-400",
+      href: "/image/books",
+    },
+  ] : Array.from({ length: 4 }).map((_, i) => ({
+    label: ["Articles", "Users", "Total Views", "Catalog"][i],
     value: undefined,
-    icon: [FileText, MessageSquare, BookOpen, Star, Users][i],
-    color: ["text-primary", "text-violet-600", "text-amber-600", "text-emerald-600", "text-blue-600"][i],
+    icon: [FileText, Users, Eye, BookOpen][i],
+    color: ["text-primary", "text-blue-600", "text-teal-600", "text-amber-600"][i],
     href: undefined,
     sub: undefined,
   }));
@@ -602,7 +860,7 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {statCards.map((card) => (
           <StatCard key={card.label} {...card} isLoading={isLoading} />
         ))}

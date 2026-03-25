@@ -909,7 +909,8 @@ export async function registerRoutes(
 
       const [usersRes, topStoriesRes, topDuasRes, topBooksRes, topMotivRes,
              bookmarkedStoriesRes, bookmarkedDuasRes, categoryBreakdownRes,
-             userGrowthRes, recentActivityRes] = await Promise.all([
+             userGrowthRes, recentActivityRes, totalViewsRes,
+             topContributorsRes, activeUsersRes] = await Promise.all([
         pool.query(`SELECT COUNT(*) FROM users`),
         pool.query(`SELECT s.id, s.title, COALESCE(COUNT(b.id), 0) as views, c.name as category_name FROM stories s LEFT JOIN categories c ON s.category_id = c.id LEFT JOIN bookmarks b ON b.story_id = s.id WHERE s.deleted_at IS NULL GROUP BY s.id, s.title, c.name ORDER BY views DESC LIMIT 5`),
         pool.query(`SELECT id, title, views, category FROM duas WHERE deleted_at IS NULL ORDER BY views DESC LIMIT 5`),
@@ -920,6 +921,9 @@ export async function registerRoutes(
         pool.query(`SELECT c.name, c.url_slug, COUNT(s.id) as story_count FROM categories c LEFT JOIN stories s ON s.category_id = c.id AND s.deleted_at IS NULL AND s.status = 'published' WHERE c.type = 'story' AND c.deleted_at IS NULL GROUP BY c.id, c.name, c.url_slug ORDER BY story_count DESC`),
         pool.query(`SELECT TO_CHAR(DATE_TRUNC('month', created_at), 'Mon YY') as month, TO_CHAR(DATE_TRUNC('month', created_at), 'YYYY-MM') as year_month, COUNT(*) as count FROM users WHERE created_at >= NOW() - INTERVAL '6 months' GROUP BY year_month, month ORDER BY year_month`),
         pool.query(`SELECT s.id, s.title, s.status, s.updated_at, c.name as category_name FROM stories s LEFT JOIN categories c ON s.category_id = c.id WHERE s.deleted_at IS NULL ORDER BY s.updated_at DESC LIMIT 8`),
+        pool.query(`SELECT COALESCE((SELECT SUM(views) FROM duas WHERE deleted_at IS NULL), 0) + COALESCE((SELECT SUM(views) FROM books WHERE deleted_at IS NULL), 0) + COALESCE((SELECT SUM(views) FROM motivational_stories WHERE deleted_at IS NULL), 0) as total_views`),
+        pool.query(`SELECT id, username, name, email, role, avatar_url, created_at FROM users WHERE role IN ('admin', 'editor', 'moderator') ORDER BY created_at ASC LIMIT 5`),
+        pool.query(`SELECT u.id, u.username, u.name, u.email, u.avatar_url, u.created_at, COUNT(DISTINCT b.id) as bookmark_count, COUNT(DISTINCT srp.id) as reading_count FROM users u LEFT JOIN bookmarks b ON b.user_id = u.id LEFT JOIN story_reading_progress srp ON srp.user_id = u.id WHERE u.role = 'user' GROUP BY u.id, u.username, u.name, u.email, u.avatar_url, u.created_at ORDER BY (COUNT(DISTINCT b.id) + COUNT(DISTINCT srp.id)) DESC LIMIT 5`),
       ]);
 
       res.json({
@@ -930,6 +934,7 @@ export async function registerRoutes(
           books: { total: totalBooks, free: freeBooks, paid: paidBooks },
           users: { total: parseInt(usersRes.rows[0].count) },
         },
+        totalViews: parseInt(totalViewsRes.rows[0].total_views) || 0,
         topContent: {
           stories: topStoriesRes.rows,
           duas: topDuasRes.rows,
@@ -943,6 +948,8 @@ export async function registerRoutes(
         categories: categoryBreakdownRes.rows,
         userGrowth: userGrowthRes.rows,
         recentActivity: recentActivityRes.rows,
+        topContributors: topContributorsRes.rows,
+        activeUsers: activeUsersRes.rows,
       });
     } catch (error) {
       console.error("Dashboard error:", error);
