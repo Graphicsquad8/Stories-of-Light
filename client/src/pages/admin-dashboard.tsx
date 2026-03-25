@@ -422,41 +422,140 @@ function ActiveUsers({ users, isLoading }: { users: ActiveUser[]; isLoading: boo
 }
 
 function RecentActivitySection({ data, isLoading }: { data?: DashboardData; isLoading: boolean }) {
+  const [sliderIndex, setSliderIndex] = useState(0);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const items = data?.recentActivity ?? [];
+  const visible = items.slice(sliderIndex, sliderIndex + 3);
+  const canBack = sliderIndex > 0;
+  const canForward = sliderIndex + 3 < items.length;
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    }
+    if (showDropdown) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showDropdown]);
+
   return (
     <Card className="p-5">
-      <h2 className="font-semibold mb-4 flex items-center gap-2 text-base">
-        <Activity className="w-4 h-4 text-primary" /> Recent Activity
-      </h2>
-      {isLoading ? (
-        <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
-      ) : (
-        <div className="space-y-0.5">
-          {(data?.recentActivity ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">No recent activity</p>
-          ) : (data?.recentActivity ?? []).map((item) => (
-            <div key={item.id} className="flex items-center gap-3 py-2.5 border-b last:border-0">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium line-clamp-1">{item.title}</p>
-                <span className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                  <Clock className="w-3 h-3" />
-                  {item.updated_at ? format(new Date(item.updated_at), "MMM d, yyyy") : "-"}
-                  {item.category_name && <span>· {item.category_name}</span>}
-                </span>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-semibold flex items-center gap-2 text-base">
+          <Activity className="w-4 h-4 text-primary" /> Recent Activity
+        </h2>
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="text-xs font-medium">Articles</Badge>
+          <div className="relative" ref={dropdownRef}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1"
+              onClick={() => setShowDropdown((v) => !v)}
+              data-testid="button-view-all-activity"
+            >
+              View All <ChevronDown className="w-3 h-3" />
+            </Button>
+            {showDropdown && (
+              <div className="absolute right-0 top-full mt-1 z-50 bg-popover border rounded-lg shadow-md py-1 min-w-[140px]">
+                <a href="/image/stories" className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors flex items-center gap-2 font-semibold text-primary">
+                  <FileText className="w-3.5 h-3.5" /> All Articles
+                </a>
+                <a href="/image/stories?status=published" className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors flex items-center gap-2">
+                  <FileText className="w-3.5 h-3.5" /> Published
+                </a>
+                <a href="/image/stories?status=draft" className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors flex items-center gap-2">
+                  <FileText className="w-3.5 h-3.5" /> Drafts
+                </a>
               </div>
-              <Badge variant={item.status === "published" ? "default" : "secondary"} className="shrink-0 text-xs">
-                {item.status}
-              </Badge>
-            </div>
-          ))}
+            )}
+          </div>
         </div>
-      )}
+      </div>
+
+      <div className="mt-2">
+        {isLoading ? (
+          <div className="grid grid-cols-3 gap-4">
+            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-36 w-full rounded-xl" />)}
+          </div>
+        ) : items.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-8">No recent activity</p>
+        ) : (
+          <>
+            <div className="grid grid-cols-3 gap-4">
+              {visible.map((item) => (
+                <div key={item.id} className="border rounded-xl p-5 hover:shadow-md transition-all bg-card flex flex-col gap-4 min-h-[140px]">
+                  <div className="h-1.5 w-14 rounded-full bg-primary" />
+                  <p className="text-sm font-semibold line-clamp-3 leading-snug flex-1">{item.title}</p>
+                  <div className="flex items-center justify-between mt-auto">
+                    <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full truncate max-w-[80px]">
+                      {item.category_name || "—"}
+                    </span>
+                    <Badge variant={item.status === "published" ? "default" : "secondary"} className="text-[10px] h-5 px-1.5">
+                      {item.status}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+              {visible.length < 3 && Array.from({ length: 3 - visible.length }).map((_, i) => (
+                <div key={`empty-${i}`} className="border border-dashed rounded-xl min-h-[140px]" />
+              ))}
+            </div>
+            {items.length > 3 && (
+              <div className="flex items-center justify-center gap-2 mt-4">
+                <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => setSliderIndex((s) => Math.max(0, s - 1))} disabled={!canBack} data-testid="button-activity-prev">
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <div className="flex gap-1">
+                  {Array.from({ length: Math.max(0, items.length - 2) }).map((_, i) => (
+                    <div key={i} className={`w-1.5 h-1.5 rounded-full transition-colors ${i === sliderIndex ? "bg-primary" : "bg-muted-foreground/30"}`} />
+                  ))}
+                </div>
+                <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => setSliderIndex((s) => s + 1)} disabled={!canForward} data-testid="button-activity-next">
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </Card>
   );
 }
 
+const BOOKMARK_LABELS: Record<"stories" | "duas", string> = {
+  stories: "Articles",
+  duas: "Duas",
+};
+
 function MostBookmarkedSection({ data, isLoading }: { data?: DashboardData; isLoading: boolean }) {
   const [tab, setTab] = useState<"stories" | "duas">("stories");
+  const [sliderIndex, setSliderIndex] = useState(0);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
   const items = tab === "stories" ? (data?.bookmarked.stories ?? []) : (data?.bookmarked.duas ?? []);
+  const visible = items.slice(sliderIndex, sliderIndex + 3);
+  const canBack = sliderIndex > 0;
+  const canForward = sliderIndex + 3 < items.length;
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    }
+    if (showDropdown) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showDropdown]);
+
+  const handleTabChange = (t: "stories" | "duas") => {
+    setTab(t);
+    setSliderIndex(0);
+    setShowDropdown(false);
+  };
 
   return (
     <Card className="p-5">
@@ -464,28 +563,83 @@ function MostBookmarkedSection({ data, isLoading }: { data?: DashboardData; isLo
         <h2 className="font-semibold flex items-center gap-2 text-base">
           <Bookmark className="w-4 h-4 text-violet-500" /> Most Bookmarked
         </h2>
-        <div className="flex gap-1">
-          <Button size="sm" variant={tab === "stories" ? "default" : "outline"} className="h-7 text-xs" onClick={() => setTab("stories")}>Articles</Button>
-          <Button size="sm" variant={tab === "duas" ? "default" : "outline"} className="h-7 text-xs" onClick={() => setTab("duas")}>Duas</Button>
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="text-xs font-medium">{BOOKMARK_LABELS[tab]}</Badge>
+          <div className="relative" ref={dropdownRef}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1"
+              onClick={() => setShowDropdown((v) => !v)}
+              data-testid="button-view-all-bookmarked"
+            >
+              View All <ChevronDown className="w-3 h-3" />
+            </Button>
+            {showDropdown && (
+              <div className="absolute right-0 top-full mt-1 z-50 bg-popover border rounded-lg shadow-md py-1 min-w-[140px]">
+                {(["stories", "duas"] as const).map((t) => (
+                  <button
+                    key={t}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors flex items-center justify-between ${tab === t ? "font-semibold text-primary" : ""}`}
+                    onClick={() => handleTabChange(t)}
+                    data-testid={`button-bookmarked-${t}`}
+                  >
+                    {BOOKMARK_LABELS[t]}
+                    {tab === t && <span className="w-1.5 h-1.5 rounded-full bg-primary ml-2" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
-      {isLoading ? (
-        <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
-      ) : items.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-6">No bookmarks yet</p>
-      ) : (
-        <div className="space-y-0.5">
-          {items.map((item, i) => (
-            <div key={item.id} className="flex items-center gap-3 py-2.5 border-b last:border-0">
-              <span className="text-sm font-bold text-muted-foreground w-5 text-center shrink-0">{i + 1}</span>
-              <p className="text-sm font-medium flex-1 line-clamp-1">{item.title}</p>
-              <span className="text-xs flex items-center gap-1 text-muted-foreground shrink-0">
-                <Bookmark className="w-3 h-3" />{item.bookmark_count}
-              </span>
+
+      <div className="mt-2">
+        {isLoading ? (
+          <div className="grid grid-cols-3 gap-4">
+            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-36 w-full rounded-xl" />)}
+          </div>
+        ) : items.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-8">No bookmarks yet</p>
+        ) : (
+          <>
+            <div className="grid grid-cols-3 gap-4">
+              {visible.map((item, i) => (
+                <div key={item.id} className="border rounded-xl p-5 hover:shadow-md transition-all bg-card flex flex-col gap-4 min-h-[140px]">
+                  <div className="h-1.5 w-14 rounded-full bg-violet-500" />
+                  <p className="text-sm font-semibold line-clamp-3 leading-snug flex-1">{item.title}</p>
+                  <div className="flex items-center justify-between mt-auto">
+                    <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full shrink-0">
+                      #{sliderIndex + i + 1}
+                    </span>
+                    <span className="text-xs flex items-center gap-1 text-muted-foreground shrink-0">
+                      <Bookmark className="w-3.5 h-3.5" />{item.bookmark_count}
+                    </span>
+                  </div>
+                </div>
+              ))}
+              {visible.length < 3 && Array.from({ length: 3 - visible.length }).map((_, i) => (
+                <div key={`empty-${i}`} className="border border-dashed rounded-xl min-h-[140px]" />
+              ))}
             </div>
-          ))}
-        </div>
-      )}
+            {items.length > 3 && (
+              <div className="flex items-center justify-center gap-2 mt-4">
+                <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => setSliderIndex((s) => Math.max(0, s - 1))} disabled={!canBack} data-testid="button-bookmarked-prev">
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <div className="flex gap-1">
+                  {Array.from({ length: Math.max(0, items.length - 2) }).map((_, i) => (
+                    <div key={i} className={`w-1.5 h-1.5 rounded-full transition-colors ${i === sliderIndex ? "bg-violet-500" : "bg-muted-foreground/30"}`} />
+                  ))}
+                </div>
+                <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => setSliderIndex((s) => s + 1)} disabled={!canForward} data-testid="button-bookmarked-next">
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </Card>
   );
 }
