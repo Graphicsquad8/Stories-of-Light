@@ -923,7 +923,7 @@ export async function registerRoutes(
         pool.query(`SELECT s.id, s.title, s.status, s.updated_at, c.name as category_name FROM stories s LEFT JOIN categories c ON s.category_id = c.id WHERE s.deleted_at IS NULL ORDER BY s.updated_at DESC LIMIT 8`),
         pool.query(`SELECT COALESCE((SELECT SUM(views) FROM duas WHERE deleted_at IS NULL), 0) + COALESCE((SELECT SUM(views) FROM books WHERE deleted_at IS NULL), 0) + COALESCE((SELECT SUM(views) FROM motivational_stories WHERE deleted_at IS NULL), 0) as total_views`),
         pool.query(`SELECT id, username, name, email, role, avatar_url, created_at FROM users WHERE role IN ('admin', 'editor', 'moderator') ORDER BY created_at ASC LIMIT 5`),
-        pool.query(`SELECT u.id, u.username, u.name, u.email, u.avatar_url, u.created_at, COUNT(DISTINCT b.id) as bookmark_count, COUNT(DISTINCT srp.id) as reading_count FROM users u LEFT JOIN bookmarks b ON b.user_id = u.id LEFT JOIN story_reading_progress srp ON srp.user_id = u.id WHERE u.role = 'user' GROUP BY u.id, u.username, u.name, u.email, u.avatar_url, u.created_at ORDER BY (COUNT(DISTINCT b.id) + COUNT(DISTINCT srp.id)) DESC LIMIT 5`),
+        pool.query(`SELECT u.id, u.username, u.name, u.email, u.avatar_url, u.created_at, COUNT(DISTINCT b.id) as bookmark_count, COUNT(DISTINCT srp.id) as reading_count FROM users u LEFT JOIN bookmarks b ON b.user_id = u.id LEFT JOIN story_reading_progress srp ON srp.user_id = u.id WHERE u.role = 'user' GROUP BY u.id, u.username, u.name, u.email, u.avatar_url, u.created_at ORDER BY COUNT(DISTINCT srp.id) DESC, COUNT(DISTINCT b.id) DESC LIMIT 5`),
       ]);
 
       res.json({

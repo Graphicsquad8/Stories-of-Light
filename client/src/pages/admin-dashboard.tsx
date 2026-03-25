@@ -339,35 +339,34 @@ function TopContributors({ contributors, isLoading }: { contributors: Contributo
 
   return (
     <>
-      <Card className="p-5">
-        <h2 className="font-semibold mb-4 flex items-center gap-2 text-base">
-          <Star className="w-4 h-4 text-amber-500" /> Top Contributors
+      <Card className="p-4">
+        <h2 className="font-semibold mb-3 flex items-center gap-2 text-sm">
+          <Star className="w-3.5 h-3.5 text-amber-500" /> Top Contributors
         </h2>
         {isLoading ? (
-          <div className="space-y-3">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+          <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-9 w-full" />)}</div>
         ) : contributors.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">No staff members found</p>
+          <p className="text-xs text-muted-foreground text-center py-3">No staff members found</p>
         ) : (
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             {contributors.map((c) => (
               <button
                 key={c.id}
-                className="w-full flex items-center gap-3 py-2.5 px-2 rounded-lg hover:bg-muted/60 transition-colors text-left"
+                className="w-full flex items-center gap-2 py-2 px-1.5 rounded-lg hover:bg-muted/60 transition-colors text-left"
                 onClick={() => setSelected(c)}
                 data-testid={`button-contributor-${c.id}`}
               >
-                <Avatar className="h-9 w-9 shrink-0">
+                <Avatar className="h-7 w-7 shrink-0">
                   <AvatarImage src={c.avatar_url ?? ""} alt={c.name || c.username} />
-                  <AvatarFallback className="text-xs">
+                  <AvatarFallback className="text-[10px]">
                     {(c.name || c.username).slice(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{c.name || c.username}</p>
-                  <p className="text-xs text-muted-foreground capitalize">{c.role}</p>
+                  <p className="text-xs font-medium truncate">{c.name || c.username}</p>
+                  <p className="text-[10px] text-muted-foreground capitalize">{c.role}</p>
                 </div>
-                <span className="text-xs text-muted-foreground flex items-center gap-1 shrink-0">
-                  <CalendarDays className="w-3 h-3" />
+                <span className="text-[10px] text-muted-foreground shrink-0">
                   {format(new Date(c.created_at), "d MMM yy")}
                 </span>
               </button>
@@ -384,33 +383,33 @@ function TopContributors({ contributors, isLoading }: { contributors: Contributo
 
 function ActiveUsers({ users, isLoading }: { users: ActiveUser[]; isLoading: boolean }) {
   return (
-    <Card className="p-5">
-      <h2 className="font-semibold mb-4 flex items-center gap-2 text-base">
-        <Activity className="w-4 h-4 text-emerald-500" /> Active Users
+    <Card className="p-4">
+      <h2 className="font-semibold mb-3 flex items-center gap-2 text-sm">
+        <Activity className="w-3.5 h-3.5 text-emerald-500" /> Active Users
       </h2>
       {isLoading ? (
-        <div className="space-y-3">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+        <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-9 w-full" />)}</div>
       ) : users.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-4">No active users yet</p>
+        <p className="text-xs text-muted-foreground text-center py-3">No active users yet</p>
       ) : (
         <div className="space-y-1">
-          {users.map((u) => {
-            const totalActivity = parseInt(u.bookmark_count) + parseInt(u.reading_count);
+          {users.map((u, i) => {
+            const articlesRead = parseInt(u.reading_count);
             return (
-              <div key={u.id} className="flex items-center gap-3 py-2.5 px-2 rounded-lg hover:bg-muted/40 transition-colors" data-testid={`row-active-user-${u.id}`}>
-                <Avatar className="h-9 w-9 shrink-0">
+              <div key={u.id} className="flex items-center gap-2.5 py-2 px-2 rounded-lg hover:bg-muted/40 transition-colors" data-testid={`row-active-user-${u.id}`}>
+                <span className="text-xs font-bold text-muted-foreground w-4 text-center shrink-0">{i + 1}</span>
+                <Avatar className="h-7 w-7 shrink-0">
                   <AvatarImage src={u.avatar_url ?? ""} alt={u.name || u.username} />
-                  <AvatarFallback className="text-xs">
+                  <AvatarFallback className="text-[10px]">
                     {(u.name || u.username).slice(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{u.name || u.username}</p>
-                  <p className="text-xs text-muted-foreground truncate">{u.email || "@" + u.username}</p>
+                  <p className="text-xs font-medium truncate">{u.name || u.username}</p>
                 </div>
                 <div className="text-xs text-right shrink-0">
-                  <p className="font-semibold text-primary">{totalActivity}</p>
-                  <p className="text-muted-foreground">actions</p>
+                  <p className="font-semibold text-primary">{articlesRead}</p>
+                  <p className="text-[10px] text-muted-foreground">read</p>
                 </div>
               </div>
             );
@@ -646,7 +645,7 @@ function MostBookmarkedSection({ data, isLoading }: { data?: DashboardData; isLo
 
 function NormalView({ data, isLoading }: { data?: DashboardData; isLoading: boolean }) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-[5fr_2fr] gap-6">
       <div className="space-y-6">
         <TrendingSection data={data} isLoading={isLoading} />
         <RecentActivitySection data={data} isLoading={isLoading} />
@@ -655,21 +654,21 @@ function NormalView({ data, isLoading }: { data?: DashboardData; isLoading: bool
       <div className="space-y-6">
         <TopContributors contributors={data?.topContributors ?? []} isLoading={isLoading} />
         <ActiveUsers users={data?.activeUsers ?? []} isLoading={isLoading} />
-        <Card className="p-5">
-          <h2 className="font-semibold mb-4 flex items-center gap-2 text-base">
-            <Layers className="w-4 h-4 text-blue-500" /> Category Breakdown
+        <Card className="p-4">
+          <h2 className="font-semibold mb-3 flex items-center gap-2 text-sm">
+            <Layers className="w-3.5 h-3.5 text-blue-500" /> Category Breakdown
           </h2>
           {isLoading ? (
-            <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
+            <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-6 w-full" />)}</div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {(data?.categories ?? []).map((cat) => (
                 <div key={cat.name}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium">{cat.name}</span>
-                    <span className="text-xs text-muted-foreground">{cat.story_count}</span>
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-xs font-medium">{cat.name}</span>
+                    <span className="text-[10px] text-muted-foreground">{cat.story_count}</span>
                   </div>
-                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div className="h-1 bg-muted rounded-full overflow-hidden">
                     <div
                       className="h-full bg-primary rounded-full"
                       style={{ width: `${Math.min(100, (parseInt(cat.story_count) / Math.max(1, parseInt(data?.categories?.[0]?.story_count ?? "1"))) * 100)}%` }}
@@ -678,33 +677,33 @@ function NormalView({ data, isLoading }: { data?: DashboardData; isLoading: bool
                 </div>
               ))}
               {(!data?.categories || data.categories.length === 0) && (
-                <p className="text-sm text-muted-foreground text-center py-4">No categories found</p>
+                <p className="text-xs text-muted-foreground text-center py-3">No categories found</p>
               )}
             </div>
           )}
         </Card>
-        <Card className="p-5">
-          <h2 className="font-semibold mb-4 flex items-center gap-2 text-base">
-            <Users className="w-4 h-4 text-blue-500" /> User Growth (6 Months)
+        <Card className="p-4">
+          <h2 className="font-semibold mb-3 flex items-center gap-2 text-sm">
+            <Users className="w-3.5 h-3.5 text-blue-500" /> User Growth (6 Months)
           </h2>
           {isLoading ? (
-            <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
+            <div className="space-y-1.5">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-6 w-full" />)}</div>
           ) : (
-            <div className="space-y-0.5">
+            <div className="space-y-0">
               {(data?.userGrowth ?? []).length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">No data yet</p>
+                <p className="text-xs text-muted-foreground text-center py-3">No data yet</p>
               ) : (data?.userGrowth ?? []).map((row, i) => {
                 const prev = i > 0 ? parseInt((data?.userGrowth ?? [])[i - 1].count) : null;
                 const curr = parseInt(row.count);
                 const trend = prev === null ? null : curr > prev ? "up" : curr < prev ? "down" : "same";
                 return (
-                  <div key={row.year_month} className="flex items-center justify-between py-2 border-b last:border-0">
-                    <span className="text-sm font-medium">{row.month}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">{row.count}</span>
-                      {trend === "up" && <span className="text-emerald-600 text-xs">▲{curr - (prev ?? 0)}</span>}
-                      {trend === "down" && <span className="text-red-500 text-xs">▼{(prev ?? 0) - curr}</span>}
-                      {!trend && <span className="text-muted-foreground text-xs">—</span>}
+                  <div key={row.year_month} className="flex items-center justify-between py-1.5 border-b last:border-0">
+                    <span className="text-xs font-medium">{row.month}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs">{row.count}</span>
+                      {trend === "up" && <span className="text-emerald-600 text-[10px]">▲{curr - (prev ?? 0)}</span>}
+                      {trend === "down" && <span className="text-red-500 text-[10px]">▼{(prev ?? 0) - curr}</span>}
+                      {!trend && <span className="text-muted-foreground text-[10px]">—</span>}
                     </div>
                   </div>
                 );
