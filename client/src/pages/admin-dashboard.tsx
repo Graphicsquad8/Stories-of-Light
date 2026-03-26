@@ -66,6 +66,7 @@ interface Contributor {
   name: string;
   email: string;
   role: string;
+  permissions: string[] | null;
   avatar_url: string | null;
   created_at: string;
 }
@@ -77,8 +78,11 @@ interface ActiveUser {
   email: string;
   avatar_url: string | null;
   created_at: string;
-  bookmark_count: string;
   reading_count: string;
+  story_bookmarks: string;
+  dua_bookmarks: string;
+  book_bookmarks: string;
+  motivational_bookmarks: string;
 }
 
 interface DashboardData {
@@ -312,45 +316,90 @@ function TrendingSection({ data, isLoading }: { data?: DashboardData; isLoading:
   );
 }
 
-function ContributorDetail({ contributor, onClose }: { contributor: Contributor; onClose: () => void }) {
+const ROLE_COLORS: Record<string, string> = {
+  admin: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+  editor: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  moderator: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
+};
+
+const ROLE_DESCRIPTION: Record<string, string> = {
+  admin: "Full site access — manages all content, users, settings, and configurations.",
+  editor: "Can publish and edit articles, duas, books, and motivational content.",
+  moderator: "Reviews content and manages user-reported issues.",
+};
+
+function ContributorDetailDialog({ contributorId, onClose }: { contributorId: string; onClose: () => void }) {
+  const { data, isLoading } = useQuery<{
+    contributor: Contributor & { permissions: string[] };
+    siteStats: { total_articles: string; total_duas: string; total_books: string; total_motivational: string };
+  }>({ queryKey: ["/api/admin/contributors", contributorId, "stats"], queryFn: () => fetch(`/api/admin/contributors/${contributorId}/stats`, { credentials: "include" }).then(r => r.json()) });
+
+  const c = data?.contributor;
+  const stats = data?.siteStats;
+
   return (
     <DialogContent className="sm:max-w-md">
       <DialogHeader>
         <DialogTitle>Contributor Profile</DialogTitle>
       </DialogHeader>
-      <div className="flex flex-col items-center gap-4 pt-2">
-        <Avatar className="h-16 w-16">
-          <AvatarImage src={contributor.avatar_url ?? ""} alt={contributor.name || contributor.username} />
-          <AvatarFallback className="text-xl">
-            {(contributor.name || contributor.username).slice(0, 2).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-        <div className="text-center">
-          <p className="font-semibold text-lg">{contributor.name || contributor.username}</p>
-          <p className="text-sm text-muted-foreground">@{contributor.username}</p>
-          <Badge variant="secondary" className="mt-1 capitalize">{contributor.role}</Badge>
+      {isLoading || !c ? (
+        <div className="space-y-3 py-4"><Skeleton className="h-16 w-16 rounded-full mx-auto" /><Skeleton className="h-4 w-32 mx-auto" /><Skeleton className="h-20 w-full" /></div>
+      ) : (
+        <div className="flex flex-col items-center gap-4 pt-1">
+          <Avatar className="h-14 w-14">
+            <AvatarImage src={c.avatar_url ?? ""} alt={c.name || c.username} />
+            <AvatarFallback className="text-lg">{(c.name || c.username).slice(0, 2).toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <div className="text-center">
+            <p className="font-semibold">{c.name || c.username}</p>
+            <p className="text-xs text-muted-foreground">@{c.username}</p>
+            <span className={`inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${ROLE_COLORS[c.role] ?? "bg-muted text-muted-foreground"}`}>{c.role}</span>
+          </div>
+          <div className="w-full space-y-3">
+            <div className="rounded-lg border divide-y text-sm">
+              <div className="flex items-center justify-between px-4 py-2.5">
+                <span className="text-muted-foreground flex items-center gap-2"><MessageSquare className="w-3.5 h-3.5" /> Email</span>
+                <span className="font-medium truncate max-w-[160px]">{c.email || "—"}</span>
+              </div>
+              <div className="flex items-center justify-between px-4 py-2.5">
+                <span className="text-muted-foreground flex items-center gap-2"><CalendarDays className="w-3.5 h-3.5" /> Joined</span>
+                <span className="font-medium">{format(new Date(c.created_at), "d MMM yyyy")}</span>
+              </div>
+            </div>
+            <div className="rounded-lg border p-3">
+              <p className="text-xs text-muted-foreground mb-2 font-medium">Role Access</p>
+              <p className="text-xs">{ROLE_DESCRIPTION[c.role] ?? "Site staff member."}</p>
+            </div>
+            {stats && (
+              <div className="rounded-lg border p-3">
+                <p className="text-xs text-muted-foreground mb-2 font-medium">Site Content Overview</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { label: "Articles", value: stats.total_articles, icon: FileText },
+                    { label: "Duas", value: stats.total_duas, icon: MessageSquare },
+                    { label: "Books", value: stats.total_books, icon: BookOpen },
+                    { label: "Motivational", value: stats.total_motivational, icon: Star },
+                  ].map(({ label, value, icon: Icon }) => (
+                    <div key={label} className="flex items-center gap-2 bg-muted/50 rounded-md px-2.5 py-2">
+                      <Icon className="w-3 h-3 text-muted-foreground" />
+                      <div>
+                        <p className="text-xs font-semibold">{value}</p>
+                        <p className="text-[10px] text-muted-foreground">{label}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-        <div className="w-full divide-y rounded-lg border">
-          <div className="flex items-center justify-between px-4 py-3">
-            <span className="text-sm text-muted-foreground flex items-center gap-2"><CalendarDays className="w-4 h-4" /> Join Date</span>
-            <span className="text-sm font-medium">{format(new Date(contributor.created_at), "d MMM yyyy")}</span>
-          </div>
-          <div className="flex items-center justify-between px-4 py-3">
-            <span className="text-sm text-muted-foreground flex items-center gap-2"><MessageSquare className="w-4 h-4" /> Email</span>
-            <span className="text-sm font-medium truncate max-w-[180px]">{contributor.email || "—"}</span>
-          </div>
-          <div className="flex items-center justify-between px-4 py-3">
-            <span className="text-sm text-muted-foreground flex items-center gap-2"><Users className="w-4 h-4" /> Role</span>
-            <span className="text-sm font-medium capitalize">{contributor.role}</span>
-          </div>
-        </div>
-      </div>
+      )}
     </DialogContent>
   );
 }
 
 function TopContributors({ contributors, isLoading }: { contributors: Contributor[]; isLoading: boolean }) {
-  const [selected, setSelected] = useState<Contributor | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   return (
     <>
@@ -359,73 +408,158 @@ function TopContributors({ contributors, isLoading }: { contributors: Contributo
           <Star className="w-3.5 h-3.5 text-amber-500" /> Top Contributors
         </h2>
         {isLoading ? (
-          <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-9 w-full" />)}</div>
+          <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-9 w-full" />)}</div>
         ) : contributors.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center py-3">No staff members found</p>
         ) : (
           <div className="space-y-0.5">
-            {contributors.map((c) => (
+            {contributors.map((c, i) => (
               <button
                 key={c.id}
-                className="w-full flex items-center gap-2 py-2 px-1.5 rounded-lg hover:bg-muted/60 transition-colors text-left"
-                onClick={() => setSelected(c)}
+                className="w-full flex items-center gap-2 py-1.5 px-1.5 rounded-lg hover:bg-muted/60 transition-colors text-left"
+                onClick={() => setSelectedId(c.id)}
                 data-testid={`button-contributor-${c.id}`}
               >
-                <Avatar className="h-7 w-7 shrink-0">
+                <span className="text-[10px] font-bold text-muted-foreground w-4 text-center shrink-0">{i + 1}</span>
+                <Avatar className="h-6 w-6 shrink-0">
                   <AvatarImage src={c.avatar_url ?? ""} alt={c.name || c.username} />
-                  <AvatarFallback className="text-[10px]">
-                    {(c.name || c.username).slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
+                  <AvatarFallback className="text-[9px]">{(c.name || c.username).slice(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium truncate">{c.name || c.username}</p>
-                  <p className="text-[10px] text-muted-foreground capitalize">{c.role}</p>
+                </div>
+                <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full capitalize shrink-0 ${ROLE_COLORS[c.role] ?? "bg-muted text-muted-foreground"}`}>{c.role}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </Card>
+      <Dialog open={!!selectedId} onOpenChange={(open) => !open && setSelectedId(null)}>
+        {selectedId && <ContributorDetailDialog contributorId={selectedId} onClose={() => setSelectedId(null)} />}
+      </Dialog>
+    </>
+  );
+}
+
+function ActiveUserDetailDialog({ userId, onClose }: { userId: string; onClose: () => void }) {
+  const { data, isLoading } = useQuery<{
+    user: ActiveUser;
+    activity: { articles_read: string; story_bookmarks: string; dua_bookmarks: string; book_bookmarks: string; motivational_bookmarks: string };
+    recentlyRead: Array<{ title: string; slug: string; read_at: string }>;
+  }>({ queryKey: ["/api/admin/users", userId, "activity"], queryFn: () => fetch(`/api/admin/users/${userId}/activity`, { credentials: "include" }).then(r => r.json()) });
+
+  const u = data?.user;
+  const act = data?.activity;
+  const totalBookmarks = act ? parseInt(act.story_bookmarks) + parseInt(act.dua_bookmarks) + parseInt(act.book_bookmarks) + parseInt(act.motivational_bookmarks) : 0;
+
+  return (
+    <DialogContent className="sm:max-w-md">
+      <DialogHeader>
+        <DialogTitle>User Activity</DialogTitle>
+      </DialogHeader>
+      {isLoading || !u || !act ? (
+        <div className="space-y-3 py-4"><Skeleton className="h-14 w-14 rounded-full mx-auto" /><Skeleton className="h-4 w-32 mx-auto" /><Skeleton className="h-32 w-full" /></div>
+      ) : (
+        <div className="flex flex-col items-center gap-4 pt-1">
+          <Avatar className="h-14 w-14">
+            <AvatarImage src={u.avatar_url ?? ""} alt={u.name || u.username} />
+            <AvatarFallback className="text-lg">{(u.name || u.username).slice(0, 2).toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <div className="text-center">
+            <p className="font-semibold">{u.name || u.username}</p>
+            <p className="text-xs text-muted-foreground">@{u.username}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">Member since {format(new Date(u.created_at), "d MMM yyyy")}</p>
+          </div>
+          <div className="w-full space-y-3">
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: "Articles Read", value: act.articles_read, color: "text-primary" },
+                { label: "Total Saves", value: String(totalBookmarks), color: "text-amber-600" },
+              ].map(({ label, value, color }) => (
+                <div key={label} className="col-span-1 bg-muted/50 rounded-lg p-3 text-center">
+                  <p className={`text-xl font-bold ${color}`}>{value}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{label}</p>
+                </div>
+              ))}
+              <div className="col-span-1 bg-muted/50 rounded-lg p-3 text-center">
+                <p className="text-xl font-bold text-emerald-600">{parseInt(act.articles_read) + totalBookmarks}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Total Actions</p>
+              </div>
+            </div>
+            <div className="rounded-lg border divide-y text-sm">
+              <p className="px-4 py-2 text-xs font-medium text-muted-foreground">Saved Content Breakdown</p>
+              {[
+                { label: "Article Saves", value: act.story_bookmarks, icon: FileText, color: "text-primary" },
+                { label: "Dua Saves", value: act.dua_bookmarks, icon: MessageSquare, color: "text-violet-500" },
+                { label: "Book Saves", value: act.book_bookmarks, icon: BookOpen, color: "text-amber-500" },
+                { label: "Motivational Saves", value: act.motivational_bookmarks, icon: Star, color: "text-emerald-500" },
+              ].map(({ label, value, icon: Icon, color }) => (
+                <div key={label} className="flex items-center justify-between px-4 py-2">
+                  <span className="text-muted-foreground flex items-center gap-2"><Icon className={`w-3.5 h-3.5 ${color}`} /> {label}</span>
+                  <span className="font-semibold">{value}</span>
+                </div>
+              ))}
+            </div>
+            {data.recentlyRead.length > 0 && (
+              <div className="rounded-lg border p-3">
+                <p className="text-xs font-medium text-muted-foreground mb-2">Recently Read</p>
+                <div className="space-y-1">
+                  {data.recentlyRead.map((r) => (
+                    <p key={r.slug} className="text-xs truncate text-foreground">{r.title}</p>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </DialogContent>
+  );
+}
+
+function ActiveUsers({ users, isLoading }: { users: ActiveUser[]; isLoading: boolean }) {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  return (
+    <>
+      <Card className="p-4">
+        <h2 className="font-semibold mb-3 flex items-center gap-2 text-sm">
+          <Activity className="w-3.5 h-3.5 text-emerald-500" /> Active Users
+        </h2>
+        {isLoading ? (
+          <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
+        ) : users.length === 0 ? (
+          <p className="text-xs text-muted-foreground text-center py-3">No active users yet</p>
+        ) : (
+          <div className="space-y-0.5">
+            {users.map((u, i) => (
+              <button
+                key={u.id}
+                className="w-full flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-muted/40 transition-colors text-left"
+                onClick={() => setSelectedId(u.id)}
+                data-testid={`row-active-user-${u.id}`}
+              >
+                <span className="text-[10px] font-bold text-muted-foreground w-4 text-center shrink-0">{i + 1}</span>
+                <Avatar className="h-6 w-6 shrink-0">
+                  <AvatarImage src={u.avatar_url ?? ""} alt={u.name || u.username} />
+                  <AvatarFallback className="text-[9px]">{(u.name || u.username).slice(0, 2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium truncate">{u.name || u.username}</p>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="text-[10px] text-muted-foreground">{u.reading_count} read</span>
+                  <span className="text-[10px] text-amber-600">{parseInt(u.story_bookmarks) + parseInt(u.dua_bookmarks) + parseInt(u.book_bookmarks) + parseInt(u.motivational_bookmarks)} saved</span>
                 </div>
               </button>
             ))}
           </div>
         )}
       </Card>
-      <Dialog open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
-        {selected && <ContributorDetail contributor={selected} onClose={() => setSelected(null)} />}
+      <Dialog open={!!selectedId} onOpenChange={(open) => !open && setSelectedId(null)}>
+        {selectedId && <ActiveUserDetailDialog userId={selectedId} onClose={() => setSelectedId(null)} />}
       </Dialog>
     </>
-  );
-}
-
-function ActiveUsers({ users, isLoading }: { users: ActiveUser[]; isLoading: boolean }) {
-  return (
-    <Card className="p-4">
-      <h2 className="font-semibold mb-3 flex items-center gap-2 text-sm">
-        <Activity className="w-3.5 h-3.5 text-emerald-500" /> Active Users
-      </h2>
-      {isLoading ? (
-        <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-9 w-full" />)}</div>
-      ) : users.length === 0 ? (
-        <p className="text-xs text-muted-foreground text-center py-3">No active users yet</p>
-      ) : (
-        <div className="space-y-1">
-          {users.map((u, i) => {
-            const articlesRead = parseInt(u.reading_count);
-            return (
-              <div key={u.id} className="flex items-center gap-2.5 py-2 px-2 rounded-lg hover:bg-muted/40 transition-colors" data-testid={`row-active-user-${u.id}`}>
-                <span className="text-xs font-bold text-muted-foreground w-4 text-center shrink-0">{i + 1}</span>
-                <Avatar className="h-7 w-7 shrink-0">
-                  <AvatarImage src={u.avatar_url ?? ""} alt={u.name || u.username} />
-                  <AvatarFallback className="text-[10px]">
-                    {(u.name || u.username).slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium truncate">{u.name || u.username}</p>
-                </div>
-                <span className="text-xs font-semibold text-primary shrink-0">{articlesRead}</span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </Card>
   );
 }
 
@@ -721,32 +855,28 @@ function NormalView({ data, isLoading }: { data?: DashboardData; isLoading: bool
             </div>
           )}
         </Card>
-      </div>
-      <div className="space-y-4">
-        <TopContributors contributors={data?.topContributors ?? []} isLoading={isLoading} />
-        <ActiveUsers users={data?.activeUsers ?? []} isLoading={isLoading} />
         <Card className="p-4">
           <h2 className="font-semibold mb-3 flex items-center gap-2 text-sm">
-            <Users className="w-3.5 h-3.5 text-blue-500" /> User Growth (6 Months)
+            <Users className="w-4 h-4 text-blue-500" /> Monthly Growth
           </h2>
           {isLoading ? (
             <div className="space-y-1.5">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-6 w-full" />)}</div>
           ) : (
             <div className="space-y-0">
               {(data?.userGrowth ?? []).length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-3">No data yet</p>
+                <p className="text-sm text-muted-foreground text-center py-4">No data yet</p>
               ) : (data?.userGrowth ?? []).map((row, i) => {
                 const prev = i > 0 ? parseInt((data?.userGrowth ?? [])[i - 1].count) : null;
                 const curr = parseInt(row.count);
                 const trend = prev === null ? null : curr > prev ? "up" : curr < prev ? "down" : "same";
                 return (
-                  <div key={row.year_month} className="flex items-center justify-between py-1.5 border-b last:border-0">
-                    <span className="text-xs font-medium">{row.month}</span>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs">{row.count}</span>
-                      {trend === "up" && <span className="text-emerald-600 text-[10px]">▲{curr - (prev ?? 0)}</span>}
-                      {trend === "down" && <span className="text-red-500 text-[10px]">▼{(prev ?? 0) - curr}</span>}
-                      {!trend && <span className="text-muted-foreground text-[10px]">—</span>}
+                  <div key={row.year_month} className="flex items-center justify-between py-2 border-b last:border-0">
+                    <span className="text-sm font-medium">{row.month}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold">{row.count} new</span>
+                      {trend === "up" && <span className="text-emerald-600 text-xs">▲{curr - (prev ?? 0)}</span>}
+                      {trend === "down" && <span className="text-red-500 text-xs">▼{(prev ?? 0) - curr}</span>}
+                      {!trend && <span className="text-muted-foreground text-xs">—</span>}
                     </div>
                   </div>
                 );
@@ -754,6 +884,10 @@ function NormalView({ data, isLoading }: { data?: DashboardData; isLoading: bool
             </div>
           )}
         </Card>
+      </div>
+      <div className="space-y-4">
+        <TopContributors contributors={data?.topContributors ?? []} isLoading={isLoading} />
+        <ActiveUsers users={data?.activeUsers ?? []} isLoading={isLoading} />
       </div>
     </div>
   );

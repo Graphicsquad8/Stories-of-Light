@@ -928,8 +928,8 @@ export async function registerRoutes(
         pool.query(`SELECT id, title, description, created_at as updated_at, 'published' as status, category as category_name FROM books WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 8`),
         pool.query(`SELECT id, title, description, updated_at, CASE WHEN published THEN 'published' ELSE 'draft' END as status, category as category_name FROM motivational_stories WHERE deleted_at IS NULL ORDER BY updated_at DESC LIMIT 8`),
         pool.query(`SELECT COALESCE((SELECT SUM(views) FROM duas WHERE deleted_at IS NULL), 0) + COALESCE((SELECT SUM(views) FROM books WHERE deleted_at IS NULL), 0) + COALESCE((SELECT SUM(views) FROM motivational_stories WHERE deleted_at IS NULL), 0) as total_views`),
-        pool.query(`SELECT id, username, name, email, role, avatar_url, created_at FROM users WHERE role IN ('admin', 'editor', 'moderator') ORDER BY created_at ASC LIMIT 5`),
-        pool.query(`SELECT u.id, u.username, u.name, u.email, u.avatar_url, u.created_at, COUNT(DISTINCT b.id) as bookmark_count, COUNT(DISTINCT srp.id) as reading_count FROM users u LEFT JOIN bookmarks b ON b.user_id = u.id LEFT JOIN story_reading_progress srp ON srp.user_id = u.id WHERE u.role = 'user' GROUP BY u.id, u.username, u.name, u.email, u.avatar_url, u.created_at ORDER BY COUNT(DISTINCT srp.id) DESC, COUNT(DISTINCT b.id) DESC LIMIT 5`),
+        pool.query(`SELECT id, username, name, email, role, permissions, avatar_url, created_at FROM users WHERE role IN ('admin', 'editor', 'moderator') ORDER BY created_at ASC LIMIT 10`),
+        pool.query(`SELECT u.id, u.username, u.name, u.email, u.avatar_url, u.created_at, COUNT(DISTINCT srp.id) as reading_count, COUNT(DISTINCT b.id) as story_bookmarks, COUNT(DISTINCT db.id) as dua_bookmarks, COUNT(DISTINCT bb.id) as book_bookmarks, COUNT(DISTINCT mb.id) as motivational_bookmarks FROM users u LEFT JOIN story_reading_progress srp ON srp.user_id = u.id LEFT JOIN bookmarks b ON b.user_id = u.id LEFT JOIN dua_bookmarks db ON db.user_id = u.id LEFT JOIN book_bookmarks bb ON bb.user_id = u.id LEFT JOIN motivational_bookmarks mb ON mb.user_id = u.id WHERE u.role = 'user' GROUP BY u.id, u.username, u.name, u.email, u.avatar_url, u.created_at ORDER BY COUNT(DISTINCT srp.id) DESC, COUNT(DISTINCT b.id) DESC LIMIT 10`),
       ]);
 
       res.json({
@@ -967,6 +967,65 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Dashboard error:", error);
       res.status(500).json({ message: "Failed to load dashboard data" });
+    }
+  });
+
+  app.get("/api/admin/contributors/:id/stats", requireStaff, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const [userRes, siteStatsRes] = await Promise.all([
+        pool.query(`SELECT id, username, name, email, role, permissions, avatar_url, created_at FROM users WHERE id = $1`, [id]),
+        pool.query(`
+          SELECT
+            (SELECT COUNT(*) FROM stories WHERE deleted_at IS NULL AND status = 'published') as total_articles,
+            (SELECT COUNT(*) FROM duas WHERE deleted_at IS NULL AND published = true) as total_duas,
+            (SELECT COUNT(*) FROM books WHERE deleted_at IS NULL) as total_books,
+            (SELECT COUNT(*) FROM motivational_stories WHERE deleted_at IS NULL AND published = true) as total_motivational
+        `),
+      ]);
+      if (userRes.rows.length === 0) return res.status(404).json({ message: "Contributor not found" });
+      res.json({ contributor: userRes.rows[0], siteStats: siteStatsRes.rows[0] });
+    } catch (error) {
+      console.error("Contributor stats error:", error);
+      res.status(500).json({ message: "Failed to load contributor stats" });
+    }
+  });
+
+  app.get("/api/admin/users/:id/activity", requireStaff, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const [userRes, activityRes, recentRes] = await Promise.all([
+        pool.query(`SELECT id, username, name, email, avatar_url, created_at FROM users WHERE id = $1`, [id]),
+        pool.query(`
+          SELECT
+            COUNT(DISTINCT srp.id) as articles_read,
+            COUNT(DISTINCT b.id) as story_bookmarks,
+            COUNT(DISTINCT db.id) as dua_bookmarks,
+            COUNT(DISTINCT bb.id) as book_bookmarks,
+            COUNT(DISTINCT mb.id) as motivational_bookmarks
+          FROM users u
+          LEFT JOIN story_reading_progress srp ON srp.user_id = u.id
+          LEFT JOIN bookmarks b ON b.user_id = u.id
+          LEFT JOIN dua_bookmarks db ON db.user_id = u.id
+          LEFT JOIN book_bookmarks bb ON bb.user_id = u.id
+          LEFT JOIN motivational_bookmarks mb ON mb.user_id = u.id
+          WHERE u.id = $1
+          GROUP BY u.id
+        `, [id]),
+        pool.query(`
+          SELECT s.title, s.slug, srp.updated_at as read_at
+          FROM story_reading_progress srp
+          JOIN stories s ON s.id = srp.story_id
+          WHERE srp.user_id = $1
+          ORDER BY srp.updated_at DESC
+          LIMIT 5
+        `, [id]),
+      ]);
+      if (userRes.rows.length === 0) return res.status(404).json({ message: "User not found" });
+      res.json({ user: userRes.rows[0], activity: activityRes.rows[0] ?? {}, recentlyRead: recentRes.rows });
+    } catch (error) {
+      console.error("User activity error:", error);
+      res.status(500).json({ message: "Failed to load user activity" });
     }
   });
 
