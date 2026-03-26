@@ -97,12 +97,19 @@ interface DashboardData {
     motivational: Array<{ id: string; title: string; description: string | null; views: number; average_rating: string; category: string }>;
   };
   bookmarked: {
-    stories: Array<{ id: string; title: string; excerpt: string | null; bookmark_count: string }>;
+    stories: Array<{ id: string; title: string; description: string | null; bookmark_count: string }>;
     duas: Array<{ id: string; title: string; description: string | null; bookmark_count: string }>;
+    books: Array<{ id: string; title: string; description: string | null; bookmark_count: string }>;
+    motivational: Array<{ id: string; title: string; description: string | null; bookmark_count: string }>;
   };
   categories: Array<{ name: string; url_slug: string; story_count: string }>;
   userGrowth: Array<{ month: string; year_month: string; count: string }>;
-  recentActivity: Array<{ id: string; title: string; excerpt: string | null; status: string; updated_at: string; category_name: string }>;
+  recentActivity: {
+    stories: Array<{ id: string; title: string; description: string | null; status: string; updated_at: string; category_name: string }>;
+    duas: Array<{ id: string; title: string; description: string | null; status: string; updated_at: string; category_name: string }>;
+    books: Array<{ id: string; title: string; description: string | null; status: string; updated_at: string; category_name: string }>;
+    motivational: Array<{ id: string; title: string; description: string | null; status: string; updated_at: string; category_name: string }>;
+  };
   topContributors: Contributor[];
   activeUsers: ActiveUser[];
 }
@@ -230,17 +237,21 @@ function TrendingSection({ data, isLoading }: { data?: DashboardData; isLoading:
               View All <ChevronDown className="w-3 h-3" />
             </Button>
             {showDropdown && (
-              <div className="absolute right-0 top-full mt-1 z-50 bg-popover border rounded-lg shadow-md py-1 min-w-[140px]">
+              <div className="absolute right-0 top-full mt-1 z-50 bg-popover border rounded-lg shadow-md py-1 min-w-[160px]">
                 {(Object.keys(CATEGORY_LABELS) as TrendingCategory[]).map((cat) => (
-                  <button
-                    key={cat}
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors flex items-center justify-between ${category === cat ? "font-semibold text-primary" : ""}`}
-                    onClick={() => handleCategoryChange(cat)}
-                    data-testid={`button-trending-${cat}`}
-                  >
-                    {CATEGORY_LABELS[cat]}
-                    {category === cat && <span className="w-1.5 h-1.5 rounded-full bg-primary ml-2" />}
-                  </button>
+                  <div key={cat} className="flex items-center justify-between hover:bg-muted transition-colors">
+                    <button
+                      className={`flex-1 text-left px-3 py-2 text-sm flex items-center gap-2 ${category === cat ? "font-semibold text-primary" : ""}`}
+                      onClick={() => handleCategoryChange(cat)}
+                      data-testid={`button-trending-${cat}`}
+                    >
+                      {CATEGORY_LABELS[cat]}
+                      {category === cat && <span className="w-1.5 h-1.5 rounded-full bg-primary ml-auto" />}
+                    </button>
+                    <a href={ADMIN_URLS[cat as ContentTab]} className="px-2 py-2 text-muted-foreground hover:text-primary" title={`Go to ${CATEGORY_LABELS[cat]}`} data-testid={`link-trending-goto-${cat}`}>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
                 ))}
               </div>
             )}
@@ -424,11 +435,36 @@ function ActiveUsers({ users, isLoading }: { users: ActiveUser[]; isLoading: boo
   );
 }
 
+type ContentTab = "stories" | "duas" | "books" | "motivational";
+
+const CONTENT_LABELS: Record<ContentTab, string> = {
+  stories: "Articles",
+  duas: "Duas",
+  books: "Books",
+  motivational: "Motivational",
+};
+
+const ADMIN_URLS: Record<ContentTab, string> = {
+  stories: "/image/stories",
+  duas: "/image/duas",
+  books: "/image/books",
+  motivational: "/image/motivational",
+};
+
+const CONTENT_COLORS: Record<ContentTab, string> = {
+  stories: "bg-primary",
+  duas: "bg-violet-500",
+  books: "bg-amber-500",
+  motivational: "bg-emerald-500",
+};
+
 function RecentActivitySection({ data, isLoading }: { data?: DashboardData; isLoading: boolean }) {
+  const [tab, setTab] = useState<ContentTab>("stories");
   const [sliderIndex, setSliderIndex] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const items = data?.recentActivity ?? [];
+
+  const items = data?.recentActivity?.[tab] ?? [];
   const visible = items.slice(sliderIndex, sliderIndex + 3);
   const canBack = sliderIndex > 0;
   const canForward = sliderIndex + 3 < items.length;
@@ -443,6 +479,8 @@ function RecentActivitySection({ data, isLoading }: { data?: DashboardData; isLo
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showDropdown]);
 
+  const handleTabChange = (t: ContentTab) => { setTab(t); setSliderIndex(0); setShowDropdown(false); };
+
   return (
     <Card className="p-5">
       <div className="flex items-center justify-between mb-4">
@@ -450,28 +488,28 @@ function RecentActivitySection({ data, isLoading }: { data?: DashboardData; isLo
           <Activity className="w-4 h-4 text-primary" /> Recent Activity
         </h2>
         <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="text-xs font-medium">Articles</Badge>
+          <Badge variant="secondary" className="text-xs font-medium">{CONTENT_LABELS[tab]}</Badge>
           <div className="relative" ref={dropdownRef}>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs gap-1"
-              onClick={() => setShowDropdown((v) => !v)}
-              data-testid="button-view-all-activity"
-            >
+            <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => setShowDropdown((v) => !v)} data-testid="button-view-all-activity">
               View All <ChevronDown className="w-3 h-3" />
             </Button>
             {showDropdown && (
-              <div className="absolute right-0 top-full mt-1 z-50 bg-popover border rounded-lg shadow-md py-1 min-w-[140px]">
-                <a href="/image/stories" className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors flex items-center gap-2 font-semibold text-primary">
-                  <FileText className="w-3.5 h-3.5" /> All Articles
-                </a>
-                <a href="/image/stories?status=published" className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors flex items-center gap-2">
-                  <FileText className="w-3.5 h-3.5" /> Published
-                </a>
-                <a href="/image/stories?status=draft" className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors flex items-center gap-2">
-                  <FileText className="w-3.5 h-3.5" /> Drafts
-                </a>
+              <div className="absolute right-0 top-full mt-1 z-50 bg-popover border rounded-lg shadow-md py-1 min-w-[160px]">
+                {(Object.keys(CONTENT_LABELS) as ContentTab[]).map((t) => (
+                  <div key={t} className="flex items-center justify-between hover:bg-muted transition-colors">
+                    <button
+                      className={`flex-1 text-left px-3 py-2 text-sm flex items-center gap-2 ${tab === t ? "font-semibold text-primary" : ""}`}
+                      onClick={() => handleTabChange(t)}
+                      data-testid={`button-activity-tab-${t}`}
+                    >
+                      {CONTENT_LABELS[t]}
+                      {tab === t && <span className="w-1.5 h-1.5 rounded-full bg-primary ml-auto" />}
+                    </button>
+                    <a href={ADMIN_URLS[t]} className="px-2 py-2 text-muted-foreground hover:text-primary" title={`Go to ${CONTENT_LABELS[t]}`} data-testid={`link-activity-goto-${t}`}>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -490,10 +528,10 @@ function RecentActivitySection({ data, isLoading }: { data?: DashboardData; isLo
             <div className="grid grid-cols-3 gap-4">
               {visible.map((item) => (
                 <div key={item.id} className="border rounded-xl p-5 hover:shadow-md transition-all bg-card flex flex-col gap-3 min-h-[160px]">
-                  <div className="h-1.5 w-14 rounded-full bg-primary" />
+                  <div className={`h-1.5 w-14 rounded-full ${CONTENT_COLORS[tab]}`} />
                   <div className="flex-1 flex flex-col gap-1.5">
                     <p className="text-sm font-semibold line-clamp-2 leading-snug">{item.title}</p>
-                    {item.excerpt && <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">{item.excerpt}</p>}
+                    {item.description && <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">{item.description}</p>}
                   </div>
                   <div className="flex items-center justify-between mt-auto">
                     <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full truncate max-w-[80px]">
@@ -506,7 +544,7 @@ function RecentActivitySection({ data, isLoading }: { data?: DashboardData; isLo
                 </div>
               ))}
               {visible.length < 3 && Array.from({ length: 3 - visible.length }).map((_, i) => (
-                <div key={`empty-${i}`} className="border border-dashed rounded-xl min-h-[140px]" />
+                <div key={`empty-${i}`} className="border border-dashed rounded-xl min-h-[160px]" />
               ))}
             </div>
             {items.length > 3 && (
@@ -516,7 +554,7 @@ function RecentActivitySection({ data, isLoading }: { data?: DashboardData; isLo
                 </Button>
                 <div className="flex gap-1">
                   {Array.from({ length: Math.max(0, items.length - 2) }).map((_, i) => (
-                    <div key={i} className={`w-1.5 h-1.5 rounded-full transition-colors ${i === sliderIndex ? "bg-primary" : "bg-muted-foreground/30"}`} />
+                    <div key={i} className={`w-1.5 h-1.5 rounded-full transition-colors ${i === sliderIndex ? CONTENT_COLORS[tab] : "bg-muted-foreground/30"}`} />
                   ))}
                 </div>
                 <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => setSliderIndex((s) => s + 1)} disabled={!canForward} data-testid="button-activity-next">
@@ -531,18 +569,13 @@ function RecentActivitySection({ data, isLoading }: { data?: DashboardData; isLo
   );
 }
 
-const BOOKMARK_LABELS: Record<"stories" | "duas", string> = {
-  stories: "Articles",
-  duas: "Duas",
-};
-
 function MostBookmarkedSection({ data, isLoading }: { data?: DashboardData; isLoading: boolean }) {
-  const [tab, setTab] = useState<"stories" | "duas">("stories");
+  const [tab, setTab] = useState<ContentTab>("stories");
   const [sliderIndex, setSliderIndex] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const items = tab === "stories" ? (data?.bookmarked.stories ?? []) : (data?.bookmarked.duas ?? []);
+  const items = data?.bookmarked?.[tab] ?? [];
   const visible = items.slice(sliderIndex, sliderIndex + 3);
   const canBack = sliderIndex > 0;
   const canForward = sliderIndex + 3 < items.length;
@@ -557,11 +590,7 @@ function MostBookmarkedSection({ data, isLoading }: { data?: DashboardData; isLo
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showDropdown]);
 
-  const handleTabChange = (t: "stories" | "duas") => {
-    setTab(t);
-    setSliderIndex(0);
-    setShowDropdown(false);
-  };
+  const handleTabChange = (t: ContentTab) => { setTab(t); setSliderIndex(0); setShowDropdown(false); };
 
   return (
     <Card className="p-5">
@@ -570,29 +599,27 @@ function MostBookmarkedSection({ data, isLoading }: { data?: DashboardData; isLo
           <Bookmark className="w-4 h-4 text-violet-500" /> Most Bookmarked
         </h2>
         <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="text-xs font-medium">{BOOKMARK_LABELS[tab]}</Badge>
+          <Badge variant="secondary" className="text-xs font-medium">{CONTENT_LABELS[tab]}</Badge>
           <div className="relative" ref={dropdownRef}>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs gap-1"
-              onClick={() => setShowDropdown((v) => !v)}
-              data-testid="button-view-all-bookmarked"
-            >
+            <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => setShowDropdown((v) => !v)} data-testid="button-view-all-bookmarked">
               View All <ChevronDown className="w-3 h-3" />
             </Button>
             {showDropdown && (
-              <div className="absolute right-0 top-full mt-1 z-50 bg-popover border rounded-lg shadow-md py-1 min-w-[140px]">
-                {(["stories", "duas"] as const).map((t) => (
-                  <button
-                    key={t}
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors flex items-center justify-between ${tab === t ? "font-semibold text-primary" : ""}`}
-                    onClick={() => handleTabChange(t)}
-                    data-testid={`button-bookmarked-${t}`}
-                  >
-                    {BOOKMARK_LABELS[t]}
-                    {tab === t && <span className="w-1.5 h-1.5 rounded-full bg-primary ml-2" />}
-                  </button>
+              <div className="absolute right-0 top-full mt-1 z-50 bg-popover border rounded-lg shadow-md py-1 min-w-[160px]">
+                {(Object.keys(CONTENT_LABELS) as ContentTab[]).map((t) => (
+                  <div key={t} className="flex items-center justify-between hover:bg-muted transition-colors">
+                    <button
+                      className={`flex-1 text-left px-3 py-2 text-sm flex items-center gap-2 ${tab === t ? "font-semibold text-primary" : ""}`}
+                      onClick={() => handleTabChange(t)}
+                      data-testid={`button-bookmarked-tab-${t}`}
+                    >
+                      {CONTENT_LABELS[t]}
+                      {tab === t && <span className="w-1.5 h-1.5 rounded-full bg-primary ml-auto" />}
+                    </button>
+                    <a href={ADMIN_URLS[t]} className="px-2 py-2 text-muted-foreground hover:text-primary" title={`Go to ${CONTENT_LABELS[t]}`} data-testid={`link-bookmarked-goto-${t}`}>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
                 ))}
               </div>
             )}
@@ -610,28 +637,25 @@ function MostBookmarkedSection({ data, isLoading }: { data?: DashboardData; isLo
         ) : (
           <>
             <div className="grid grid-cols-3 gap-4">
-              {visible.map((item, i) => {
-                const blurb = (item as any).excerpt || (item as any).description || null;
-                return (
-                  <div key={item.id} className="border rounded-xl p-5 hover:shadow-md transition-all bg-card flex flex-col gap-3 min-h-[160px]">
-                    <div className="h-1.5 w-14 rounded-full bg-violet-500" />
-                    <div className="flex-1 flex flex-col gap-1.5">
-                      <p className="text-sm font-semibold line-clamp-2 leading-snug">{item.title}</p>
-                      {blurb && <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">{blurb}</p>}
-                    </div>
-                    <div className="flex items-center justify-between mt-auto">
-                      <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full shrink-0">
-                        #{sliderIndex + i + 1}
-                      </span>
-                      <span className="text-xs flex items-center gap-1 text-muted-foreground shrink-0">
-                        <Bookmark className="w-3.5 h-3.5" />{item.bookmark_count}
-                      </span>
-                    </div>
+              {visible.map((item, i) => (
+                <div key={item.id} className="border rounded-xl p-5 hover:shadow-md transition-all bg-card flex flex-col gap-3 min-h-[160px]">
+                  <div className={`h-1.5 w-14 rounded-full ${CONTENT_COLORS[tab]}`} />
+                  <div className="flex-1 flex flex-col gap-1.5">
+                    <p className="text-sm font-semibold line-clamp-2 leading-snug">{item.title}</p>
+                    {item.description && <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">{item.description}</p>}
                   </div>
-                );
-              })}
+                  <div className="flex items-center justify-between mt-auto">
+                    <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full shrink-0">
+                      #{sliderIndex + i + 1}
+                    </span>
+                    <span className="text-xs flex items-center gap-1 text-muted-foreground shrink-0">
+                      <Bookmark className="w-3.5 h-3.5" />{item.bookmark_count}
+                    </span>
+                  </div>
+                </div>
+              ))}
               {visible.length < 3 && Array.from({ length: 3 - visible.length }).map((_, i) => (
-                <div key={`empty-${i}`} className="border border-dashed rounded-xl min-h-[140px]" />
+                <div key={`empty-${i}`} className="border border-dashed rounded-xl min-h-[160px]" />
               ))}
             </div>
             {items.length > 3 && (
@@ -641,7 +665,7 @@ function MostBookmarkedSection({ data, isLoading }: { data?: DashboardData; isLo
                 </Button>
                 <div className="flex gap-1">
                   {Array.from({ length: Math.max(0, items.length - 2) }).map((_, i) => (
-                    <div key={i} className={`w-1.5 h-1.5 rounded-full transition-colors ${i === sliderIndex ? "bg-violet-500" : "bg-muted-foreground/30"}`} />
+                    <div key={i} className={`w-1.5 h-1.5 rounded-full transition-colors ${i === sliderIndex ? CONTENT_COLORS[tab] : "bg-muted-foreground/30"}`} />
                   ))}
                 </div>
                 <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => setSliderIndex((s) => s + 1)} disabled={!canForward} data-testid="button-bookmarked-next">
