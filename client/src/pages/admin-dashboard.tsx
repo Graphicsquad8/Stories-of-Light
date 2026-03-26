@@ -102,7 +102,7 @@ interface DashboardData {
     books: Array<{ id: string; title: string; description: string | null; bookmark_count: string }>;
     motivational: Array<{ id: string; title: string; description: string | null; bookmark_count: string }>;
   };
-  categories: Array<{ name: string; url_slug: string; story_count: string }>;
+  categories: Array<{ name: string; url_slug: string; story_count: string; total_views: string }>;
   userGrowth: Array<{ month: string; year_month: string; count: string }>;
   recentActivity: {
     stories: Array<{ id: string; title: string; description: string | null; status: string; updated_at: string; category_name: string }>;
@@ -144,9 +144,9 @@ type TrendingCategory = "stories" | "duas" | "books" | "motivational";
 
 const CATEGORY_LABELS: Record<TrendingCategory, string> = {
   stories: "Articles",
+  motivational: "Motivational",
   duas: "Duas",
   books: "Books",
-  motivational: "Motivational",
 };
 
 const CATEGORY_COLORS: Record<TrendingCategory, string> = {
@@ -163,10 +163,10 @@ function TrendingCard({ item, category }: {
   const cat = item.category_name || item.category || "—";
   const blurb = item.excerpt || item.description || null;
   return (
-    <div className="border rounded-xl p-5 hover:shadow-md transition-all bg-card flex flex-col gap-3 min-h-[160px]">
+    <a href={getAdminItemUrl(category, item.id)} className="border rounded-xl p-5 hover:shadow-md hover:border-primary/40 transition-all bg-card flex flex-col gap-3 min-h-[160px] cursor-pointer group" data-testid={`card-trending-${item.id}`}>
       <div className={`h-1.5 w-14 rounded-full ${CATEGORY_COLORS[category]}`} />
       <div className="flex-1 flex flex-col gap-1.5">
-        <p className="text-sm font-semibold line-clamp-2 leading-snug">{item.title}</p>
+        <p className="text-sm font-semibold line-clamp-2 leading-snug group-hover:text-primary transition-colors">{item.title}</p>
         {blurb && <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">{blurb}</p>}
       </div>
       <div className="flex items-center justify-between mt-auto">
@@ -175,7 +175,7 @@ function TrendingCard({ item, category }: {
           <Eye className="w-3.5 h-3.5" />{item.views ?? 0}
         </span>
       </div>
-    </div>
+    </a>
   );
 }
 
@@ -439,16 +439,16 @@ type ContentTab = "stories" | "duas" | "books" | "motivational";
 
 const CONTENT_LABELS: Record<ContentTab, string> = {
   stories: "Articles",
+  motivational: "Motivational",
   duas: "Duas",
   books: "Books",
-  motivational: "Motivational",
 };
 
 const ADMIN_URLS: Record<ContentTab, string> = {
   stories: "/image/stories",
   duas: "/image/duas",
   books: "/image/books",
-  motivational: "/image/motivational",
+  motivational: "/image/motivational-stories",
 };
 
 const CONTENT_COLORS: Record<ContentTab, string> = {
@@ -457,6 +457,16 @@ const CONTENT_COLORS: Record<ContentTab, string> = {
   books: "bg-amber-500",
   motivational: "bg-emerald-500",
 };
+
+function getAdminItemUrl(type: ContentTab | TrendingCategory, id: string): string {
+  switch (type) {
+    case "stories": return `/image/stories/${id}/edit`;
+    case "duas": return `/image/duas/${id}/edit`;
+    case "books": return `/image/books/${id}/edit`;
+    case "motivational": return `/image/motivational-stories`;
+    default: return "#";
+  }
+}
 
 function RecentActivitySection({ data, isLoading }: { data?: DashboardData; isLoading: boolean }) {
   const [tab, setTab] = useState<ContentTab>("stories");
@@ -527,10 +537,10 @@ function RecentActivitySection({ data, isLoading }: { data?: DashboardData; isLo
           <>
             <div className="grid grid-cols-3 gap-4">
               {visible.map((item) => (
-                <div key={item.id} className="border rounded-xl p-5 hover:shadow-md transition-all bg-card flex flex-col gap-3 min-h-[160px]">
+                <a key={item.id} href={getAdminItemUrl(tab, item.id)} className="border rounded-xl p-5 hover:shadow-md hover:border-primary/40 transition-all bg-card flex flex-col gap-3 min-h-[160px] cursor-pointer group" data-testid={`card-activity-${item.id}`}>
                   <div className={`h-1.5 w-14 rounded-full ${CONTENT_COLORS[tab]}`} />
                   <div className="flex-1 flex flex-col gap-1.5">
-                    <p className="text-sm font-semibold line-clamp-2 leading-snug">{item.title}</p>
+                    <p className="text-sm font-semibold line-clamp-2 leading-snug group-hover:text-primary transition-colors">{item.title}</p>
                     {item.description && <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">{item.description}</p>}
                   </div>
                   <div className="flex items-center justify-between mt-auto">
@@ -541,7 +551,7 @@ function RecentActivitySection({ data, isLoading }: { data?: DashboardData; isLo
                       {item.status}
                     </Badge>
                   </div>
-                </div>
+                </a>
               ))}
               {visible.length < 3 && Array.from({ length: 3 - visible.length }).map((_, i) => (
                 <div key={`empty-${i}`} className="border border-dashed rounded-xl min-h-[160px]" />
@@ -638,10 +648,10 @@ function MostBookmarkedSection({ data, isLoading }: { data?: DashboardData; isLo
           <>
             <div className="grid grid-cols-3 gap-4">
               {visible.map((item, i) => (
-                <div key={item.id} className="border rounded-xl p-5 hover:shadow-md transition-all bg-card flex flex-col gap-3 min-h-[160px]">
+                <a key={item.id} href={getAdminItemUrl(tab, item.id)} className="border rounded-xl p-5 hover:shadow-md hover:border-primary/40 transition-all bg-card flex flex-col gap-3 min-h-[160px] cursor-pointer group" data-testid={`card-bookmarked-${item.id}`}>
                   <div className={`h-1.5 w-14 rounded-full ${CONTENT_COLORS[tab]}`} />
                   <div className="flex-1 flex flex-col gap-1.5">
-                    <p className="text-sm font-semibold line-clamp-2 leading-snug">{item.title}</p>
+                    <p className="text-sm font-semibold line-clamp-2 leading-snug group-hover:text-primary transition-colors">{item.title}</p>
                     {item.description && <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">{item.description}</p>}
                   </div>
                   <div className="flex items-center justify-between mt-auto">
@@ -652,7 +662,7 @@ function MostBookmarkedSection({ data, isLoading }: { data?: DashboardData; isLo
                       <Bookmark className="w-3.5 h-3.5" />{item.bookmark_count}
                     </span>
                   </div>
-                </div>
+                </a>
               ))}
               {visible.length < 3 && Array.from({ length: 3 - visible.length }).map((_, i) => (
                 <div key={`empty-${i}`} className="border border-dashed rounded-xl min-h-[160px]" />
@@ -681,44 +691,52 @@ function MostBookmarkedSection({ data, isLoading }: { data?: DashboardData; isLo
 }
 
 function NormalView({ data, isLoading }: { data?: DashboardData; isLoading: boolean }) {
+  const maxStories = Math.max(1, parseInt(data?.categories?.[0]?.story_count ?? "1"));
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[5fr_2fr] gap-6">
       <div className="space-y-6">
         <TrendingSection data={data} isLoading={isLoading} />
         <RecentActivitySection data={data} isLoading={isLoading} />
         <MostBookmarkedSection data={data} isLoading={isLoading} />
-      </div>
-      <div className="space-y-6">
-        <TopContributors contributors={data?.topContributors ?? []} isLoading={isLoading} />
-        <ActiveUsers users={data?.activeUsers ?? []} isLoading={isLoading} />
         <Card className="p-4">
-          <h2 className="font-semibold mb-3 flex items-center gap-2 text-sm">
-            <Layers className="w-3.5 h-3.5 text-blue-500" /> Category Breakdown
+          <h2 className="font-semibold mb-4 flex items-center gap-2 text-sm">
+            <Layers className="w-4 h-4 text-primary" /> Category Breakdown
           </h2>
           {isLoading ? (
-            <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-6 w-full" />)}</div>
+            <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {(data?.categories ?? []).map((cat) => (
                 <div key={cat.name}>
-                  <div className="flex items-center justify-between mb-0.5">
-                    <span className="text-xs font-medium">{cat.name}</span>
-                    <span className="text-[10px] text-muted-foreground">{cat.story_count}</span>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium">{cat.name}</span>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <BookOpen className="w-3 h-3" />{cat.story_count} articles
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Bookmark className="w-3 h-3" />{cat.total_views} saves
+                      </span>
+                    </div>
                   </div>
-                  <div className="h-1 bg-muted rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                     <div
                       className="h-full bg-primary rounded-full"
-                      style={{ width: `${Math.min(100, (parseInt(cat.story_count) / Math.max(1, parseInt(data?.categories?.[0]?.story_count ?? "1"))) * 100)}%` }}
+                      style={{ width: `${Math.min(100, (parseInt(cat.story_count) / maxStories) * 100)}%` }}
                     />
                   </div>
                 </div>
               ))}
               {(!data?.categories || data.categories.length === 0) && (
-                <p className="text-xs text-muted-foreground text-center py-3">No categories found</p>
+                <p className="text-sm text-muted-foreground text-center py-4">No categories found</p>
               )}
             </div>
           )}
         </Card>
+      </div>
+      <div className="space-y-6">
+        <TopContributors contributors={data?.topContributors ?? []} isLoading={isLoading} />
+        <ActiveUsers users={data?.activeUsers ?? []} isLoading={isLoading} />
         <Card className="p-4">
           <h2 className="font-semibold mb-3 flex items-center gap-2 text-sm">
             <Users className="w-3.5 h-3.5 text-blue-500" /> User Growth (6 Months)
