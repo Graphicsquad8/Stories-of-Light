@@ -679,45 +679,52 @@ function MostBookmarkedSection({ data, isLoading }: { data?: DashboardData; isLo
 }
 
 function NormalView({ data, isLoading }: { data?: DashboardData; isLoading: boolean }) {
-  const maxViews = Math.max(1, ...(data?.categories ?? []).map((c) => parseInt(c.total_views)));
+  const maxStories = Math.max(1, ...(data?.categories ?? []).map((c) => parseInt(c.story_count)));
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[5fr_1.7fr] gap-6">
       <div className="space-y-6">
         <TrendingSection data={data} isLoading={isLoading} />
         <RecentActivitySection data={data} isLoading={isLoading} />
         <MostBookmarkedSection data={data} isLoading={isLoading} />
-      </div>
-      <div className="space-y-4">
-        <TopContributors contributors={data?.topContributors ?? []} isLoading={isLoading} />
-        <ActiveUsers users={data?.activeUsers ?? []} isLoading={isLoading} />
         <Card className="p-4">
-          <h2 className="font-semibold mb-3 flex items-center gap-2 text-sm">
-            <Layers className="w-3.5 h-3.5 text-primary" /> Category Breakdown
+          <h2 className="font-semibold mb-4 flex items-center gap-2 text-sm">
+            <Layers className="w-4 h-4 text-primary" /> Category Breakdown
           </h2>
           {isLoading ? (
-            <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-6 w-full" />)}</div>
+            <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {(data?.categories ?? []).map((cat) => (
                 <div key={cat.name}>
-                  <div className="flex items-center justify-between mb-0.5">
-                    <span className="text-xs font-medium truncate max-w-[120px]">{cat.name}</span>
-                    <span className="text-[10px] text-muted-foreground shrink-0">{cat.total_views} views</span>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium">{cat.name}</span>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <BookOpen className="w-3 h-3" />{cat.story_count} articles
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Eye className="w-3 h-3" />{cat.total_views} views
+                      </span>
+                    </div>
                   </div>
-                  <div className="h-1 bg-muted rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                     <div
                       className="h-full bg-primary rounded-full"
-                      style={{ width: `${Math.min(100, (parseInt(cat.total_views) / maxViews) * 100)}%` }}
+                      style={{ width: `${Math.min(100, (parseInt(cat.story_count) / maxStories) * 100)}%` }}
                     />
                   </div>
                 </div>
               ))}
               {(!data?.categories || data.categories.length === 0) && (
-                <p className="text-xs text-muted-foreground text-center py-3">No categories found</p>
+                <p className="text-sm text-muted-foreground text-center py-4">No categories found</p>
               )}
             </div>
           )}
         </Card>
+      </div>
+      <div className="space-y-4">
+        <TopContributors contributors={data?.topContributors ?? []} isLoading={isLoading} />
+        <ActiveUsers users={data?.activeUsers ?? []} isLoading={isLoading} />
         <Card className="p-4">
           <h2 className="font-semibold mb-3 flex items-center gap-2 text-sm">
             <Users className="w-3.5 h-3.5 text-blue-500" /> User Growth (6 Months)
