@@ -96,24 +96,24 @@ interface DashboardData {
   };
   totalViews: number;
   topContent: {
-    stories: Array<{ id: string; title: string; excerpt: string | null; views: number; average_rating: string; category_name: string }>;
-    duas: Array<{ id: string; title: string; description: string | null; views: number; category: string }>;
-    books: Array<{ id: string; title: string; description: string | null; views: number; average_rating: string; category: string }>;
-    motivational: Array<{ id: string; title: string; description: string | null; views: number; average_rating: string; category: string }>;
+    stories: Array<{ id: string; title: string; slug: string; excerpt: string | null; views: number; average_rating: string; category_name: string; category_url_slug: string }>;
+    duas: Array<{ id: string; title: string; slug: string; description: string | null; views: number; category: string }>;
+    books: Array<{ id: string; title: string; slug: string; description: string | null; views: number; average_rating: string; category: string }>;
+    motivational: Array<{ id: string; title: string; slug: string; description: string | null; views: number; average_rating: string; category: string }>;
   };
   bookmarked: {
-    stories: Array<{ id: string; title: string; description: string | null; bookmark_count: string }>;
-    duas: Array<{ id: string; title: string; description: string | null; bookmark_count: string }>;
-    books: Array<{ id: string; title: string; description: string | null; bookmark_count: string }>;
-    motivational: Array<{ id: string; title: string; description: string | null; bookmark_count: string }>;
+    stories: Array<{ id: string; title: string; slug: string; description: string | null; bookmark_count: string }>;
+    duas: Array<{ id: string; title: string; slug: string; description: string | null; bookmark_count: string }>;
+    books: Array<{ id: string; title: string; slug: string; description: string | null; bookmark_count: string }>;
+    motivational: Array<{ id: string; title: string; slug: string; description: string | null; bookmark_count: string }>;
   };
   categories: Array<{ name: string; url_slug: string; story_count: string; total_views: string }>;
   userGrowth: Array<{ month: string; year_month: string; count: string }>;
   recentActivity: {
-    stories: Array<{ id: string; title: string; description: string | null; status: string; updated_at: string; category_name: string }>;
-    duas: Array<{ id: string; title: string; description: string | null; status: string; updated_at: string; category_name: string }>;
-    books: Array<{ id: string; title: string; description: string | null; status: string; updated_at: string; category_name: string }>;
-    motivational: Array<{ id: string; title: string; description: string | null; status: string; updated_at: string; category_name: string }>;
+    stories: Array<{ id: string; title: string; slug: string; description: string | null; status: string; updated_at: string; category_name: string; category_url_slug: string }>;
+    duas: Array<{ id: string; title: string; slug: string; description: string | null; status: string; updated_at: string; category_name: string }>;
+    books: Array<{ id: string; title: string; slug: string; description: string | null; status: string; updated_at: string; category_name: string }>;
+    motivational: Array<{ id: string; title: string; slug: string; description: string | null; status: string; updated_at: string; category_name: string }>;
   };
   topContributors: Contributor[];
   activeUsers: ActiveUser[];
@@ -161,14 +161,16 @@ const CATEGORY_COLORS: Record<TrendingCategory, string> = {
   motivational: "bg-emerald-500",
 };
 
-function TrendingCard({ item, category }: {
-  item: { id: string; title: string; views: number; excerpt?: string | null; description?: string | null; category_name?: string; category?: string };
+function TrendingCard({ item, category, isContributor }: {
+  item: { id: string; title: string; slug?: string; views: number; excerpt?: string | null; description?: string | null; category_name?: string; category?: string; category_url_slug?: string };
   category: TrendingCategory;
+  isContributor: boolean;
 }) {
   const cat = item.category_name || item.category || "—";
   const blurb = item.excerpt || item.description || null;
+  const href = getItemUrl(isContributor, category, item);
   return (
-    <a href={getAdminItemUrl(category, item.id)} className="border rounded-xl p-5 hover:shadow-md hover:border-primary/40 transition-all bg-card flex flex-col gap-3 min-h-[160px] cursor-pointer group" data-testid={`card-trending-${item.id}`}>
+    <a href={href} target={isContributor ? "_blank" : undefined} rel={isContributor ? "noopener noreferrer" : undefined} className="border rounded-xl p-5 hover:shadow-md hover:border-primary/40 transition-all bg-card flex flex-col gap-3 min-h-[160px] cursor-pointer group" data-testid={`card-trending-${item.id}`}>
       <div className={`h-1.5 w-14 rounded-full ${CATEGORY_COLORS[category]}`} />
       <div className="flex-1 flex flex-col gap-1.5">
         <p className="text-sm font-semibold line-clamp-2 leading-snug group-hover:text-primary transition-colors">{item.title}</p>
@@ -184,7 +186,7 @@ function TrendingCard({ item, category }: {
   );
 }
 
-function TrendingSection({ data, isLoading }: { data?: DashboardData; isLoading: boolean }) {
+function TrendingSection({ data, isLoading, isContributor }: { data?: DashboardData; isLoading: boolean; isContributor: boolean }) {
   const [category, setCategory] = useState<TrendingCategory>("stories");
   const [sliderIndex, setSliderIndex] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -253,7 +255,7 @@ function TrendingSection({ data, isLoading }: { data?: DashboardData; isLoading:
                       {CATEGORY_LABELS[cat]}
                       {category === cat && <span className="w-1.5 h-1.5 rounded-full bg-primary ml-auto" />}
                     </button>
-                    <a href={ADMIN_URLS[cat as ContentTab]} className="px-2 py-2 text-muted-foreground hover:text-primary" title={`Go to ${CATEGORY_LABELS[cat]}`} data-testid={`link-trending-goto-${cat}`}>
+                    <a href={getListUrl(isContributor, cat as ContentTab)} target={isContributor ? "_blank" : undefined} rel={isContributor ? "noopener noreferrer" : undefined} className="px-2 py-2 text-muted-foreground hover:text-primary" title={`Go to ${CATEGORY_LABELS[cat]}`} data-testid={`link-trending-goto-${cat}`}>
                       <ChevronRight className="w-3.5 h-3.5" />
                     </a>
                   </div>
@@ -275,7 +277,7 @@ function TrendingSection({ data, isLoading }: { data?: DashboardData; isLoading:
           <>
             <div className="grid grid-cols-3 gap-4">
               {visible.map((item) => (
-                <TrendingCard key={item.id} item={item} category={category} />
+                <TrendingCard key={item.id} item={item} category={category} isContributor={isContributor} />
               ))}
               {visible.length < 3 && Array.from({ length: 3 - visible.length }).map((_, i) => (
                 <div key={`empty-${i}`} className="border border-dashed rounded-xl min-h-[140px]" />
@@ -515,6 +517,13 @@ const ADMIN_URLS: Record<ContentTab, string> = {
   motivational: "/image/motivational-stories",
 };
 
+const PUBLIC_LIST_URLS: Record<ContentTab, string> = {
+  stories: "/",
+  duas: "/duas",
+  books: "/books",
+  motivational: "/motivational-stories",
+};
+
 const CONTENT_COLORS: Record<ContentTab, string> = {
   stories: "bg-primary",
   duas: "bg-violet-500",
@@ -522,11 +531,27 @@ const CONTENT_COLORS: Record<ContentTab, string> = {
   motivational: "bg-emerald-500",
 };
 
-function getAdminItemUrl(type: ContentTab | TrendingCategory, _id: string): string {
+function getPublicItemUrl(type: ContentTab | TrendingCategory, item: { slug?: string; category_url_slug?: string }): string {
+  const slug = item.slug;
+  if (!slug) return "#";
+  const t = type as ContentTab;
+  if (t === "stories") return `/${item.category_url_slug || "stories"}/${slug}`;
+  if (t === "duas") return `/duas/${slug}`;
+  if (t === "books") return `/books/${slug}`;
+  if (t === "motivational") return `/motivational-stories/${slug}`;
+  return "#";
+}
+
+function getItemUrl(isContributor: boolean, type: ContentTab | TrendingCategory, item: { slug?: string; category_url_slug?: string }): string {
+  if (isContributor) return getPublicItemUrl(type, item);
   return ADMIN_URLS[type as ContentTab] ?? "#";
 }
 
-function RecentActivitySection({ data, isLoading }: { data?: DashboardData; isLoading: boolean }) {
+function getListUrl(isContributor: boolean, type: ContentTab): string {
+  return isContributor ? PUBLIC_LIST_URLS[type] : ADMIN_URLS[type];
+}
+
+function RecentActivitySection({ data, isLoading, isContributor }: { data?: DashboardData; isLoading: boolean; isContributor: boolean }) {
   const [tab, setTab] = useState<ContentTab>("stories");
   const [sliderIndex, setSliderIndex] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -573,7 +598,7 @@ function RecentActivitySection({ data, isLoading }: { data?: DashboardData; isLo
                       {CONTENT_LABELS[t]}
                       {tab === t && <span className="w-1.5 h-1.5 rounded-full bg-primary ml-auto" />}
                     </button>
-                    <a href={ADMIN_URLS[t]} className="px-2 py-2 text-muted-foreground hover:text-primary" title={`Go to ${CONTENT_LABELS[t]}`} data-testid={`link-activity-goto-${t}`}>
+                    <a href={getListUrl(isContributor, t)} target={isContributor ? "_blank" : undefined} rel={isContributor ? "noopener noreferrer" : undefined} className="px-2 py-2 text-muted-foreground hover:text-primary" title={`Go to ${CONTENT_LABELS[t]}`} data-testid={`link-activity-goto-${t}`}>
                       <ChevronRight className="w-3.5 h-3.5" />
                     </a>
                   </div>
@@ -595,7 +620,7 @@ function RecentActivitySection({ data, isLoading }: { data?: DashboardData; isLo
           <>
             <div className="grid grid-cols-3 gap-4">
               {visible.map((item) => (
-                <a key={item.id} href={getAdminItemUrl(tab, item.id)} className="border rounded-xl p-5 hover:shadow-md hover:border-primary/40 transition-all bg-card flex flex-col gap-3 min-h-[160px] cursor-pointer group" data-testid={`card-activity-${item.id}`}>
+                <a key={item.id} href={getItemUrl(isContributor, tab, item)} target={isContributor ? "_blank" : undefined} rel={isContributor ? "noopener noreferrer" : undefined} className="border rounded-xl p-5 hover:shadow-md hover:border-primary/40 transition-all bg-card flex flex-col gap-3 min-h-[160px] cursor-pointer group" data-testid={`card-activity-${item.id}`}>
                   <div className={`h-1.5 w-14 rounded-full ${CONTENT_COLORS[tab]}`} />
                   <div className="flex-1 flex flex-col gap-1.5">
                     <p className="text-sm font-semibold line-clamp-2 leading-snug group-hover:text-primary transition-colors">{item.title}</p>
@@ -637,7 +662,7 @@ function RecentActivitySection({ data, isLoading }: { data?: DashboardData; isLo
   );
 }
 
-function MostBookmarkedSection({ data, isLoading }: { data?: DashboardData; isLoading: boolean }) {
+function MostBookmarkedSection({ data, isLoading, isContributor }: { data?: DashboardData; isLoading: boolean; isContributor: boolean }) {
   const [tab, setTab] = useState<ContentTab>("stories");
   const [sliderIndex, setSliderIndex] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -684,7 +709,7 @@ function MostBookmarkedSection({ data, isLoading }: { data?: DashboardData; isLo
                       {CONTENT_LABELS[t]}
                       {tab === t && <span className="w-1.5 h-1.5 rounded-full bg-primary ml-auto" />}
                     </button>
-                    <a href={ADMIN_URLS[t]} className="px-2 py-2 text-muted-foreground hover:text-primary" title={`Go to ${CONTENT_LABELS[t]}`} data-testid={`link-bookmarked-goto-${t}`}>
+                    <a href={getListUrl(isContributor, t)} target={isContributor ? "_blank" : undefined} rel={isContributor ? "noopener noreferrer" : undefined} className="px-2 py-2 text-muted-foreground hover:text-primary" title={`Go to ${CONTENT_LABELS[t]}`} data-testid={`link-bookmarked-goto-${t}`}>
                       <ChevronRight className="w-3.5 h-3.5" />
                     </a>
                   </div>
@@ -706,7 +731,7 @@ function MostBookmarkedSection({ data, isLoading }: { data?: DashboardData; isLo
           <>
             <div className="grid grid-cols-3 gap-4">
               {visible.map((item, i) => (
-                <a key={item.id} href={getAdminItemUrl(tab, item.id)} className="border rounded-xl p-5 hover:shadow-md hover:border-primary/40 transition-all bg-card flex flex-col gap-3 min-h-[160px] cursor-pointer group" data-testid={`card-bookmarked-${item.id}`}>
+                <a key={item.id} href={getItemUrl(isContributor, tab, item)} target={isContributor ? "_blank" : undefined} rel={isContributor ? "noopener noreferrer" : undefined} className="border rounded-xl p-5 hover:shadow-md hover:border-primary/40 transition-all bg-card flex flex-col gap-3 min-h-[160px] cursor-pointer group" data-testid={`card-bookmarked-${item.id}`}>
                   <div className={`h-1.5 w-14 rounded-full ${CONTENT_COLORS[tab]}`} />
                   <div className="flex-1 flex flex-col gap-1.5">
                     <p className="text-sm font-semibold line-clamp-2 leading-snug group-hover:text-primary transition-colors">{item.title}</p>
@@ -748,14 +773,14 @@ function MostBookmarkedSection({ data, isLoading }: { data?: DashboardData; isLo
   );
 }
 
-function NormalView({ data, isLoading }: { data?: DashboardData; isLoading: boolean }) {
+function NormalView({ data, isLoading, isContributor }: { data?: DashboardData; isLoading: boolean; isContributor: boolean }) {
   const maxStories = Math.max(1, ...(data?.categories ?? []).map((c) => parseInt(c.story_count)));
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[5fr_1.7fr] gap-6">
       <div className="space-y-6">
-        <TrendingSection data={data} isLoading={isLoading} />
-        <RecentActivitySection data={data} isLoading={isLoading} />
-        <MostBookmarkedSection data={data} isLoading={isLoading} />
+        <TrendingSection data={data} isLoading={isLoading} isContributor={isContributor} />
+        <RecentActivitySection data={data} isLoading={isLoading} isContributor={isContributor} />
+        <MostBookmarkedSection data={data} isLoading={isLoading} isContributor={isContributor} />
         <Card className="p-4">
           <h2 className="font-semibold mb-4 flex items-center gap-2 text-sm">
             <Layers className="w-4 h-4 text-primary" /> Category Breakdown
@@ -1064,6 +1089,8 @@ function GraphView({ data, isLoading }: { data?: DashboardData; isLoading: boole
 
 export default function AdminDashboardPage() {
   const [viewMode, setViewMode] = useState<"normal" | "graph">("normal");
+  const { viewAsUser } = useViewAs();
+  const isContributor = !!viewAsUser;
 
   const { data, isLoading } = useQuery<DashboardData>({
     queryKey: ["/api/admin/dashboard"],
@@ -1167,7 +1194,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {viewMode === "normal" ? (
-        <NormalView data={data} isLoading={isLoading} />
+        <NormalView data={data} isLoading={isLoading} isContributor={isContributor} />
       ) : (
         <GraphView data={data} isLoading={isLoading} />
       )}
