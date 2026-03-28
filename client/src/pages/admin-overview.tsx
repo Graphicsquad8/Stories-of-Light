@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/lib/auth";
+import { useViewAs } from "@/lib/view-as";
 import {
   FileText, BookOpen, Star, Eye, Users, CalendarDays,
   MessageSquare, ArrowLeft, ShieldCheck, Edit3, Layers,
@@ -55,9 +56,11 @@ export default function AdminOverviewPage() {
   const [, navigate] = useLocation();
   const search = useSearch();
   const { user, isAdmin } = useAuth();
+  const { viewAs, clearViewAs } = useViewAs();
 
   const params = new URLSearchParams(search);
-  const viewingId = params.get("id");
+  const urlId = params.get("id");
+  const viewingId = urlId || viewAs?.id || null;
   const subjectId = viewingId || user?.id;
   const isViewingOther = isAdmin && !!viewingId && viewingId !== user?.id;
 

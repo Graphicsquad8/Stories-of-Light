@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
+import { useViewAs } from "@/lib/view-as";
 import { AdminLayout } from "@/components/admin-layout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -323,7 +324,20 @@ const ROLE_COLORS: Record<string, string> = {
 
 
 function TopContributors({ contributors, isLoading }: { contributors: Contributor[]; isLoading: boolean }) {
+  const { setViewAs } = useViewAs();
   const [, navigate] = useLocation();
+
+  const handleContributorClick = (c: Contributor) => {
+    setViewAs({
+      id: c.id,
+      username: c.username,
+      name: c.name,
+      role: c.role,
+      permissions: c.permissions,
+      avatar_url: c.avatar_url,
+    });
+    navigate("/image");
+  };
 
   return (
     <Card className="p-4">
@@ -340,7 +354,7 @@ function TopContributors({ contributors, isLoading }: { contributors: Contributo
             <button
               key={c.id}
               className="w-full flex items-center gap-2 py-1.5 px-1.5 rounded-lg hover:bg-muted/60 transition-colors text-left"
-              onClick={() => navigate(`/image/overview?id=${c.id}`)}
+              onClick={() => handleContributorClick(c)}
               data-testid={`button-contributor-${c.id}`}
             >
               <span className="text-[10px] font-bold text-muted-foreground w-4 text-center shrink-0">{i + 1}</span>

@@ -20,13 +20,16 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   LayoutDashboard, FileText, FolderOpen, LogOut, BookOpen,
   Sun, Moon, ExternalLink, Book, Settings, Lightbulb, Library,
   Trash2, Users, ShieldCheck, ChevronRight, LayoutTemplate, UserCircle,
+  ArrowLeftRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
+import { useViewAs, ViewAsProvider } from "@/lib/view-as";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 
@@ -57,6 +60,17 @@ function ThemeToggle() {
 function AdminSidebar() {
   const [location] = useLocation();
   const { logout, isAdmin, isModerator, hasPermission, user } = useAuth();
+  const { viewAs } = useViewAs();
+
+  const effectiveIsAdmin = viewAs ? viewAs.role === "admin" : isAdmin;
+  const effectiveIsModerator = viewAs ? viewAs.role === "moderator" : isModerator;
+  const effectiveHasPermission = (section: string): boolean => {
+    if (viewAs) {
+      if (viewAs.role === "admin") return true;
+      return (viewAs.permissions || []).includes(section);
+    }
+    return hasPermission(section);
+  };
 
   const { data: allCategories } = useQuery<any[]>({
     queryKey: ["/api/categories?type=all"],
@@ -182,9 +196,9 @@ function AdminSidebar() {
 
   const visibleItems = managementItems.filter(item => {
     if (item.permission === null) return true;
-    if (item.permission === "admin-only") return isAdmin;
-    if (item.permission === "staff-only") return isAdmin || isModerator;
-    return hasPermission(item.permission);
+    if (item.permission === "admin-only") return effectiveIsAdmin;
+    if (item.permission === "staff-only") return effectiveIsAdmin || effectiveIsModerator || !!viewAs;
+    return effectiveHasPermission(item.permission);
   });
 
   const articlesAllActive = location.startsWith("/image/stories") &&
@@ -205,11 +219,24 @@ function AdminSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        {isModerator && !isAdmin && (
+        {viewAs ? (
+          <div className="mx-3 mt-2 mb-1 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-2.5">
+            <div className="flex items-center gap-2 mb-1.5">
+              <Avatar className="h-7 w-7 shrink-0">
+                <AvatarImage src={viewAs.avatar_url ?? ""} alt={viewAs.name || viewAs.username} />
+                <AvatarFallback className="text-[9px] bg-amber-100 text-amber-700">{(viewAs.name || viewAs.username).slice(0, 2).toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold text-amber-900 dark:text-amber-100 truncate">{viewAs.name || viewAs.username}</p>
+                <p className="text-[10px] text-amber-700 dark:text-amber-300 capitalize">{viewAs.role} view</p>
+              </div>
+            </div>
+          </div>
+        ) : (isModerator && !isAdmin) ? (
           <div className="px-4 pt-2 pb-1">
             <Badge variant="secondary" className="text-xs">Moderator</Badge>
           </div>
-        )}
+        ) : null}
 
         <SidebarGroup>
           <SidebarGroupLabel>Management</SidebarGroupLabel>
@@ -307,8 +334,9 @@ function AdminSidebar() {
   );
 }
 
-export function AdminLayout({ children }: { children: React.ReactNode }) {
+function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const { user, isLoading, isStaff } = useAuth();
+  const { viewAs, clearViewAs } = useViewAs();
 
   if (isLoading) {
     return (
@@ -339,6 +367,26 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       <div className="flex h-screen w-full">
         <AdminSidebar />
         <div className="flex flex-col flex-1 min-w-0">
+          {viewAs && (
+            <div className="flex items-center gap-3 px-4 py-2 bg-amber-500 text-white shrink-0">
+              <ArrowLeftRight className="w-4 h-4 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <span className="text-sm font-medium">
+                  Viewing as: <span className="font-bold">{viewAs.name || viewAs.username}</span>
+                </span>
+                <span className="ml-2 text-xs opacity-80 capitalize">({viewAs.role})</span>
+              </div>
+              <Button
+                size="sm"
+                variant="secondary"
+                className="bg-white text-amber-700 hover:bg-amber-50 shrink-0 h-7 text-xs font-semibold"
+                onClick={clearViewAs}
+                data-testid="button-switch-admin-mode"
+              >
+                Switch to Admin Mode
+              </Button>
+            </div>
+          )}
           <header className="flex items-center justify-between gap-4 p-3 border-b bg-background shrink-0">
             <SidebarTrigger data-testid="button-admin-sidebar-toggle" />
             <div className="flex items-center gap-1">
@@ -352,5 +400,13 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         </div>
       </div>
     </SidebarProvider>
+  );
+}
+
+export function AdminLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <ViewAsProvider>
+      <AdminLayoutInner>{children}</AdminLayoutInner>
+    </ViewAsProvider>
   );
 }
