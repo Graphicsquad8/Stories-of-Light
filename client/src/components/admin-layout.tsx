@@ -198,7 +198,7 @@ function AdminSidebar() {
     if (item.permission === null) return true;
     if (item.permission === "admin-only") return effectiveIsAdmin;
     if (item.permission === "staff-only") return effectiveIsAdmin || effectiveIsModerator || !!viewAs;
-    if (item.permission === "viewas-only") return !!viewAs;
+    if (item.permission === "viewas-only") return !!viewAs || effectiveIsModerator;
     return effectiveHasPermission(item.permission);
   });
 

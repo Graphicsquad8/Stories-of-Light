@@ -55,7 +55,7 @@ interface ContributorStats {
 export default function AdminOverviewPage() {
   const [, navigate] = useLocation();
   const search = useSearch();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isModerator } = useAuth();
   const { viewAs, clearViewAs } = useViewAs();
 
   const params = new URLSearchParams(search);
@@ -64,7 +64,7 @@ export default function AdminOverviewPage() {
   const subjectId = viewingId || user?.id;
   const isViewingOther = isAdmin && !!viewingId && viewingId !== user?.id;
 
-  if (user && !isAdmin && !viewAs) {
+  if (user && !isAdmin && !isModerator && !viewAs) {
     navigate("/image");
     return null;
   }
