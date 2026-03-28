@@ -23,7 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   LayoutDashboard, FileText, FolderOpen, LogOut, BookOpen,
   Sun, Moon, ExternalLink, Book, Settings, Lightbulb, Library,
-  Trash2, Users, ShieldCheck, ChevronRight, LayoutTemplate,
+  Trash2, Users, ShieldCheck, ChevronRight, LayoutTemplate, UserCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
@@ -88,6 +88,14 @@ function AdminSidebar() {
       icon: LayoutDashboard,
       isActive: (loc) => loc === "/image",
       permission: null,
+    },
+    {
+      key: "overview",
+      title: "Overview",
+      href: "/image/overview",
+      icon: UserCircle,
+      isActive: (loc) => loc.startsWith("/image/overview"),
+      permission: "staff-only",
     },
     {
       key: "categories",
@@ -175,6 +183,7 @@ function AdminSidebar() {
   const visibleItems = managementItems.filter(item => {
     if (item.permission === null) return true;
     if (item.permission === "admin-only") return isAdmin;
+    if (item.permission === "staff-only") return isAdmin || isModerator;
     return hasPermission(item.permission);
   });
 

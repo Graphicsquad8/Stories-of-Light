@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { AdminLayout } from "@/components/admin-layout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -38,7 +38,6 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
-  CalendarDays,
 } from "lucide-react";
 import {
   BarChart,
@@ -322,122 +321,42 @@ const ROLE_COLORS: Record<string, string> = {
   moderator: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
 };
 
-const ROLE_DESCRIPTION: Record<string, string> = {
-  admin: "Full site access — manages all content, users, settings, and configurations.",
-  editor: "Can publish and edit articles, duas, books, and motivational content.",
-  moderator: "Reviews content and manages user-reported issues.",
-};
-
-function ContributorDetailDialog({ contributorId, onClose }: { contributorId: string; onClose: () => void }) {
-  const { data, isLoading } = useQuery<{
-    contributor: Contributor & { permissions: string[] };
-    siteStats: { total_articles: string; total_duas: string; total_books: string; total_motivational: string };
-  }>({ queryKey: ["/api/admin/contributors", contributorId, "stats"], queryFn: () => fetch(`/api/admin/contributors/${contributorId}/stats`, { credentials: "include" }).then(r => r.json()) });
-
-  const c = data?.contributor;
-  const stats = data?.siteStats;
-
-  return (
-    <DialogContent className="sm:max-w-md">
-      <DialogHeader>
-        <DialogTitle>Contributor Profile</DialogTitle>
-      </DialogHeader>
-      {isLoading || !c ? (
-        <div className="space-y-3 py-4"><Skeleton className="h-16 w-16 rounded-full mx-auto" /><Skeleton className="h-4 w-32 mx-auto" /><Skeleton className="h-20 w-full" /></div>
-      ) : (
-        <div className="flex flex-col items-center gap-4 pt-1">
-          <Avatar className="h-14 w-14">
-            <AvatarImage src={c.avatar_url ?? ""} alt={c.name || c.username} />
-            <AvatarFallback className="text-lg">{(c.name || c.username).slice(0, 2).toUpperCase()}</AvatarFallback>
-          </Avatar>
-          <div className="text-center">
-            <p className="font-semibold">{c.name || c.username}</p>
-            <p className="text-xs text-muted-foreground">@{c.username}</p>
-            <span className={`inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${ROLE_COLORS[c.role] ?? "bg-muted text-muted-foreground"}`}>{c.role}</span>
-          </div>
-          <div className="w-full space-y-3">
-            <div className="rounded-lg border divide-y text-sm">
-              <div className="flex items-center justify-between px-4 py-2.5">
-                <span className="text-muted-foreground flex items-center gap-2"><MessageSquare className="w-3.5 h-3.5" /> Email</span>
-                <span className="font-medium truncate max-w-[160px]">{c.email || "—"}</span>
-              </div>
-              <div className="flex items-center justify-between px-4 py-2.5">
-                <span className="text-muted-foreground flex items-center gap-2"><CalendarDays className="w-3.5 h-3.5" /> Joined</span>
-                <span className="font-medium">{format(new Date(c.created_at), "d MMM yyyy")}</span>
-              </div>
-            </div>
-            <div className="rounded-lg border p-3">
-              <p className="text-xs text-muted-foreground mb-2 font-medium">Role Access</p>
-              <p className="text-xs">{ROLE_DESCRIPTION[c.role] ?? "Site staff member."}</p>
-            </div>
-            {stats && (
-              <div className="rounded-lg border p-3">
-                <p className="text-xs text-muted-foreground mb-2 font-medium">Site Content Overview</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { label: "Articles", value: stats.total_articles, icon: FileText },
-                    { label: "Duas", value: stats.total_duas, icon: MessageSquare },
-                    { label: "Books", value: stats.total_books, icon: BookOpen },
-                    { label: "Motivational", value: stats.total_motivational, icon: Star },
-                  ].map(({ label, value, icon: Icon }) => (
-                    <div key={label} className="flex items-center gap-2 bg-muted/50 rounded-md px-2.5 py-2">
-                      <Icon className="w-3 h-3 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs font-semibold">{value}</p>
-                        <p className="text-[10px] text-muted-foreground">{label}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </DialogContent>
-  );
-}
 
 function TopContributors({ contributors, isLoading }: { contributors: Contributor[]; isLoading: boolean }) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [, navigate] = useLocation();
 
   return (
-    <>
-      <Card className="p-4">
-        <h2 className="font-semibold mb-3 flex items-center gap-2 text-sm">
-          <Star className="w-3.5 h-3.5 text-amber-500" /> Top Contributors
-        </h2>
-        {isLoading ? (
-          <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-9 w-full" />)}</div>
-        ) : contributors.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-3">No staff members found</p>
-        ) : (
-          <div className="space-y-0.5">
-            {contributors.map((c, i) => (
-              <button
-                key={c.id}
-                className="w-full flex items-center gap-2 py-1.5 px-1.5 rounded-lg hover:bg-muted/60 transition-colors text-left"
-                onClick={() => setSelectedId(c.id)}
-                data-testid={`button-contributor-${c.id}`}
-              >
-                <span className="text-[10px] font-bold text-muted-foreground w-4 text-center shrink-0">{i + 1}</span>
-                <Avatar className="h-6 w-6 shrink-0">
-                  <AvatarImage src={c.avatar_url ?? ""} alt={c.name || c.username} />
-                  <AvatarFallback className="text-[9px]">{(c.name || c.username).slice(0, 2).toUpperCase()}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium truncate">{c.name || c.username}</p>
-                </div>
-                <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full capitalize shrink-0 ${ROLE_COLORS[c.role] ?? "bg-muted text-muted-foreground"}`}>{c.role}</span>
-              </button>
-            ))}
-          </div>
-        )}
-      </Card>
-      <Dialog open={!!selectedId} onOpenChange={(open) => !open && setSelectedId(null)}>
-        {selectedId && <ContributorDetailDialog contributorId={selectedId} onClose={() => setSelectedId(null)} />}
-      </Dialog>
-    </>
+    <Card className="p-4">
+      <h2 className="font-semibold mb-3 flex items-center gap-2 text-sm">
+        <Star className="w-3.5 h-3.5 text-amber-500" /> Top Contributors
+      </h2>
+      {isLoading ? (
+        <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-9 w-full" />)}</div>
+      ) : contributors.length === 0 ? (
+        <p className="text-xs text-muted-foreground text-center py-3">No staff members found</p>
+      ) : (
+        <div className="space-y-0.5">
+          {contributors.map((c, i) => (
+            <button
+              key={c.id}
+              className="w-full flex items-center gap-2 py-1.5 px-1.5 rounded-lg hover:bg-muted/60 transition-colors text-left"
+              onClick={() => navigate(`/image/overview?id=${c.id}`)}
+              data-testid={`button-contributor-${c.id}`}
+            >
+              <span className="text-[10px] font-bold text-muted-foreground w-4 text-center shrink-0">{i + 1}</span>
+              <Avatar className="h-6 w-6 shrink-0">
+                <AvatarImage src={c.avatar_url ?? ""} alt={c.name || c.username} />
+                <AvatarFallback className="text-[9px]">{(c.name || c.username).slice(0, 2).toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium truncate">{c.name || c.username}</p>
+              </div>
+              <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full capitalize shrink-0 ${ROLE_COLORS[c.role] ?? "bg-muted text-muted-foreground"}`}>{c.role}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </Card>
   );
 }
 
