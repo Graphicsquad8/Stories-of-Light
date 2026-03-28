@@ -109,7 +109,7 @@ function AdminSidebar() {
       href: "/image/overview",
       icon: UserCircle,
       isActive: (loc) => loc.startsWith("/image/overview"),
-      permission: "staff-only",
+      permission: "viewas-only",
     },
     {
       key: "categories",
@@ -198,6 +198,7 @@ function AdminSidebar() {
     if (item.permission === null) return true;
     if (item.permission === "admin-only") return effectiveIsAdmin;
     if (item.permission === "staff-only") return effectiveIsAdmin || effectiveIsModerator || !!viewAs;
+    if (item.permission === "viewas-only") return !!viewAs;
     return effectiveHasPermission(item.permission);
   });
 

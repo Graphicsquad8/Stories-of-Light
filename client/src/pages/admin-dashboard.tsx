@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { useViewAs } from "@/lib/view-as";
+import { useAuth } from "@/lib/auth";
 import { AdminLayout } from "@/components/admin-layout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -325,9 +326,11 @@ const ROLE_COLORS: Record<string, string> = {
 
 function TopContributors({ contributors, isLoading }: { contributors: Contributor[]; isLoading: boolean }) {
   const { setViewAs } = useViewAs();
+  const { isAdmin } = useAuth();
   const [, navigate] = useLocation();
 
   const handleContributorClick = (c: Contributor) => {
+    if (!isAdmin) return;
     setViewAs({
       id: c.id,
       username: c.username,
@@ -353,7 +356,7 @@ function TopContributors({ contributors, isLoading }: { contributors: Contributo
           {contributors.map((c, i) => (
             <button
               key={c.id}
-              className="w-full flex items-center gap-2 py-1.5 px-1.5 rounded-lg hover:bg-muted/60 transition-colors text-left"
+              className={`w-full flex items-center gap-2 py-1.5 px-1.5 rounded-lg transition-colors text-left ${isAdmin ? "hover:bg-muted/60 cursor-pointer" : "cursor-default"}`}
               onClick={() => handleContributorClick(c)}
               data-testid={`button-contributor-${c.id}`}
             >

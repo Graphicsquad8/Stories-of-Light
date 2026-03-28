@@ -64,6 +64,11 @@ export default function AdminOverviewPage() {
   const subjectId = viewingId || user?.id;
   const isViewingOther = isAdmin && !!viewingId && viewingId !== user?.id;
 
+  if (user && !isAdmin && !viewAs) {
+    navigate("/image");
+    return null;
+  }
+
   const { data, isLoading } = useQuery<ContributorStats>({
     queryKey: ["/api/admin/contributors", subjectId, "stats"],
     queryFn: () =>
