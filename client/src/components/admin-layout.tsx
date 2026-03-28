@@ -60,7 +60,7 @@ function ThemeToggle() {
 function AdminSidebar() {
   const [location] = useLocation();
   const { logout, isAdmin, isModerator, hasPermission, user } = useAuth();
-  const { viewAs } = useViewAs();
+  const { viewAs, clearViewAs } = useViewAs();
 
   const effectiveIsAdmin = viewAs ? viewAs.role === "admin" : isAdmin;
   const effectiveIsModerator = viewAs ? viewAs.role === "moderator" : isModerator;
