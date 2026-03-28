@@ -221,15 +221,23 @@ function AdminSidebar() {
       <SidebarContent>
         {viewAs ? (
           <div className="mx-3 mt-2 mb-1 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-2.5">
-            <div className="flex items-center gap-2 mb-1.5">
+            <div className="flex items-center gap-2">
               <Avatar className="h-7 w-7 shrink-0">
                 <AvatarImage src={viewAs.avatar_url ?? ""} alt={viewAs.name || viewAs.username} />
                 <AvatarFallback className="text-[9px] bg-amber-100 text-amber-700">{(viewAs.name || viewAs.username).slice(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-[11px] font-semibold text-amber-900 dark:text-amber-100 truncate">{viewAs.name || viewAs.username}</p>
-                <p className="text-[10px] text-amber-700 dark:text-amber-300 capitalize">{viewAs.role} view</p>
+                <p className="text-[10px] text-amber-700 dark:text-amber-300 capitalize">{viewAs.role} View</p>
               </div>
+              <button
+                onClick={clearViewAs}
+                title="Switch to Admin Mode"
+                data-testid="button-switch-admin-mode-sidebar"
+                className="shrink-0 p-1 rounded-md text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-800 transition-colors"
+              >
+                <ArrowLeftRight className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
         ) : (isModerator && !isAdmin) ? (
@@ -367,26 +375,6 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       <div className="flex h-screen w-full">
         <AdminSidebar />
         <div className="flex flex-col flex-1 min-w-0">
-          {viewAs && (
-            <div className="flex items-center gap-3 px-4 py-2 bg-amber-500 text-white shrink-0">
-              <ArrowLeftRight className="w-4 h-4 shrink-0" />
-              <div className="flex-1 min-w-0">
-                <span className="text-sm font-medium">
-                  Viewing as: <span className="font-bold">{viewAs.name || viewAs.username}</span>
-                </span>
-                <span className="ml-2 text-xs opacity-80 capitalize">({viewAs.role})</span>
-              </div>
-              <Button
-                size="sm"
-                variant="secondary"
-                className="bg-white text-amber-700 hover:bg-amber-50 shrink-0 h-7 text-xs font-semibold"
-                onClick={clearViewAs}
-                data-testid="button-switch-admin-mode"
-              >
-                Switch to Admin Mode
-              </Button>
-            </div>
-          )}
           <header className="flex items-center justify-between gap-4 p-3 border-b bg-background shrink-0">
             <SidebarTrigger data-testid="button-admin-sidebar-toggle" />
             <div className="flex items-center gap-1">
