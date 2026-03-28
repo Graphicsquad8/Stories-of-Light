@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
-import { useViewAs, ViewAsProvider } from "@/lib/view-as";
+import { useViewAs } from "@/lib/view-as";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 
@@ -334,7 +334,7 @@ function AdminSidebar() {
   );
 }
 
-function AdminLayoutInner({ children }: { children: React.ReactNode }) {
+export function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading, isStaff } = useAuth();
   const { viewAs, clearViewAs } = useViewAs();
 
@@ -403,10 +403,3 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function AdminLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <ViewAsProvider>
-      <AdminLayoutInner>{children}</AdminLayoutInner>
-    </ViewAsProvider>
-  );
-}
