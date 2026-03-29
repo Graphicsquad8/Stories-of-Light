@@ -1,0 +1,82 @@
+🔹 Default State: Moderator View Mode
+
+When a Moderator logs into their account and enters the Admin Panel, they will by default be in Moderator View Mode.
+
+✅ Management Section Structure:
+
+Dashboard → remains unchanged
+Overview → remains unchanged
+
+✅ Dynamic Access-Based Topics:
+
+Under the Management section, only those Topics/Options will be visible for which the Admin has granted access to the Moderator
+
+Examples:
+
+All Articles
+Books
+Motivational Stories
+Dua
+
+👉 If the Admin grants access to any new Topic, it will automatically be added to this list and function like the others
+
+🔹 Content Behavior (Moderator View Mode)
+
+In Moderator View Mode:
+
+All total website content/articles will be displayed based on the assigned Topics
+Exactly the same way an Admin views content from the Admin Panel
+
+However, the Moderator:
+
+✅ Can view and read content only (View Only)
+❌ Cannot Edit / Update / Delete / Modify anything
+
+👉 In short, this mode is strictly View/Read Only, similar to how content is viewed from the Dashboard
+
+🔹 Switch to “View Me” → Edit Mode
+
+👉 When the Moderator clicks on the “View Me” icon/button:
+
+The system will switch to Edit Mode (Scoped Edit Access)
+
+🔹 Content Behavior (Edit Mode)
+
+In this mode:
+
+The Moderator can only see their own published content/articles
+They cannot access or view content created by other Moderators or Admins
+Within the Topics/Options assigned by Admin (e.g., All Articles, Books, Motivational Stories, Dua), only the content that the Moderator has personally uploaded/published will be shown
+
+👉 On their own content, the Moderator can:
+
+✅ Edit
+✅ Update
+✅ Duplicate
+✅ Delete
+
+👉 In summary:
+Own Content = Full Control
+Others’ Content = No Access
+
+🔹 Real-Time Update
+
+In both Moderator View Mode and Edit Mode:
+
+All content and access data must update in real time
+Any content the Moderator publishes or modifies must reflect instantly
+
+📌 Dashboard Visibility Fix (Important)
+
+⚠️ Current Issue:
+
+When switching from View Mode to Edit Mode, the Dashboard option disappears from the Management section
+
+👉 Required Fix:
+
+The Dashboard option must never be removed
+
+👉 Meaning:
+
+Just like the Dashboard is visible in Moderator View Mode,
+It must also remain visible in Edit Mode at all times
