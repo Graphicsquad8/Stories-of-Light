@@ -1,6 +1,8 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useLocation, useRoute } from "wouter";
 import { AdminLayout } from "@/components/admin-layout";
+import { useAuth } from "@/lib/auth";
+import { useViewAs } from "@/lib/view-as";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,6 +35,11 @@ export default function AdminStoriesPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
+  const { user, isAdmin } = useAuth();
+  const { viewAs, viewMeMode } = useViewAs();
+  const isContributor = !!viewAs || (!isAdmin && !viewMeMode);
+  const viewMeUserId = viewMeMode ? (viewAs?.id ?? user?.id) : undefined;
+
   const [matchCat, catParams] = useRoute("/image/stories/category/:slug");
   const categorySlug = matchCat ? catParams?.slug : null;
 
@@ -47,6 +54,7 @@ export default function AdminStoriesPage() {
   if (statusFilter && statusFilter !== "all" && statusFilter !== "recent") queryParams.set("status", statusFilter);
   if (statusFilter === "recent") queryParams.set("limit", "20");
   if (activeCategory?.id) queryParams.set("categoryId", activeCategory.id);
+  if (viewMeUserId) queryParams.set("userId", viewMeUserId);
   const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
 
   const { data: stories, isLoading } = useQuery<StoryWithCategory[]>({
@@ -129,12 +137,14 @@ export default function AdminStoriesPage() {
           <h1 className="text-2xl font-bold" data-testid="text-stories-title">{pageTitle}</h1>
           <p className="text-muted-foreground mt-1">{pageDescription}</p>
         </div>
-        <Link href="/image/stories/new">
-          <Button data-testid="button-new-story">
-            <Plus className="w-4 h-4 mr-2" />
-            New Article
-          </Button>
-        </Link>
+        {!isContributor && (
+          <Link href="/image/stories/new">
+            <Button data-testid="button-new-story">
+              <Plus className="w-4 h-4 mr-2" />
+              New Article
+            </Button>
+          </Link>
+        )}
       </div>
 
       <Card>
@@ -168,7 +178,7 @@ export default function AdminStoriesPage() {
               </Button>
             ))}
           </div>
-          {selectedIds.size > 0 && (
+          {!isContributor && selectedIds.size > 0 && (
             <Button
               variant="destructive"
               size="sm"
@@ -257,29 +267,33 @@ export default function AdminStoriesPage() {
                             <Eye className="w-4 h-4" />
                           </Button>
                         </Link>
-                        <Link href={`/image/stories/${story.id}/edit`}>
-                          <Button size="icon" variant="ghost" data-testid={`button-edit-${story.id}`}>
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                        </Link>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => duplicateMutation.mutate(story.id)}
-                          disabled={duplicateMutation.isPending}
-                          title="Duplicate"
-                          data-testid={`button-duplicate-${story.id}`}
-                        >
-                          <Copy className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => handleDelete(story.id)}
-                          data-testid={`button-delete-${story.id}`}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        {!isContributor && (
+                          <>
+                            <Link href={`/image/stories/${story.id}/edit`}>
+                              <Button size="icon" variant="ghost" data-testid={`button-edit-${story.id}`}>
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            </Link>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => duplicateMutation.mutate(story.id)}
+                              disabled={duplicateMutation.isPending}
+                              title="Duplicate"
+                              data-testid={`button-duplicate-${story.id}`}
+                            >
+                              <Copy className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleDelete(story.id)}
+                              data-testid={`button-delete-${story.id}`}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>

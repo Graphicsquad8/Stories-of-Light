@@ -1,6 +1,8 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import type { Book, BookChapter } from "@shared/schema";
 import { AdminLayout } from "@/components/admin-layout";
+import { useAuth } from "@/lib/auth";
+import { useViewAs } from "@/lib/view-as";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -319,8 +321,20 @@ export default function AdminBooksPage() {
   const [editingBook, setEditingBook] = useState<Book | undefined>();
   const [chaptersBook, setChaptersBook] = useState<Book | undefined>();
 
+  const { user, isAdmin } = useAuth();
+  const { viewAs, viewMeMode } = useViewAs();
+  const isContributor = !!viewAs || (!isAdmin && !viewMeMode);
+  const viewMeUserId = viewMeMode ? (viewAs?.id ?? user?.id) : undefined;
+
+  const booksQueryKey = viewMeUserId ? ["/api/books", { userId: viewMeUserId }] : ["/api/books"];
+  const booksUrl = viewMeUserId ? `/api/books?userId=${viewMeUserId}` : "/api/books";
+
   const { data: books, isLoading } = useQuery<Book[]>({
-    queryKey: ["/api/books"],
+    queryKey: booksQueryKey,
+    queryFn: async () => {
+      const res = await fetch(booksUrl, { credentials: "include" });
+      return res.json();
+    },
   });
 
   const deleteMutation = useMutation({
@@ -357,9 +371,11 @@ export default function AdminBooksPage() {
             <h1 className="text-2xl font-bold" data-testid="text-admin-books-title">Books</h1>
             <p className="text-sm text-muted-foreground">Manage your Islamic library</p>
           </div>
-          <Button onClick={openCreate} data-testid="button-add-book">
-            <Plus className="w-4 h-4 mr-2" /> Add Book
-          </Button>
+          {!isContributor && (
+            <Button onClick={openCreate} data-testid="button-add-book">
+              <Plus className="w-4 h-4 mr-2" /> Add Book
+            </Button>
+          )}
         </div>
 
         {books && books.length > 0 && (
@@ -435,23 +451,27 @@ export default function AdminBooksPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Link href={`/image/books/${book.id}/edit`}>
-                          <Button size="icon" variant="ghost" className="h-8 w-8" data-testid={`button-edit-parts-${book.id}`} title="Edit Parts">
-                            <FileText className="w-3.5 h-3.5" />
-                          </Button>
-                        </Link>
-                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => duplicateMutation.mutate(book.id)} data-testid={`button-duplicate-${book.id}`}>
-                          <Copy className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(book)} data-testid={`button-edit-book-${book.id}`}>
-                          <Pencil className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive"
-                          onClick={() => { if (confirm("Delete this book?")) deleteMutation.mutate(book.id); }}
-                          data-testid={`button-delete-book-${book.id}`}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
+                        {!isContributor && (
+                          <>
+                            <Link href={`/image/books/${book.id}/edit`}>
+                              <Button size="icon" variant="ghost" className="h-8 w-8" data-testid={`button-edit-parts-${book.id}`} title="Edit Parts">
+                                <FileText className="w-3.5 h-3.5" />
+                              </Button>
+                            </Link>
+                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => duplicateMutation.mutate(book.id)} data-testid={`button-duplicate-${book.id}`}>
+                              <Copy className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(book)} data-testid={`button-edit-book-${book.id}`}>
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive"
+                              onClick={() => { if (confirm("Delete this book?")) deleteMutation.mutate(book.id); }}
+                              data-testid={`button-delete-book-${book.id}`}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

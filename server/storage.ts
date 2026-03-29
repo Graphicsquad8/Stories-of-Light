@@ -78,7 +78,7 @@ export interface IStorage {
   getCategoryMotivationalViewCounts(): Promise<Record<string, number>>;
   getCategoryDuaViewCounts(): Promise<Record<string, number>>;
 
-  getStories(opts?: { status?: string; categoryId?: string; featured?: boolean; search?: string; limit?: number; offset?: number }): Promise<StoryWithCategory[]>;
+  getStories(opts?: { status?: string; categoryId?: string; featured?: boolean; search?: string; limit?: number; offset?: number; userId?: string }): Promise<StoryWithCategory[]>;
   getStoryById(id: string): Promise<StoryWithCategory | undefined>;
   getStoryBySlug(slug: string): Promise<StoryWithCategory | undefined>;
   createStory(story: InsertStory): Promise<Story>;
@@ -92,7 +92,7 @@ export interface IStorage {
   incrementStoryViews(id: string): Promise<void>;
   getRelatedStories(storyId: string, categoryId: string | null, limit?: number): Promise<StoryWithCategory[]>;
 
-  getBooks(opts?: { type?: string; category?: string; search?: string; sort?: string; minRating?: number }): Promise<Book[]>;
+  getBooks(opts?: { type?: string; category?: string; search?: string; sort?: string; minRating?: number; userId?: string }): Promise<Book[]>;
   getBookById(id: string): Promise<Book | undefined>;
   getBookBySlug(slug: string): Promise<BookWithChapters | undefined>;
   createBook(book: InsertBook): Promise<Book>;
@@ -157,7 +157,7 @@ export interface IStorage {
   setSetting(key: string, value: string): Promise<void>;
   getAllSettings(): Promise<Record<string, string>>;
 
-  getMotivationalStories(opts?: { category?: string; search?: string; sort?: string; published?: boolean; limit?: number; offset?: number }): Promise<{ stories: MotivationalStory[]; total: number }>;
+  getMotivationalStories(opts?: { category?: string; search?: string; sort?: string; published?: boolean; limit?: number; offset?: number; userId?: string }): Promise<{ stories: MotivationalStory[]; total: number }>;
   getMotivationalStoryById(id: string): Promise<MotivationalStoryWithLessons | undefined>;
   getMotivationalStoryBySlug(slug: string): Promise<MotivationalStoryWithLessons | undefined>;
   createMotivationalStory(story: InsertMotivationalStory): Promise<MotivationalStory>;
@@ -169,7 +169,7 @@ export interface IStorage {
   duplicateMotivationalStory(id: string): Promise<MotivationalStory>;
   getMotivationalStoryCount(published?: boolean): Promise<number>;
 
-  getDuas(opts?: { published?: boolean; search?: string; category?: string; sort?: string; limit?: number; offset?: number }): Promise<{ duas: Dua[]; total: number }>;
+  getDuas(opts?: { published?: boolean; search?: string; category?: string; sort?: string; limit?: number; offset?: number; userId?: string }): Promise<{ duas: Dua[]; total: number }>;
   getDuaCategories(): Promise<string[]>;
   incrementDuaViews(id: string): Promise<void>;
   getDuaBySlug(slug: string): Promise<DuaWithParts | undefined>;
@@ -444,12 +444,13 @@ export class DatabaseStorage implements IStorage {
     return map;
   }
 
-  async getStories(opts?: { status?: string; categoryId?: string; featured?: boolean; search?: string; limit?: number; offset?: number }): Promise<StoryWithCategory[]> {
+  async getStories(opts?: { status?: string; categoryId?: string; featured?: boolean; search?: string; limit?: number; offset?: number; userId?: string }): Promise<StoryWithCategory[]> {
     const conditions: any[] = [isNull(stories.deletedAt)];
     if (opts?.status) conditions.push(eq(stories.status, opts.status));
     if (opts?.categoryId) conditions.push(eq(stories.categoryId, opts.categoryId));
     if (opts?.featured !== undefined) conditions.push(eq(stories.featured, opts.featured));
     if (opts?.search) conditions.push(ilike(stories.title, `%${opts.search}%`));
+    if (opts?.userId) conditions.push(eq(stories.userId, opts.userId));
 
     const rows = await db
       .select({ story: stories, category: categories })
@@ -555,12 +556,13 @@ export class DatabaseStorage implements IStorage {
     return rows.map((r) => ({ ...r.story, category: r.category }));
   }
 
-  async getBooks(opts?: { type?: string; category?: string; search?: string; sort?: string; minRating?: number }): Promise<Book[]> {
+  async getBooks(opts?: { type?: string; category?: string; search?: string; sort?: string; minRating?: number; userId?: string }): Promise<Book[]> {
     const conditions: any[] = [isNull(books.deletedAt)];
     if (opts?.type && opts.type !== "all") conditions.push(eq(books.type, opts.type));
     if (opts?.category) conditions.push(eq(books.category, opts.category));
     if (opts?.search) conditions.push(ilike(books.title, `%${opts.search}%`));
     if (opts?.minRating) conditions.push(gte(books.averageRating, opts.minRating));
+    if (opts?.userId) conditions.push(eq(books.userId, opts.userId));
 
     let orderBy;
     switch (opts?.sort) {
@@ -858,11 +860,12 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  async getMotivationalStories(opts?: { category?: string; search?: string; sort?: string; published?: boolean; limit?: number; offset?: number }): Promise<{ stories: MotivationalStory[]; total: number }> {
+  async getMotivationalStories(opts?: { category?: string; search?: string; sort?: string; published?: boolean; limit?: number; offset?: number; userId?: string }): Promise<{ stories: MotivationalStory[]; total: number }> {
     const conditions: any[] = [isNull(motivationalStories.deletedAt)];
     if (opts?.published !== undefined) conditions.push(eq(motivationalStories.published, opts.published));
     if (opts?.category) conditions.push(eq(motivationalStories.category, opts.category));
     if (opts?.search) conditions.push(ilike(motivationalStories.title, `%${opts.search}%`));
+    if (opts?.userId) conditions.push(eq(motivationalStories.userId, opts.userId));
     const where = and(...conditions);
 
     let orderBy;
@@ -1369,11 +1372,12 @@ export class DatabaseStorage implements IStorage {
     return newPage;
   }
 
-  async getDuas(opts: { published?: boolean; search?: string; category?: string; sort?: string; limit?: number; offset?: number } = {}): Promise<{ duas: Dua[]; total: number }> {
+  async getDuas(opts: { published?: boolean; search?: string; category?: string; sort?: string; limit?: number; offset?: number; userId?: string } = {}): Promise<{ duas: Dua[]; total: number }> {
     const conditions = [isNull(duas.deletedAt)];
     if (opts.published !== undefined) conditions.push(eq(duas.published, opts.published));
     if (opts.search) conditions.push(ilike(duas.title, `%${opts.search}%`));
     if (opts.category) conditions.push(eq(duas.category, opts.category));
+    if (opts.userId) conditions.push(eq(duas.userId, opts.userId));
     const where = and(...conditions);
     let orderClause;
     if (opts.sort === "oldest") orderClause = [asc(duas.createdAt)];

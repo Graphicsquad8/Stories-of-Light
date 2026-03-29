@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { AdminLayout } from "@/components/admin-layout";
+import { useAuth } from "@/lib/auth";
+import { useViewAs } from "@/lib/view-as";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,6 +56,11 @@ export default function AdminDuasPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editing, setEditing] = useState<Dua | null>(null);
 
+  const { user, isAdmin } = useAuth();
+  const { viewAs, viewMeMode } = useViewAs();
+  const isContributor = !!viewAs || (!isAdmin && !viewMeMode);
+  const viewMeUserId = viewMeMode ? (viewAs?.id ?? user?.id) : undefined;
+
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
@@ -67,10 +74,11 @@ export default function AdminDuasPage() {
   const [partsLoading, setPartsLoading] = useState(false);
 
   const { data, isLoading } = useQuery<DuaListResult>({
-    queryKey: ["/api/admin/duas", search],
+    queryKey: ["/api/admin/duas", search, viewMeUserId],
     queryFn: async () => {
       const params = new URLSearchParams({ limit: "50" });
       if (search) params.set("search", search);
+      if (viewMeUserId) params.set("userId", viewMeUserId);
       const res = await fetch(`/api/admin/duas?${params}`, { credentials: "include" });
       return res.json();
     },
@@ -232,9 +240,11 @@ export default function AdminDuasPage() {
               Manage Islamic supplication collections — {data?.total ?? 0} total
             </p>
           </div>
-          <Button onClick={openCreate} data-testid="button-create-dua">
-            <Plus className="w-4 h-4 mr-2" />New Dua
-          </Button>
+          {!isContributor && (
+            <Button onClick={openCreate} data-testid="button-create-dua">
+              <Plus className="w-4 h-4 mr-2" />New Dua
+            </Button>
+          )}
         </div>
 
         {/* Search */}
@@ -303,32 +313,36 @@ export default function AdminDuasPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Link href={`/image/duas/${dua.id}/edit`}>
-                          <Button size="sm" variant="outline" data-testid={`button-edit-parts-${dua.id}`}>
-                            <BookOpen className="w-3.5 h-3.5 mr-1" />Manage Duas
-                          </Button>
-                        </Link>
-                        <Button size="icon" variant="ghost" onClick={() => openEdit(dua)} data-testid={`button-edit-${dua.id}`} title="Edit details">
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="icon" variant="ghost"
-                          onClick={() => duplicateDua.mutate(dua.id)}
-                          disabled={duplicateDua.isPending}
-                          data-testid={`button-duplicate-${dua.id}`}
-                          title="Duplicate as draft"
-                        >
-                          <Copy className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="icon" variant="ghost"
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => setDeleteId(dua.id)}
-                          data-testid={`button-delete-${dua.id}`}
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        {!isContributor && (
+                          <>
+                            <Link href={`/image/duas/${dua.id}/edit`}>
+                              <Button size="sm" variant="outline" data-testid={`button-edit-parts-${dua.id}`}>
+                                <BookOpen className="w-3.5 h-3.5 mr-1" />Manage Duas
+                              </Button>
+                            </Link>
+                            <Button size="icon" variant="ghost" onClick={() => openEdit(dua)} data-testid={`button-edit-${dua.id}`} title="Edit details">
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="icon" variant="ghost"
+                              onClick={() => duplicateDua.mutate(dua.id)}
+                              disabled={duplicateDua.isPending}
+                              data-testid={`button-duplicate-${dua.id}`}
+                              title="Duplicate as draft"
+                            >
+                              <Copy className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="icon" variant="ghost"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => setDeleteId(dua.id)}
+                              data-testid={`button-delete-${dua.id}`}
+                              title="Delete"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </>
+                        )}
                         {dua.published && (
                           <a href={`/duas/${dua.slug}`} target="_blank" rel="noopener noreferrer">
                             <Button size="icon" variant="ghost" data-testid={`button-view-${dua.id}`}>

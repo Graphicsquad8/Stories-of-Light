@@ -34,6 +34,7 @@ export const categories = pgTable("categories", {
 
 export const stories = pgTable("stories", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id),
   title: text("title").notNull(),
   slug: text("slug").notNull().unique(),
   excerpt: text("excerpt"),
@@ -54,6 +55,7 @@ export const stories = pgTable("stories", {
 
 export const books = pgTable("books", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id),
   title: text("title").notNull(),
   slug: text("slug").notNull().unique(),
   author: text("author").notNull(),
@@ -187,6 +189,7 @@ export type BookRating = typeof bookRatings.$inferSelect;
 
 export const motivationalStories = pgTable("motivational_stories", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id),
   title: text("title").notNull(),
   slug: text("slug").notNull().unique(),
   description: text("description"),
@@ -320,6 +323,7 @@ export type SiteSetting = typeof siteSettings.$inferSelect;
 
 export const duas = pgTable("duas", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id),
   title: text("title").notNull(),
   slug: text("slug").notNull().unique(),
   description: text("description"),

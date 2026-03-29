@@ -881,7 +881,7 @@ export async function registerRoutes(
   });
 
   app.get("/api/stories", async (req, res) => {
-    const { status, categoryId, featured, search, limit, offset } = req.query;
+    const { status, categoryId, featured, search, limit, offset, userId } = req.query;
     const opts: any = {};
     if (status) opts.status = status;
     if (categoryId) opts.categoryId = categoryId;
@@ -889,6 +889,7 @@ export async function registerRoutes(
     if (search) opts.search = search;
     if (limit) opts.limit = parseInt(limit as string);
     if (offset) opts.offset = parseInt(offset as string);
+    if (userId) opts.userId = userId as string;
     const storiesList = await storage.getStories(opts);
     res.json(storiesList);
   });
@@ -1067,6 +1068,7 @@ export async function registerRoutes(
     if (body.publishedAt && typeof body.publishedAt === "string") {
       body.publishedAt = new Date(body.publishedAt);
     }
+    if ((req as any).session?.userId) body.userId = (req as any).session.userId;
     const parsed = insertStorySchema.safeParse(body);
     if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.flatten() });
     const story = await storage.createStory(parsed.data);
@@ -1138,13 +1140,14 @@ export async function registerRoutes(
   }
 
   app.get("/api/books", async (req, res) => {
-    const { type, category, search, sort, minRating } = req.query;
+    const { type, category, search, sort, minRating, userId } = req.query;
     const booksList = await storage.getBooks({
       type: type as string,
       category: category as string,
       search: search as string,
       sort: sort as string,
       minRating: minRating ? parseFloat(minRating as string) : undefined,
+      userId: userId as string | undefined,
     });
     res.json(booksList.map(sanitizeBook));
   });
@@ -1205,7 +1208,9 @@ export async function registerRoutes(
   });
 
   app.post("/api/books", requireStaff, async (req, res) => {
-    const parsed = insertBookSchema.safeParse(req.body);
+    const body = { ...req.body };
+    if ((req as any).session?.userId) body.userId = (req as any).session.userId;
+    const parsed = insertBookSchema.safeParse(body);
     if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.flatten() });
     const book = await storage.createBook(parsed.data);
     res.status(201).json(book);
@@ -1561,13 +1566,14 @@ export async function registerRoutes(
   });
 
   app.get("/api/admin/motivational-stories", requireStaff, async (req, res) => {
-    const { category, search, sort, limit, offset } = req.query;
+    const { category, search, sort, limit, offset, userId } = req.query;
     const result = await storage.getMotivationalStories({
       category: category as string,
       search: search as string,
       sort: sort as string,
       limit: limit ? parseInt(limit as string) : 50,
       offset: offset ? parseInt(offset as string) : 0,
+      userId: userId as string | undefined,
     });
     res.json(result);
   });
@@ -1584,7 +1590,9 @@ export async function registerRoutes(
   });
 
   app.post("/api/admin/motivational-stories", requireStaff, async (req, res) => {
-    const parsed = insertMotivationalStorySchema.safeParse(req.body);
+    const body = { ...req.body };
+    if ((req as any).session?.userId) body.userId = (req as any).session.userId;
+    const parsed = insertMotivationalStorySchema.safeParse(body);
     if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
     const story = await storage.createMotivationalStory(parsed.data);
     res.json(story);
@@ -1830,15 +1838,16 @@ export async function registerRoutes(
 
   // Admin Duas
   app.get("/api/admin/duas", requireStaff, async (req, res) => {
-    const { search, category, sort, limit, offset } = req.query;
-    const result = await storage.getDuas({ search: search as string, category: category as string, sort: sort as string, limit: limit ? Number(limit) : 50, offset: offset ? Number(offset) : 0 });
+    const { search, category, sort, limit, offset, userId } = req.query;
+    const result = await storage.getDuas({ search: search as string, category: category as string, sort: sort as string, limit: limit ? Number(limit) : 50, offset: offset ? Number(offset) : 0, userId: userId as string | undefined });
     res.json(result);
   });
 
   app.post("/api/admin/duas", requireStaff, async (req, res) => {
     const { title, slug, description, thumbnail, category, orderIndex, published } = req.body;
     if (!title || !slug) return res.status(400).json({ message: "Title and slug are required" });
-    const dua = await storage.createDua({ title, slug, description, thumbnail, category, orderIndex: orderIndex ?? 0, published: published ?? false });
+    const userId = (req as any).session?.userId ?? null;
+    const dua = await storage.createDua({ title, slug, description, thumbnail, category, orderIndex: orderIndex ?? 0, published: published ?? false, userId });
     res.json(dua);
   });
 

@@ -194,11 +194,12 @@ function AdminSidebar() {
     },
   ];
 
+  const isMod = (isModerator && !isAdmin) || !!viewAs;
   const visibleItems = managementItems.filter(item => {
-    if (item.permission === null) return !viewMeMode;
+    if (item.permission === null) return true;
     if (item.permission === "admin-only") return effectiveIsAdmin && !viewMeMode;
     if (item.permission === "staff-only") return effectiveIsAdmin || effectiveIsModerator || !!viewAs;
-    if (item.permission === "viewas-only") return !!viewAs || effectiveIsModerator;
+    if (item.permission === "viewas-only") return isMod;
     return effectiveHasPermission(item.permission);
   });
 

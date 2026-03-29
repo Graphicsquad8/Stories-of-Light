@@ -1,5 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/admin-layout";
+import { useAuth } from "@/lib/auth";
+import { useViewAs } from "@/lib/view-as";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -330,8 +332,23 @@ export default function AdminMotivationalStoriesPage() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
+  const { user, isAdmin } = useAuth();
+  const { viewAs, viewMeMode } = useViewAs();
+  const isContributor = !!viewAs || (!isAdmin && !viewMeMode);
+  const viewMeUserId = viewMeMode ? (viewAs?.id ?? user?.id) : undefined;
+
+  const motivQueryKey = viewMeUserId
+    ? ["/api/admin/motivational-stories", { userId: viewMeUserId }]
+    : ["/api/admin/motivational-stories"];
+
   const { data, isLoading } = useQuery<{ stories: MotivationalStory[]; total: number }>({
-    queryKey: ["/api/admin/motivational-stories"],
+    queryKey: motivQueryKey,
+    queryFn: async () => {
+      const params = new URLSearchParams({ limit: "50" });
+      if (viewMeUserId) params.set("userId", viewMeUserId);
+      const res = await fetch(`/api/admin/motivational-stories?${params}`, { credentials: "include" });
+      return res.json();
+    },
   });
 
   const stories = data?.stories || [];
@@ -404,9 +421,11 @@ export default function AdminMotivationalStoriesPage() {
             <h1 className="text-2xl font-bold" data-testid="text-admin-motivational-stories-title">Motivational Stories</h1>
             <p className="text-sm text-muted-foreground">Manage motivational stories and lessons</p>
           </div>
-          <Button onClick={openCreate} data-testid="button-add-motivational-story">
-            <Plus className="w-4 h-4 mr-2" /> Add Story
-          </Button>
+          {!isContributor && (
+            <Button onClick={openCreate} data-testid="button-add-motivational-story">
+              <Plus className="w-4 h-4 mr-2" /> Add Story
+            </Button>
+          )}
         </div>
 
         {stories.length > 0 && (
@@ -531,22 +550,26 @@ export default function AdminMotivationalStoriesPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <Button size="icon" variant="ghost" onClick={() => openEdit(story)} data-testid={`button-edit-story-${story.id}`}>
-                            <Pencil className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => duplicateMutation.mutate(story.id)}
-                            disabled={duplicateMutation.isPending}
-                            title="Duplicate story"
-                            data-testid={`button-duplicate-story-${story.id}`}
-                          >
-                            {duplicateMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Copy className="w-3.5 h-3.5" />}
-                          </Button>
-                          <Button size="icon" variant="ghost" onClick={() => handleDelete(story.id)} data-testid={`button-delete-story-${story.id}`}>
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
+                          {!isContributor && (
+                            <>
+                              <Button size="icon" variant="ghost" onClick={() => openEdit(story)} data-testid={`button-edit-story-${story.id}`}>
+                                <Pencil className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => duplicateMutation.mutate(story.id)}
+                                disabled={duplicateMutation.isPending}
+                                title="Duplicate story"
+                                data-testid={`button-duplicate-story-${story.id}`}
+                              >
+                                {duplicateMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Copy className="w-3.5 h-3.5" />}
+                              </Button>
+                              <Button size="icon" variant="ghost" onClick={() => handleDelete(story.id)} data-testid={`button-delete-story-${story.id}`}>
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
