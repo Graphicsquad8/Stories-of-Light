@@ -49,6 +49,7 @@ import {
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth";
 import { useState, useRef } from "react";
 import type { Category } from "@shared/schema";
 
@@ -96,6 +97,7 @@ const QUERY_KEY = "/api/categories?type=all";
 
 export default function AdminCategoriesPage() {
   const { toast } = useToast();
+  const { isAdmin } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCat, setEditingCat] = useState<CategoryWithCount | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -259,10 +261,12 @@ export default function AdminCategoriesPage() {
             Manage page names, descriptions, and cover images for all sections
           </p>
         </div>
-        <Button onClick={openCreate} data-testid="button-new-category">
-          <Plus className="w-4 h-4 mr-2" />
-          New Category
-        </Button>
+        {isAdmin && (
+          <Button onClick={openCreate} data-testid="button-new-category">
+            <Plus className="w-4 h-4 mr-2" />
+            New Category
+          </Button>
+        )}
       </div>
 
       <div className="space-y-3">
@@ -280,30 +284,32 @@ export default function AdminCategoriesPage() {
             return (
               <Card key={cat.id} className="p-4" data-testid={`card-category-${cat.slug}`}>
                 <div className="flex items-center gap-3">
-                  <div className="flex flex-col gap-0.5">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-6 w-6"
-                      onClick={() => handleMoveUp(cat, idx)}
-                      disabled={idx === 0 || reorderMutation.isPending}
-                      title="Move up"
-                      data-testid={`button-move-up-${cat.slug}`}
-                    >
-                      <ChevronUp className="w-3.5 h-3.5" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-6 w-6"
-                      onClick={() => handleMoveDown(cat, idx)}
-                      disabled={idx === (categories.length - 1) || reorderMutation.isPending}
-                      title="Move down"
-                      data-testid={`button-move-down-${cat.slug}`}
-                    >
-                      <ChevronDown className="w-3.5 h-3.5" />
-                    </Button>
-                  </div>
+                  {isAdmin && (
+                    <div className="flex flex-col gap-0.5">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-6 w-6"
+                        onClick={() => handleMoveUp(cat, idx)}
+                        disabled={idx === 0 || reorderMutation.isPending}
+                        title="Move up"
+                        data-testid={`button-move-up-${cat.slug}`}
+                      >
+                        <ChevronUp className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-6 w-6"
+                        onClick={() => handleMoveDown(cat, idx)}
+                        disabled={idx === (categories.length - 1) || reorderMutation.isPending}
+                        title="Move down"
+                        data-testid={`button-move-down-${cat.slug}`}
+                      >
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  )}
 
                   {cat.image ? (
                     <img src={cat.image} alt={cat.name} className="h-14 w-20 rounded object-cover shrink-0 border" />
@@ -330,40 +336,42 @@ export default function AdminCategoriesPage() {
                     )}
                   </div>
 
-                  <div className="flex items-center gap-1 shrink-0">
-                    <Button size="sm" variant="ghost" onClick={() => openEdit(cat)} data-testid={`button-edit-cat-${cat.slug}`}>
-                      <Edit className="w-4 h-4 mr-1" />
-                      Edit
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => duplicateMutation.mutate(cat)}
-                      disabled={duplicateMutation.isPending}
-                      data-testid={`button-duplicate-cat-${cat.slug}`}
-                      title="Duplicate category"
-                    >
-                      {duplicateMutation.isPending ? (
-                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                      ) : (
-                        <Copy className="w-4 h-4 mr-1" />
-                      )}
-                      Duplicate
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => {
-                        setDeleteTarget(cat.id);
-                        setDeleteDialogOpen(true);
-                      }}
-                      data-testid={`button-delete-cat-${cat.slug}`}
-                    >
-                      <Trash2 className="w-4 h-4 mr-1" />
-                      Delete
-                    </Button>
-                  </div>
+                  {isAdmin && (
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button size="sm" variant="ghost" onClick={() => openEdit(cat)} data-testid={`button-edit-cat-${cat.slug}`}>
+                        <Edit className="w-4 h-4 mr-1" />
+                        Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => duplicateMutation.mutate(cat)}
+                        disabled={duplicateMutation.isPending}
+                        data-testid={`button-duplicate-cat-${cat.slug}`}
+                        title="Duplicate category"
+                      >
+                        {duplicateMutation.isPending ? (
+                          <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                        ) : (
+                          <Copy className="w-4 h-4 mr-1" />
+                        )}
+                        Duplicate
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => {
+                          setDeleteTarget(cat.id);
+                          setDeleteDialogOpen(true);
+                        }}
+                        data-testid={`button-delete-cat-${cat.slug}`}
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Delete
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </Card>
             );
@@ -375,9 +383,10 @@ export default function AdminCategoriesPage() {
         )}
       </div>
 
-      <input ref={imageFileRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+      {isAdmin && <>
+        <input ref={imageFileRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>{editingCat ? "Edit Category / Page" : "New Category"}</DialogTitle>
@@ -487,30 +496,31 @@ export default function AdminCategoriesPage() {
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+        </Dialog>
 
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Category</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will remove the category. For section pages (Books, Motivational Stories, Duas), the public page will fall back to default content.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel data-testid="button-cancel-cat-delete">Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (deleteTarget) deleteMutation.mutate(deleteTarget);
-                setDeleteDialogOpen(false);
-              }}
-              data-testid="button-confirm-cat-delete"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Category</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will remove the category. For section pages (Books, Motivational Stories, Duas), the public page will fall back to default content.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel data-testid="button-cancel-cat-delete">Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (deleteTarget) deleteMutation.mutate(deleteTarget);
+                  setDeleteDialogOpen(false);
+                }}
+                data-testid="button-confirm-cat-delete"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </>}
     </AdminLayout>
   );
 }
