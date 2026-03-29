@@ -655,11 +655,14 @@ export default function StoryPage() {
   });
 
   useEffect(() => {
-    if (story && user) {
-      fetch(`/api/stories/${story.id}/track-read`, {
-        method: "POST",
-        credentials: "include",
-      }).catch(() => {});
+    if (story) {
+      fetch(`/api/stories/${story.id}/view`, { method: "POST" }).catch(() => {});
+      if (user) {
+        fetch(`/api/stories/${story.id}/track-read`, {
+          method: "POST",
+          credentials: "include",
+        }).catch(() => {});
+      }
     }
   }, [story?.id, user?.id]);
 

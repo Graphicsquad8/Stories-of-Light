@@ -33,7 +33,7 @@ import {
   bookParts, bookPages, footerPages,
   duas, duaParts, duaBookmarks
 } from "@shared/schema";
-import { eq, desc, and, ilike, sql, count, inArray, asc, gte, ne, isNull, isNotNull } from "drizzle-orm";
+import { eq, desc, and, ilike, sql, count, sum, inArray, asc, gte, ne, isNull, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 
@@ -73,6 +73,10 @@ export interface IStorage {
   getCategoryBookCounts(): Promise<Record<string, number>>;
   getCategoryMotivationalCounts(): Promise<Record<string, number>>;
   getCategoryDuaCounts(): Promise<Record<string, number>>;
+  getCategoryStoryViewCounts(): Promise<Record<string, number>>;
+  getCategoryBookViewCounts(): Promise<Record<string, number>>;
+  getCategoryMotivationalViewCounts(): Promise<Record<string, number>>;
+  getCategoryDuaViewCounts(): Promise<Record<string, number>>;
 
   getStories(opts?: { status?: string; categoryId?: string; featured?: boolean; search?: string; limit?: number; offset?: number }): Promise<StoryWithCategory[]>;
   getStoryById(id: string): Promise<StoryWithCategory | undefined>;
@@ -85,6 +89,7 @@ export interface IStorage {
   permanentDeleteStory(id: string): Promise<boolean>;
   getDeletedStories(): Promise<StoryWithCategory[]>;
   getStoryCount(status?: string): Promise<number>;
+  incrementStoryViews(id: string): Promise<void>;
   getRelatedStories(storyId: string, categoryId: string | null, limit?: number): Promise<StoryWithCategory[]>;
 
   getBooks(opts?: { type?: string; category?: string; search?: string; sort?: string; minRating?: number }): Promise<Book[]>;
@@ -387,6 +392,58 @@ export class DatabaseStorage implements IStorage {
     return map;
   }
 
+  async getCategoryStoryViewCounts(): Promise<Record<string, number>> {
+    const rows = await db
+      .select({ categoryId: stories.categoryId, total: sum(stories.views) })
+      .from(stories)
+      .where(and(isNull(stories.deletedAt), eq(stories.status, "published")))
+      .groupBy(stories.categoryId);
+    const map: Record<string, number> = {};
+    for (const r of rows) {
+      if (r.categoryId) map[r.categoryId] = Number(r.total) || 0;
+    }
+    return map;
+  }
+
+  async getCategoryBookViewCounts(): Promise<Record<string, number>> {
+    const rows = await db
+      .select({ name: books.category, total: sum(books.views) })
+      .from(books)
+      .where(and(isNull(books.deletedAt), isNotNull(books.category)))
+      .groupBy(books.category);
+    const map: Record<string, number> = {};
+    for (const r of rows) {
+      if (r.name) map[r.name] = Number(r.total) || 0;
+    }
+    return map;
+  }
+
+  async getCategoryMotivationalViewCounts(): Promise<Record<string, number>> {
+    const rows = await db
+      .select({ name: motivationalStories.category, total: sum(motivationalStories.views) })
+      .from(motivationalStories)
+      .where(and(isNull(motivationalStories.deletedAt), isNotNull(motivationalStories.category)))
+      .groupBy(motivationalStories.category);
+    const map: Record<string, number> = {};
+    for (const r of rows) {
+      if (r.name) map[r.name] = Number(r.total) || 0;
+    }
+    return map;
+  }
+
+  async getCategoryDuaViewCounts(): Promise<Record<string, number>> {
+    const rows = await db
+      .select({ name: duas.category, total: sum(duas.views) })
+      .from(duas)
+      .where(and(isNull(duas.deletedAt), isNotNull(duas.category)))
+      .groupBy(duas.category);
+    const map: Record<string, number> = {};
+    for (const r of rows) {
+      if (r.name) map[r.name] = Number(r.total) || 0;
+    }
+    return map;
+  }
+
   async getStories(opts?: { status?: string; categoryId?: string; featured?: boolean; search?: string; limit?: number; offset?: number }): Promise<StoryWithCategory[]> {
     const conditions: any[] = [isNull(stories.deletedAt)];
     if (opts?.status) conditions.push(eq(stories.status, opts.status));
@@ -473,6 +530,10 @@ export class DatabaseStorage implements IStorage {
     if (status) conditions.push(eq(stories.status, status));
     const [result] = await db.select({ count: count() }).from(stories).where(and(...conditions));
     return result?.count ?? 0;
+  }
+
+  async incrementStoryViews(id: string): Promise<void> {
+    await db.update(stories).set({ views: sql`${stories.views} + 1` }).where(eq(stories.id, id));
   }
 
   async getRelatedStories(storyId: string, categoryId: string | null, limit = 4): Promise<StoryWithCategory[]> {

@@ -46,6 +46,7 @@ import {
   Moon,
   Layers,
   Copy,
+  Eye,
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -64,7 +65,7 @@ function slugify(text: string): string {
 
 type CategoryType = "story" | "book" | "motivational-story" | "dua";
 
-type CategoryWithCount = Category & { contentCount?: number; storyCount?: number };
+type CategoryWithCount = Category & { contentCount?: number; storyCount?: number; totalViews?: number };
 
 const TYPE_META: Record<CategoryType, { label: string; color: string; icon: React.ReactNode; contentLabel: string }> = {
   story: {
@@ -341,6 +342,10 @@ export default function AdminCategoriesPage() {
                       </span>
                       <Badge variant="secondary" className="text-xs">
                         {getContentLabel(cat)}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs gap-1" data-testid={`badge-views-${cat.slug}`}>
+                        <Eye className="w-3 h-3" />
+                        {(cat.totalViews ?? 0).toLocaleString()} views
                       </Badge>
                     </div>
                     {cat.description && (

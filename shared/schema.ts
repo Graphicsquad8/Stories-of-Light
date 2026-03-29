@@ -43,6 +43,7 @@ export const stories = pgTable("stories", {
   youtubeUrl: text("youtube_url"),
   audioUrl: text("audio_url"),
   tags: text("tags").array(),
+  views: integer("views").default(0).notNull(),
   status: text("status").notNull().default("draft"),
   featured: boolean("featured").default(false),
   publishedAt: timestamp("published_at"),

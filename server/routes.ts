@@ -807,19 +807,24 @@ export async function registerRoutes(
 
     if (type === "all") {
       const cats = await storage.getCategories();
-      const [storyCounts, bookCounts, motivationalCounts, duaCounts] = await Promise.all([
+      const [storyCounts, bookCounts, motivationalCounts, duaCounts, storyViews, bookViews, motivationalViews, duaViews] = await Promise.all([
         storage.getCategoryStoryCounts(),
         storage.getCategoryBookCounts(),
         storage.getCategoryMotivationalCounts(),
         storage.getCategoryDuaCounts(),
+        storage.getCategoryStoryViewCounts(),
+        storage.getCategoryBookViewCounts(),
+        storage.getCategoryMotivationalViewCounts(),
+        storage.getCategoryDuaViewCounts(),
       ]);
       const withCounts = cats.map(c => {
         let contentCount = 0;
-        if (c.type === "story") contentCount = storyCounts[c.id] || 0;
-        else if (c.type === "book") contentCount = bookCounts[c.name] || 0;
-        else if (c.type === "motivational-story") contentCount = motivationalCounts[c.name] || 0;
-        else if (c.type === "dua") contentCount = duaCounts[c.name] || 0;
-        return { ...c, contentCount, storyCount: c.type === "story" ? contentCount : 0 };
+        let totalViews = 0;
+        if (c.type === "story") { contentCount = storyCounts[c.id] || 0; totalViews = storyViews[c.id] || 0; }
+        else if (c.type === "book") { contentCount = bookCounts[c.name] || 0; totalViews = bookViews[c.name] || 0; }
+        else if (c.type === "motivational-story") { contentCount = motivationalCounts[c.name] || 0; totalViews = motivationalViews[c.name] || 0; }
+        else if (c.type === "dua") { contentCount = duaCounts[c.name] || 0; totalViews = duaViews[c.name] || 0; }
+        return { ...c, contentCount, storyCount: c.type === "story" ? contentCount : 0, totalViews };
       });
       return res.json(withCounts);
     }
@@ -828,18 +833,27 @@ export async function registerRoutes(
     const cats = await storage.getCategories(effectiveType);
 
     if (effectiveType === "story") {
-      const storyCounts = await storage.getCategoryStoryCounts();
-      const withCounts = cats.map(c => ({ ...c, contentCount: storyCounts[c.id] || 0, storyCount: storyCounts[c.id] || 0 }));
+      const [storyCounts, storyViews] = await Promise.all([
+        storage.getCategoryStoryCounts(),
+        storage.getCategoryStoryViewCounts(),
+      ]);
+      const withCounts = cats.map(c => ({ ...c, contentCount: storyCounts[c.id] || 0, storyCount: storyCounts[c.id] || 0, totalViews: storyViews[c.id] || 0 }));
       return res.json(withCounts);
     }
 
     let countMap: Record<string, number> = {};
-    if (effectiveType === "book") countMap = await storage.getCategoryBookCounts();
-    else if (effectiveType === "motivational-story") countMap = await storage.getCategoryMotivationalCounts();
-    else if (effectiveType === "dua") countMap = await storage.getCategoryDuaCounts();
+    let viewMap: Record<string, number> = {};
+    if (effectiveType === "book") { countMap = await storage.getCategoryBookCounts(); viewMap = await storage.getCategoryBookViewCounts(); }
+    else if (effectiveType === "motivational-story") { countMap = await storage.getCategoryMotivationalCounts(); viewMap = await storage.getCategoryMotivationalViewCounts(); }
+    else if (effectiveType === "dua") { countMap = await storage.getCategoryDuaCounts(); viewMap = await storage.getCategoryDuaViewCounts(); }
 
-    const withCounts = cats.map(c => ({ ...c, contentCount: countMap[c.name] || 0 }));
+    const withCounts = cats.map(c => ({ ...c, contentCount: countMap[c.name] || 0, totalViews: viewMap[c.name] || 0 }));
     res.json(withCounts);
+  });
+
+  app.post("/api/stories/:id/view", async (req, res) => {
+    await storage.incrementStoryViews(req.params.id);
+    res.json({ success: true });
   });
 
   app.get("/api/categories/:slug", async (req, res) => {
