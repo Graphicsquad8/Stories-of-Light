@@ -51,6 +51,7 @@ import {
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
+import { useViewAs } from "@/lib/view-as";
 import { useState, useRef } from "react";
 import type { Category } from "@shared/schema";
 
@@ -119,8 +120,9 @@ export default function AdminCategoriesPage() {
   const [catType, setCatType] = useState<CategoryType>("story");
   const [uploadingImage, setUploadingImage] = useState(false);
   const imageFileRef = useRef<HTMLInputElement>(null);
+  const { viewAs, viewMeMode } = useViewAs();
 
-  const isContributor = !isAdmin;
+  const isContributor = !!viewAs || (!isAdmin && !viewMeMode);
 
   const { data: categories, isLoading } = useQuery<CategoryWithCount[]>({
     queryKey: [QUERY_KEY],

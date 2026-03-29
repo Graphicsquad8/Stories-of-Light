@@ -13,11 +13,14 @@ interface ViewAsContextType {
   viewAs: ViewAsContributor | null;
   setViewAs: (contributor: ViewAsContributor | null) => void;
   clearViewAs: () => void;
+  viewMeMode: boolean;
+  setViewMeMode: (mode: boolean) => void;
 }
 
 const ViewAsContext = createContext<ViewAsContextType | null>(null);
 
 const STORAGE_KEY = "admin_view_as_contributor";
+const VIEW_ME_KEY = "admin_view_me_mode";
 
 export function ViewAsProvider({ children }: { children: React.ReactNode }) {
   const [viewAs, setViewAsState] = useState<ViewAsContributor | null>(() => {
@@ -26,6 +29,14 @@ export function ViewAsProvider({ children }: { children: React.ReactNode }) {
       return stored ? JSON.parse(stored) : null;
     } catch {
       return null;
+    }
+  });
+
+  const [viewMeMode, setViewMeModeState] = useState<boolean>(() => {
+    try {
+      return sessionStorage.getItem(VIEW_ME_KEY) === "true";
+    } catch {
+      return false;
     }
   });
 
@@ -40,8 +51,13 @@ export function ViewAsProvider({ children }: { children: React.ReactNode }) {
 
   const clearViewAs = useCallback(() => setViewAs(null), [setViewAs]);
 
+  const setViewMeMode = useCallback((mode: boolean) => {
+    setViewMeModeState(mode);
+    sessionStorage.setItem(VIEW_ME_KEY, mode ? "true" : "false");
+  }, []);
+
   return (
-    <ViewAsContext.Provider value={{ viewAs, setViewAs, clearViewAs }}>
+    <ViewAsContext.Provider value={{ viewAs, setViewAs, clearViewAs, viewMeMode, setViewMeMode }}>
       {children}
     </ViewAsContext.Provider>
   );

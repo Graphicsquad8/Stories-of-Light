@@ -25,7 +25,7 @@ import {
   LayoutDashboard, FileText, FolderOpen, LogOut, BookOpen,
   Sun, Moon, ExternalLink, Book, Settings, Lightbulb, Library,
   Trash2, Users, ShieldCheck, ChevronRight, LayoutTemplate, UserCircle,
-  ArrowLeftRight,
+  Eye, UserCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
@@ -60,7 +60,7 @@ function ThemeToggle() {
 function AdminSidebar() {
   const [location] = useLocation();
   const { logout, isAdmin, isModerator, hasPermission, user } = useAuth();
-  const { viewAs, clearViewAs } = useViewAs();
+  const { viewAs, clearViewAs, viewMeMode, setViewMeMode } = useViewAs();
 
   const effectiveIsAdmin = viewAs ? viewAs.role === "admin" : isAdmin;
   const effectiveIsModerator = viewAs ? viewAs.role === "moderator" : isModerator;
@@ -195,8 +195,8 @@ function AdminSidebar() {
   ];
 
   const visibleItems = managementItems.filter(item => {
-    if (item.permission === null) return true;
-    if (item.permission === "admin-only") return effectiveIsAdmin;
+    if (item.permission === null) return !viewMeMode;
+    if (item.permission === "admin-only") return effectiveIsAdmin && !viewMeMode;
     if (item.permission === "staff-only") return effectiveIsAdmin || effectiveIsModerator || !!viewAs;
     if (item.permission === "viewas-only") return !!viewAs || effectiveIsModerator;
     return effectiveHasPermission(item.permission);
@@ -233,17 +233,43 @@ function AdminSidebar() {
               </div>
               <button
                 onClick={clearViewAs}
-                title="Switch to Admin Mode"
-                data-testid="button-switch-admin-mode-sidebar"
+                title="View Me — Return to Admin"
+                data-testid="button-view-me-admin"
                 className="shrink-0 p-1 rounded-md text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-800 transition-colors"
               >
-                <ArrowLeftRight className="w-3.5 h-3.5" />
+                <UserCheck className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
         ) : (isModerator && !isAdmin) ? (
-          <div className="px-4 pt-2 pb-1">
-            <Badge variant="secondary" className="text-xs">Moderator</Badge>
+          <div className="mx-3 mt-2 mb-1 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-2.5">
+            <div className="flex items-center gap-2">
+              <Avatar className="h-7 w-7 shrink-0">
+                <AvatarImage src={user?.avatarUrl ?? ""} alt={user?.name || user?.username || ""} />
+                <AvatarFallback className="text-[9px] bg-amber-100 text-amber-700">
+                  {((user?.name || user?.username) ?? "M").slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-semibold text-amber-900 dark:text-amber-100 truncate">{user?.name || user?.username}</p>
+                <p className="text-[10px] text-amber-700 dark:text-amber-300">
+                  {viewMeMode ? "View Me — Edit Mode" : "Moderator View"}
+                </p>
+              </div>
+              <button
+                onClick={() => setViewMeMode(!viewMeMode)}
+                title={viewMeMode ? "Exit Edit Mode" : "View Me — Switch to Edit Mode"}
+                data-testid="button-view-me-moderator"
+                className={cn(
+                  "shrink-0 p-1 rounded-md transition-colors",
+                  viewMeMode
+                    ? "bg-amber-600 text-white hover:bg-amber-700"
+                    : "text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-800"
+                )}
+              >
+                <Eye className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         ) : null}
 

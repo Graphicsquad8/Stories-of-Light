@@ -1089,9 +1089,9 @@ function GraphView({ data, isLoading }: { data?: DashboardData; isLoading: boole
 
 export default function AdminDashboardPage() {
   const [viewMode, setViewMode] = useState<"normal" | "graph">("normal");
-  const { viewAsUser } = useViewAs();
+  const { viewAs, viewMeMode } = useViewAs();
   const { isAdmin } = useAuth();
-  const isContributor = !!viewAsUser || !isAdmin;
+  const isContributor = !!viewAs || (!isAdmin && !viewMeMode);
 
   const { data, isLoading } = useQuery<DashboardData>({
     queryKey: ["/api/admin/dashboard"],
