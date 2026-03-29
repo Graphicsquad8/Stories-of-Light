@@ -1090,7 +1090,8 @@ function GraphView({ data, isLoading }: { data?: DashboardData; isLoading: boole
 export default function AdminDashboardPage() {
   const [viewMode, setViewMode] = useState<"normal" | "graph">("normal");
   const { viewAsUser } = useViewAs();
-  const isContributor = !!viewAsUser;
+  const { isAdmin } = useAuth();
+  const isContributor = !!viewAsUser || !isAdmin;
 
   const { data, isLoading } = useQuery<DashboardData>({
     queryKey: ["/api/admin/dashboard"],
@@ -1106,7 +1107,7 @@ export default function AdminDashboardPage() {
       sub: `${data.content.stories.published} published · ${data.content.stories.drafts} drafts`,
       icon: FileText,
       color: "text-primary",
-      href: "/image/stories",
+      href: isContributor ? undefined : "/image/stories",
     },
     {
       label: "Duas",
@@ -1114,7 +1115,7 @@ export default function AdminDashboardPage() {
       sub: `${data.content.duas.published} published`,
       icon: MessageSquare,
       color: "text-violet-600 dark:text-violet-400",
-      href: "/image/duas",
+      href: isContributor ? undefined : "/image/duas",
     },
     {
       label: "Books",
@@ -1122,7 +1123,7 @@ export default function AdminDashboardPage() {
       sub: `${data.content.books.free} free · ${data.content.books.paid} paid`,
       icon: BookOpen,
       color: "text-amber-600 dark:text-amber-400",
-      href: "/image/books",
+      href: isContributor ? undefined : "/image/books",
     },
     {
       label: "Motivational",
@@ -1130,7 +1131,7 @@ export default function AdminDashboardPage() {
       sub: `${data.content.motivational.published} published`,
       icon: Star,
       color: "text-emerald-600 dark:text-emerald-400",
-      href: "/image/motivational",
+      href: isContributor ? undefined : "/image/motivational",
     },
     {
       label: "Users",
@@ -1138,7 +1139,7 @@ export default function AdminDashboardPage() {
       sub: "registered accounts",
       icon: Users,
       color: "text-blue-600 dark:text-blue-400",
-      href: "/image/users",
+      href: isContributor ? undefined : "/image/users",
     },
     {
       label: "Total Views",
