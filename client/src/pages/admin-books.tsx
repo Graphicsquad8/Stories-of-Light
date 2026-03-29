@@ -323,7 +323,7 @@ export default function AdminBooksPage() {
 
   const { user, isAdmin } = useAuth();
   const { viewAs, viewMeMode } = useViewAs();
-  const isContributor = !!viewAs || (!isAdmin && !viewMeMode);
+  const isContributor = !viewMeMode && (!!viewAs || !isAdmin);
   const viewMeUserId = viewMeMode ? (viewAs?.id ?? user?.id) : undefined;
 
   const booksQueryKey = viewMeUserId ? ["/api/books", { userId: viewMeUserId }] : ["/api/books"];

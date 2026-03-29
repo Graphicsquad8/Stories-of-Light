@@ -37,7 +37,7 @@ export default function AdminStoriesPage() {
 
   const { user, isAdmin } = useAuth();
   const { viewAs, viewMeMode } = useViewAs();
-  const isContributor = !!viewAs || (!isAdmin && !viewMeMode);
+  const isContributor = !viewMeMode && (!!viewAs || !isAdmin);
   const viewMeUserId = viewMeMode ? (viewAs?.id ?? user?.id) : undefined;
 
   const [matchCat, catParams] = useRoute("/image/stories/category/:slug");

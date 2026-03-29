@@ -327,7 +327,7 @@ const ROLE_COLORS: Record<string, string> = {
 
 
 function TopContributors({ contributors, isLoading }: { contributors: Contributor[]; isLoading: boolean }) {
-  const { setViewAs } = useViewAs();
+  const { setViewAs, setViewMeMode } = useViewAs();
   const { isAdmin } = useAuth();
   const [, navigate] = useLocation();
 
@@ -341,6 +341,7 @@ function TopContributors({ contributors, isLoading }: { contributors: Contributo
       permissions: c.permissions,
       avatar_url: c.avatar_url,
     });
+    setViewMeMode(true);
     navigate("/image");
   };
 
@@ -1091,7 +1092,7 @@ export default function AdminDashboardPage() {
   const [viewMode, setViewMode] = useState<"normal" | "graph">("normal");
   const { viewAs, viewMeMode } = useViewAs();
   const { isAdmin } = useAuth();
-  const isContributor = !!viewAs || (!isAdmin && !viewMeMode);
+  const isContributor = !viewMeMode && (!!viewAs || !isAdmin);
 
   const { data, isLoading } = useQuery<DashboardData>({
     queryKey: ["/api/admin/dashboard"],

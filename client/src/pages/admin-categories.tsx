@@ -122,7 +122,7 @@ export default function AdminCategoriesPage() {
   const imageFileRef = useRef<HTMLInputElement>(null);
   const { viewAs, viewMeMode } = useViewAs();
 
-  const isContributor = !!viewAs || (!isAdmin && !viewMeMode);
+  const isContributor = !viewMeMode && (!!viewAs || !isAdmin);
 
   const { data: categories, isLoading } = useQuery<CategoryWithCount[]>({
     queryKey: [QUERY_KEY],
