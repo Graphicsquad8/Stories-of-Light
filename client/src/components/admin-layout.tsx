@@ -372,7 +372,23 @@ function AdminSidebar() {
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading, isStaff } = useAuth();
-  const { viewAs, clearViewAs } = useViewAs();
+  const { viewAs, clearViewAs, setViewAs, setViewMeMode } = useViewAs();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const viewasId = params.get("viewas");
+    if (!viewasId) return;
+    window.history.replaceState({}, "", window.location.pathname);
+    fetch(`/api/admin/contributors/${viewasId}/stats`, { credentials: "include" })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (!data?.contributor) return;
+        const c = data.contributor;
+        setViewAs({ id: c.id, username: c.username, name: c.name, role: c.role, permissions: c.permissions, avatar_url: c.avatar_url });
+        setViewMeMode(true);
+      })
+      .catch(() => {});
+  }, []);
 
   if (isLoading) {
     return (

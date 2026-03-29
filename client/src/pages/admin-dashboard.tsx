@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { useViewAs } from "@/lib/view-as";
 import { useAuth } from "@/lib/auth";
 import { AdminLayout } from "@/components/admin-layout";
@@ -327,22 +327,11 @@ const ROLE_COLORS: Record<string, string> = {
 
 
 function TopContributors({ contributors, isLoading }: { contributors: Contributor[]; isLoading: boolean }) {
-  const { setViewAs, setViewMeMode } = useViewAs();
   const { isAdmin } = useAuth();
-  const [, navigate] = useLocation();
 
   const handleContributorClick = (c: Contributor) => {
     if (!isAdmin) return;
-    setViewAs({
-      id: c.id,
-      username: c.username,
-      name: c.name,
-      role: c.role,
-      permissions: c.permissions,
-      avatar_url: c.avatar_url,
-    });
-    setViewMeMode(true);
-    navigate("/image");
+    window.open(`/image?viewas=${c.id}`, "_blank");
   };
 
   return (
