@@ -95,6 +95,14 @@ const TYPE_META: Record<CategoryType, { label: string; color: string; icon: Reac
 
 const QUERY_KEY = "/api/categories?type=all";
 
+function getCategoryPublicUrl(cat: CategoryWithCount): string {
+  if (cat.type === "story") return `/${cat.urlSlug || ""}`;
+  if (cat.type === "book") return "/books";
+  if (cat.type === "motivational-story") return "/motivational-stories";
+  if (cat.type === "dua") return "/duas";
+  return "/";
+}
+
 export default function AdminCategoriesPage() {
   const { toast } = useToast();
   const { isAdmin } = useAuth();
@@ -111,8 +119,12 @@ export default function AdminCategoriesPage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const imageFileRef = useRef<HTMLInputElement>(null);
 
+  const isContributor = !isAdmin;
+
   const { data: categories, isLoading } = useQuery<CategoryWithCount[]>({
     queryKey: [QUERY_KEY],
+    refetchInterval: 30 * 1000,
+    refetchOnWindowFocus: true,
   });
 
   const saveMutation = useMutation({
@@ -258,7 +270,7 @@ export default function AdminCategoriesPage() {
         <div>
           <h1 className="text-2xl font-bold" data-testid="text-categories-title">Categories</h1>
           <p className="text-muted-foreground mt-1">
-            Manage page names, descriptions, and cover images for all sections
+            {isContributor ? "Browse categories and view published content" : "Manage page names, descriptions, and cover images for all sections"}
           </p>
         </div>
         {isAdmin && (
@@ -281,8 +293,8 @@ export default function AdminCategoriesPage() {
         ) : categories && categories.length > 0 ? (
           categories.map((cat, idx) => {
             const meta = TYPE_META[(cat.type as CategoryType) || "story"];
-            return (
-              <Card key={cat.id} className="p-4" data-testid={`card-category-${cat.slug}`}>
+            const cardContent = (
+              <Card key={isContributor ? undefined : cat.id} className={`p-4${isContributor ? " hover:shadow-md hover:border-primary/40 transition-all cursor-pointer" : ""}`} data-testid={`card-category-${cat.slug}`}>
                 <div className="flex items-center gap-3">
                   {isAdmin && (
                     <div className="flex flex-col gap-0.5">
@@ -375,6 +387,9 @@ export default function AdminCategoriesPage() {
                 </div>
               </Card>
             );
+            return isContributor ? (
+              <a key={cat.id} href={getCategoryPublicUrl(cat)}>{cardContent}</a>
+            ) : cardContent;
           })
         ) : (
           <Card className="p-12 text-center">
