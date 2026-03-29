@@ -170,7 +170,7 @@ function TrendingCard({ item, category, isContributor }: {
   const blurb = item.excerpt || item.description || null;
   const href = getItemUrl(isContributor, category, item);
   return (
-    <a href={href} target={isContributor ? "_blank" : undefined} rel={isContributor ? "noopener noreferrer" : undefined} className="border rounded-xl p-5 hover:shadow-md hover:border-primary/40 transition-all bg-card flex flex-col gap-3 min-h-[160px] cursor-pointer group" data-testid={`card-trending-${item.id}`}>
+    <a href={href} className="border rounded-xl p-5 hover:shadow-md hover:border-primary/40 transition-all bg-card flex flex-col gap-3 min-h-[160px] cursor-pointer group" data-testid={`card-trending-${item.id}`}>
       <div className={`h-1.5 w-14 rounded-full ${CATEGORY_COLORS[category]}`} />
       <div className="flex-1 flex flex-col gap-1.5">
         <p className="text-sm font-semibold line-clamp-2 leading-snug group-hover:text-primary transition-colors">{item.title}</p>
@@ -255,7 +255,7 @@ function TrendingSection({ data, isLoading, isContributor }: { data?: DashboardD
                       {CATEGORY_LABELS[cat]}
                       {category === cat && <span className="w-1.5 h-1.5 rounded-full bg-primary ml-auto" />}
                     </button>
-                    <a href={getListUrl(isContributor, cat as ContentTab)} target={isContributor ? "_blank" : undefined} rel={isContributor ? "noopener noreferrer" : undefined} className="px-2 py-2 text-muted-foreground hover:text-primary" title={`Go to ${CATEGORY_LABELS[cat]}`} data-testid={`link-trending-goto-${cat}`}>
+                    <a href={getListUrl(isContributor, cat as ContentTab)} className="px-2 py-2 text-muted-foreground hover:text-primary" title={`Go to ${CATEGORY_LABELS[cat]}`} data-testid={`link-trending-goto-${cat}`}>
                       <ChevronRight className="w-3.5 h-3.5" />
                     </a>
                   </div>
@@ -598,7 +598,7 @@ function RecentActivitySection({ data, isLoading, isContributor }: { data?: Dash
                       {CONTENT_LABELS[t]}
                       {tab === t && <span className="w-1.5 h-1.5 rounded-full bg-primary ml-auto" />}
                     </button>
-                    <a href={getListUrl(isContributor, t)} target={isContributor ? "_blank" : undefined} rel={isContributor ? "noopener noreferrer" : undefined} className="px-2 py-2 text-muted-foreground hover:text-primary" title={`Go to ${CONTENT_LABELS[t]}`} data-testid={`link-activity-goto-${t}`}>
+                    <a href={getListUrl(isContributor, t)} className="px-2 py-2 text-muted-foreground hover:text-primary" title={`Go to ${CONTENT_LABELS[t]}`} data-testid={`link-activity-goto-${t}`}>
                       <ChevronRight className="w-3.5 h-3.5" />
                     </a>
                   </div>
@@ -620,7 +620,7 @@ function RecentActivitySection({ data, isLoading, isContributor }: { data?: Dash
           <>
             <div className="grid grid-cols-3 gap-4">
               {visible.map((item) => (
-                <a key={item.id} href={getItemUrl(isContributor, tab, item)} target={isContributor ? "_blank" : undefined} rel={isContributor ? "noopener noreferrer" : undefined} className="border rounded-xl p-5 hover:shadow-md hover:border-primary/40 transition-all bg-card flex flex-col gap-3 min-h-[160px] cursor-pointer group" data-testid={`card-activity-${item.id}`}>
+                <a key={item.id} href={getItemUrl(isContributor, tab, item)} className="border rounded-xl p-5 hover:shadow-md hover:border-primary/40 transition-all bg-card flex flex-col gap-3 min-h-[160px] cursor-pointer group" data-testid={`card-activity-${item.id}`}>
                   <div className={`h-1.5 w-14 rounded-full ${CONTENT_COLORS[tab]}`} />
                   <div className="flex-1 flex flex-col gap-1.5">
                     <p className="text-sm font-semibold line-clamp-2 leading-snug group-hover:text-primary transition-colors">{item.title}</p>
@@ -709,7 +709,7 @@ function MostBookmarkedSection({ data, isLoading, isContributor }: { data?: Dash
                       {CONTENT_LABELS[t]}
                       {tab === t && <span className="w-1.5 h-1.5 rounded-full bg-primary ml-auto" />}
                     </button>
-                    <a href={getListUrl(isContributor, t)} target={isContributor ? "_blank" : undefined} rel={isContributor ? "noopener noreferrer" : undefined} className="px-2 py-2 text-muted-foreground hover:text-primary" title={`Go to ${CONTENT_LABELS[t]}`} data-testid={`link-bookmarked-goto-${t}`}>
+                    <a href={getListUrl(isContributor, t)} className="px-2 py-2 text-muted-foreground hover:text-primary" title={`Go to ${CONTENT_LABELS[t]}`} data-testid={`link-bookmarked-goto-${t}`}>
                       <ChevronRight className="w-3.5 h-3.5" />
                     </a>
                   </div>
@@ -731,7 +731,7 @@ function MostBookmarkedSection({ data, isLoading, isContributor }: { data?: Dash
           <>
             <div className="grid grid-cols-3 gap-4">
               {visible.map((item, i) => (
-                <a key={item.id} href={getItemUrl(isContributor, tab, item)} target={isContributor ? "_blank" : undefined} rel={isContributor ? "noopener noreferrer" : undefined} className="border rounded-xl p-5 hover:shadow-md hover:border-primary/40 transition-all bg-card flex flex-col gap-3 min-h-[160px] cursor-pointer group" data-testid={`card-bookmarked-${item.id}`}>
+                <a key={item.id} href={getItemUrl(isContributor, tab, item)} className="border rounded-xl p-5 hover:shadow-md hover:border-primary/40 transition-all bg-card flex flex-col gap-3 min-h-[160px] cursor-pointer group" data-testid={`card-bookmarked-${item.id}`}>
                   <div className={`h-1.5 w-14 rounded-full ${CONTENT_COLORS[tab]}`} />
                   <div className="flex-1 flex flex-col gap-1.5">
                     <p className="text-sm font-semibold line-clamp-2 leading-snug group-hover:text-primary transition-colors">{item.title}</p>
