@@ -25,7 +25,7 @@ import {
   LayoutDashboard, FileText, FolderOpen, LogOut, BookOpen,
   Sun, Moon, ExternalLink, Book, Settings, Lightbulb, Library,
   Trash2, Users, ShieldCheck, ChevronRight, LayoutTemplate, UserCircle,
-  Eye, UserCheck,
+  Eye, UserCheck, Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
@@ -304,6 +304,14 @@ function AdminSidebar() {
                                 <Link href="/image/stories" data-testid="link-admin-all-stories">
                                   <FileText className="w-3.5 h-3.5" />
                                   <span>All Articles</span>
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                            <SidebarMenuSubItem>
+                              <SidebarMenuSubButton asChild data-active={location === "/image/stories/recent"}>
+                                <Link href="/image/stories/recent" data-testid="link-admin-recent-articles">
+                                  <Clock className="w-3.5 h-3.5" />
+                                  <span>Recent Article</span>
                                 </Link>
                               </SidebarMenuSubButton>
                             </SidebarMenuSubItem>

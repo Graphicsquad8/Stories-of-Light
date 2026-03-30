@@ -19,7 +19,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, Trash2, Eye, Edit, Clock, Copy } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Plus, Search, Trash2, Eye, Edit, Copy, Clock } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -40,8 +47,10 @@ export default function AdminStoriesPage() {
   const isContributor = !viewMeMode && (!!viewAs || !isAdmin);
   const viewMeUserId = viewMeMode ? (viewAs?.id ?? user?.id) : undefined;
 
+  const [matchRecent] = useRoute("/image/stories/recent");
   const [matchCat, catParams] = useRoute("/image/stories/category/:slug");
   const categorySlug = matchCat ? catParams?.slug : null;
+  const effectiveStatusFilter = matchRecent ? "recent" : statusFilter;
 
   const { data: categories } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
@@ -51,8 +60,8 @@ export default function AdminStoriesPage() {
 
   const queryParams = new URLSearchParams();
   if (search) queryParams.set("search", search);
-  if (statusFilter && statusFilter !== "all" && statusFilter !== "recent") queryParams.set("status", statusFilter);
-  if (statusFilter === "recent") queryParams.set("limit", "20");
+  if (effectiveStatusFilter && effectiveStatusFilter !== "all" && effectiveStatusFilter !== "recent") queryParams.set("status", effectiveStatusFilter);
+  if (effectiveStatusFilter === "recent") queryParams.set("limit", "20");
   if (activeCategory?.id) queryParams.set("categoryId", activeCategory.id);
   if (viewMeUserId) queryParams.set("userId", viewMeUserId);
   const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
@@ -125,8 +134,10 @@ export default function AdminStoriesPage() {
     setDeleteTarget(null);
   };
 
-  const pageTitle = activeCategory ? activeCategory.name : "All Articles";
-  const pageDescription = activeCategory
+  const pageTitle = matchRecent ? "Recent Article" : activeCategory ? activeCategory.name : "All Articles";
+  const pageDescription = matchRecent
+    ? "Recently uploaded articles across the website"
+    : activeCategory
     ? `Manage articles in ${activeCategory.name}`
     : "Manage all your stories and articles";
 
@@ -159,25 +170,17 @@ export default function AdminStoriesPage() {
               data-testid="input-search-stories"
             />
           </div>
-          <div className="flex gap-1 flex-wrap">
-            {[
-              { value: "all", label: "All Status" },
-              { value: "published", label: "Published" },
-              { value: "draft", label: "Draft" },
-              { value: "recent", label: "Recent Article" },
-            ].map(({ value, label }) => (
-              <Button
-                key={value}
-                variant={statusFilter === value ? "default" : "outline"}
-                size="sm"
-                onClick={() => setStatusFilter(value)}
-                data-testid={`button-filter-${value}`}
-              >
-                {value === "recent" && <Clock className="w-3.5 h-3.5 mr-1.5" />}
-                {label}
-              </Button>
-            ))}
-          </div>
+          <Select value={matchRecent ? "recent" : statusFilter} onValueChange={setStatusFilter} disabled={matchRecent}>
+            <SelectTrigger className="w-36" data-testid="select-status-filter">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all" data-testid="filter-all">All Status</SelectItem>
+              <SelectItem value="published" data-testid="filter-published">Published</SelectItem>
+              <SelectItem value="draft" data-testid="filter-draft">Draft</SelectItem>
+              {matchRecent && <SelectItem value="recent">Recent Article</SelectItem>}
+            </SelectContent>
+          </Select>
           {!isContributor && selectedIds.size > 0 && (
             <Button
               variant="destructive"

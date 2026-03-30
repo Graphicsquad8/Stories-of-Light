@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useViewAs } from "@/lib/view-as";
 import { useAuth } from "@/lib/auth";
 import { AdminLayout } from "@/components/admin-layout";
@@ -327,11 +327,15 @@ const ROLE_COLORS: Record<string, string> = {
 
 
 function TopContributors({ contributors, isLoading }: { contributors: Contributor[]; isLoading: boolean }) {
+  const { setViewAs, setViewMeMode } = useViewAs();
   const { isAdmin } = useAuth();
+  const [, navigate] = useLocation();
 
   const handleContributorClick = (c: Contributor) => {
     if (!isAdmin) return;
-    window.open(`/image?viewas=${c.id}`, "_blank");
+    setViewAs({ id: c.id, username: c.username, name: c.name, role: c.role, permissions: c.permissions, avatar_url: c.avatar_url });
+    setViewMeMode(true);
+    navigate("/image");
   };
 
   return (
@@ -1081,7 +1085,7 @@ export default function AdminDashboardPage() {
   const [viewMode, setViewMode] = useState<"normal" | "graph">("normal");
   const { viewAs, viewMeMode } = useViewAs();
   const { isAdmin } = useAuth();
-  const isContributor = !viewMeMode && (!!viewAs || !isAdmin);
+  const isContributor = !!viewAs || !isAdmin;
 
   const { data, isLoading } = useQuery<DashboardData>({
     queryKey: ["/api/admin/dashboard"],
