@@ -1571,8 +1571,19 @@ export async function registerRoutes(
     res.json(related);
   });
 
+  app.get("/api/admin/motivational-stories/stats", requireStaff, async (_req, res) => {
+    const [total, published, totalViews, recentCount, ratingDist] = await Promise.all([
+      storage.getMotivationalStoryCount(),
+      storage.getMotivationalStoryCount(true),
+      storage.getMotivationalTotalViews(),
+      storage.getRecentMotivationalCount(30),
+      storage.getMotivationalRatingDistribution(),
+    ]);
+    res.json({ total, published, totalViews, recentCount, ...ratingDist });
+  });
+
   app.get("/api/admin/motivational-stories", requireStaff, async (req, res) => {
-    const { category, search, sort, limit, offset, userId } = req.query;
+    const { category, search, sort, limit, offset, userId, startDate, endDate } = req.query;
     const result = await storage.getMotivationalStories({
       category: category as string,
       search: search as string,
@@ -1580,6 +1591,8 @@ export async function registerRoutes(
       limit: limit ? parseInt(limit as string) : 50,
       offset: offset ? parseInt(offset as string) : 0,
       userId: userId as string | undefined,
+      startDate: startDate as string | undefined,
+      endDate: endDate as string | undefined,
     });
     res.json(result);
   });

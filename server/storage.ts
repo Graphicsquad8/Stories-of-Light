@@ -159,7 +159,7 @@ export interface IStorage {
   setSetting(key: string, value: string): Promise<void>;
   getAllSettings(): Promise<Record<string, string>>;
 
-  getMotivationalStories(opts?: { category?: string; search?: string; sort?: string; published?: boolean; limit?: number; offset?: number; userId?: string }): Promise<{ stories: MotivationalStory[]; total: number }>;
+  getMotivationalStories(opts?: { category?: string; search?: string; sort?: string; published?: boolean; limit?: number; offset?: number; userId?: string; startDate?: string; endDate?: string }): Promise<{ stories: MotivationalStory[]; total: number }>;
   getMotivationalStoryById(id: string): Promise<MotivationalStoryWithLessons | undefined>;
   getMotivationalStoryBySlug(slug: string): Promise<MotivationalStoryWithLessons | undefined>;
   createMotivationalStory(story: InsertMotivationalStory): Promise<MotivationalStory>;
@@ -170,6 +170,9 @@ export interface IStorage {
   getDeletedMotivationalStories(): Promise<MotivationalStory[]>;
   duplicateMotivationalStory(id: string): Promise<MotivationalStory>;
   getMotivationalStoryCount(published?: boolean): Promise<number>;
+  getMotivationalTotalViews(): Promise<number>;
+  getRecentMotivationalCount(days: number): Promise<number>;
+  getMotivationalRatingDistribution(): Promise<{ fiveStarCount: number; fourStarCount: number }>;
 
   getDuas(opts?: { published?: boolean; search?: string; category?: string; sort?: string; limit?: number; offset?: number; userId?: string }): Promise<{ duas: Dua[]; total: number }>;
   getDuaCategories(): Promise<string[]>;
@@ -878,12 +881,14 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  async getMotivationalStories(opts?: { category?: string; search?: string; sort?: string; published?: boolean; limit?: number; offset?: number; userId?: string }): Promise<{ stories: MotivationalStory[]; total: number }> {
+  async getMotivationalStories(opts?: { category?: string; search?: string; sort?: string; published?: boolean; limit?: number; offset?: number; userId?: string; startDate?: string; endDate?: string }): Promise<{ stories: MotivationalStory[]; total: number }> {
     const conditions: any[] = [isNull(motivationalStories.deletedAt)];
     if (opts?.published !== undefined) conditions.push(eq(motivationalStories.published, opts.published));
     if (opts?.category) conditions.push(eq(motivationalStories.category, opts.category));
     if (opts?.search) conditions.push(ilike(motivationalStories.title, `%${opts.search}%`));
     if (opts?.userId) conditions.push(eq(motivationalStories.userId, opts.userId));
+    if (opts?.startDate) conditions.push(gte(motivationalStories.createdAt, new Date(opts.startDate)));
+    if (opts?.endDate) conditions.push(lte(motivationalStories.createdAt, new Date(opts.endDate)));
     const where = and(...conditions);
 
     let orderBy;
@@ -894,8 +899,28 @@ export class DatabaseStorage implements IStorage {
     }
 
     const [totalResult] = await db.select({ count: count() }).from(motivationalStories).where(where);
-    const rows = await db.select().from(motivationalStories).where(where).orderBy(orderBy).limit(opts?.limit ?? 12).offset(opts?.offset ?? 0);
+    const rows = await db.select().from(motivationalStories).where(where).orderBy(orderBy).limit(opts?.limit ?? 50).offset(opts?.offset ?? 0);
     return { stories: rows, total: totalResult?.count ?? 0 };
+  }
+
+  async getMotivationalTotalViews(): Promise<number> {
+    const [result] = await db.select({ total: sum(motivationalStories.views) }).from(motivationalStories).where(isNull(motivationalStories.deletedAt));
+    return Number(result?.total) || 0;
+  }
+
+  async getRecentMotivationalCount(days: number): Promise<number> {
+    const since = new Date(Date.now() - days * 86400000);
+    const [result] = await db.select({ count: count() }).from(motivationalStories)
+      .where(and(isNull(motivationalStories.deletedAt), gte(motivationalStories.createdAt, since)));
+    return result?.count ?? 0;
+  }
+
+  async getMotivationalRatingDistribution(): Promise<{ fiveStarCount: number; fourStarCount: number }> {
+    const [fiveStar] = await db.select({ count: count() }).from(motivationalStories)
+      .where(and(isNull(motivationalStories.deletedAt), gte(motivationalStories.averageRating, 4.1)));
+    const [fourStar] = await db.select({ count: count() }).from(motivationalStories)
+      .where(and(isNull(motivationalStories.deletedAt), gte(motivationalStories.averageRating, 3.5), lte(motivationalStories.averageRating, 4.0)));
+    return { fiveStarCount: fiveStar?.count ?? 0, fourStarCount: fourStar?.count ?? 0 };
   }
 
   async getMotivationalStoryById(id: string): Promise<MotivationalStoryWithLessons | undefined> {

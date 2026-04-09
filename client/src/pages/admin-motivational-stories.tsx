@@ -23,10 +23,10 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, BookOpen, Loader2, Star, Eye, Search, GripVertical, Copy } from "lucide-react";
+import { Plus, Pencil, Trash2, BookOpen, Loader2, Star, Eye, Search, GripVertical, Copy, Clock, BarChart2, CalendarDays, FileText } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import type { MotivationalStory, MotivationalStoryWithLessons, MotivationalLesson } from "@shared/schema";
 
 
@@ -322,6 +322,9 @@ function StoryFormDialog({ story, open, onOpenChange }: {
   );
 }
 
+type MotivStatusFilter = "all" | "published" | "draft" | "recent" | "most-viewed" | "best-rating";
+type MotivDateFilter = "all" | "7d" | "30d" | "90d" | "month" | "custom";
+
 export default function AdminMotivationalStoriesPage() {
   const { toast } = useToast();
   const [formOpen, setFormOpen] = useState(false);
@@ -330,44 +333,100 @@ export default function AdminMotivationalStoriesPage() {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<MotivStatusFilter>("all");
+  const [dateFilter, setDateFilter] = useState<MotivDateFilter>("all");
+  const [customDays, setCustomDays] = useState("30");
+  const [recentDays, setRecentDays] = useState("30");
+  const [filterMonth, setFilterMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
 
   const { user, isAdmin } = useAuth();
   const { viewAs, viewMeMode } = useViewAs();
   const isContributor = !viewMeMode && (!!viewAs || !isAdmin);
   const viewMeUserId = viewMeMode ? (viewAs?.id ?? user?.id) : undefined;
 
-  const motivQueryKey = viewMeUserId
-    ? ["/api/admin/motivational-stories", { userId: viewMeUserId }]
-    : ["/api/admin/motivational-stories"];
+  const { startDate, endDate, apiSort } = useMemo(() => {
+    const ms = (d: number) => new Date(Date.now() - d * 86400000).toISOString();
+
+    if (statusFilter === "recent") {
+      const days = parseInt(recentDays) || 30;
+      return { startDate: ms(days), endDate: undefined, apiSort: "newest" };
+    }
+    if (statusFilter === "most-viewed") {
+      const base = { apiSort: "most-viewed" };
+      if (dateFilter === "7d") return { ...base, startDate: ms(7), endDate: undefined };
+      if (dateFilter === "30d") return { ...base, startDate: ms(30), endDate: undefined };
+      if (dateFilter === "90d") return { ...base, startDate: ms(90), endDate: undefined };
+      if (dateFilter === "custom") { const d = parseInt(customDays) || 30; return { ...base, startDate: ms(d), endDate: undefined }; }
+      if (dateFilter === "month") {
+        const [y, m] = filterMonth.split("-").map(Number);
+        return { ...base, startDate: new Date(y, m - 1, 1).toISOString(), endDate: new Date(y, m, 0, 23, 59, 59).toISOString() };
+      }
+      return { ...base, startDate: undefined, endDate: undefined };
+    }
+    if (statusFilter === "best-rating") {
+      const base = { apiSort: "highest-rated" };
+      if (dateFilter === "7d") return { ...base, startDate: ms(7), endDate: undefined };
+      if (dateFilter === "30d") return { ...base, startDate: ms(30), endDate: undefined };
+      if (dateFilter === "90d") return { ...base, startDate: ms(90), endDate: undefined };
+      if (dateFilter === "custom") { const d = parseInt(customDays) || 30; return { ...base, startDate: ms(d), endDate: undefined }; }
+      if (dateFilter === "month") {
+        const [y, m] = filterMonth.split("-").map(Number);
+        return { ...base, startDate: new Date(y, m - 1, 1).toISOString(), endDate: new Date(y, m, 0, 23, 59, 59).toISOString() };
+      }
+      return { ...base, startDate: undefined, endDate: undefined };
+    }
+
+    const base = { apiSort: "newest" };
+    if (dateFilter === "7d") return { ...base, startDate: ms(7), endDate: undefined };
+    if (dateFilter === "30d") return { ...base, startDate: ms(30), endDate: undefined };
+    if (dateFilter === "90d") return { ...base, startDate: ms(90), endDate: undefined };
+    if (dateFilter === "custom") { const d = parseInt(customDays) || 30; return { ...base, startDate: ms(d), endDate: undefined }; }
+    if (dateFilter === "month") {
+      const [y, m] = filterMonth.split("-").map(Number);
+      return { ...base, startDate: new Date(y, m - 1, 1).toISOString(), endDate: new Date(y, m, 0, 23, 59, 59).toISOString() };
+    }
+    return { ...base, startDate: undefined, endDate: undefined };
+  }, [statusFilter, dateFilter, customDays, recentDays, filterMonth]);
+
+  const queryParams = new URLSearchParams({ limit: "50" });
+  if (viewMeUserId) queryParams.set("userId", viewMeUserId);
+  if (search) queryParams.set("search", search);
+  if (categoryFilter !== "all") queryParams.set("category", categoryFilter);
+  if (statusFilter === "published") queryParams.set("published", "true");
+  if (statusFilter === "draft") queryParams.set("published", "false");
+  if (apiSort) queryParams.set("sort", apiSort);
+  if (startDate) queryParams.set("startDate", startDate);
+  if (endDate) queryParams.set("endDate", endDate);
+  const queryString = queryParams.toString();
 
   const { data, isLoading } = useQuery<{ stories: MotivationalStory[]; total: number }>({
-    queryKey: motivQueryKey,
+    queryKey: ["/api/admin/motivational-stories", queryString],
     queryFn: async () => {
-      const params = new URLSearchParams({ limit: "50" });
-      if (viewMeUserId) params.set("userId", viewMeUserId);
-      const res = await fetch(`/api/admin/motivational-stories?${params}`, { credentials: "include" });
+      const res = await fetch(`/api/admin/motivational-stories?${queryString}`, { credentials: "include" });
+      return res.json();
+    },
+  });
+
+  const { data: stats } = useQuery<{ total: number; published: number; totalViews: number; recentCount: number; fiveStarCount: number; fourStarCount: number }>({
+    queryKey: ["/api/admin/motivational-stories/stats"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/motivational-stories/stats", { credentials: "include" });
+      return res.json();
+    },
+  });
+
+  const { data: categoriesData } = useQuery<string[]>({
+    queryKey: ["/api/admin/motivational-stories/categories"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/motivational-stories/categories", { credentials: "include" });
       return res.json();
     },
   });
 
   const stories = data?.stories || [];
-
-  const filteredStories = stories.filter((s) => {
-    if (search && !s.title.toLowerCase().includes(search.toLowerCase())) return false;
-    if (categoryFilter !== "all" && s.category !== categoryFilter) return false;
-    if (statusFilter === "published" && !s.published) return false;
-    if (statusFilter === "draft" && s.published) return false;
-    return true;
-  });
-
-  const publishedCount = stories.filter((s) => s.published).length;
-  const mostViewed = stories.length > 0
-    ? stories.reduce((prev, curr) => ((curr.views || 0) > (prev.views || 0) ? curr : prev), stories[0])
-    : null;
-  const highestRated = stories.length > 0
-    ? stories.reduce((prev, curr) => ((curr.averageRating || 0) > (prev.averageRating || 0) ? curr : prev), stories[0])
-    : null;
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -390,6 +449,7 @@ export default function AdminMotivationalStoriesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/motivational-stories"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/motivational-stories/stats"] });
     },
     onError: (err: any) => {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -402,6 +462,7 @@ export default function AdminMotivationalStoriesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/motivational-stories"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/motivational-stories/stats"] });
       toast({ title: "Story duplicated", description: "A draft copy has been created." });
     },
     onError: (err: any) => {
@@ -413,173 +474,261 @@ export default function AdminMotivationalStoriesPage() {
   const openEdit = (story: MotivationalStory) => { setEditingStory(story); setFormOpen(true); };
   const handleDelete = (id: string) => { setDeleteTarget(id); setDeleteDialogOpen(true); };
 
+  const showDateFilter = statusFilter !== "recent";
+  const showCustomDaysInput = dateFilter === "custom";
+  const showMonthInput = dateFilter === "month";
+
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="text-2xl font-bold" data-testid="text-admin-motivational-stories-title">Motivational Stories</h1>
-            <p className="text-sm text-muted-foreground">Manage motivational stories and lessons</p>
+      <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold" data-testid="text-admin-motivational-stories-title">Motivational Stories</h1>
+          <p className="text-sm text-muted-foreground">Manage motivational stories and lessons</p>
+        </div>
+        {!isContributor && (
+          <Button onClick={openCreate} data-testid="button-add-motivational-story">
+            <Plus className="w-4 h-4 mr-2" /> Add Story
+          </Button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+        <Card className="p-4" data-testid="stat-total-stories">
+          <div className="flex items-center gap-2 mb-1 text-muted-foreground">
+            <FileText className="w-4 h-4" />
+            <span className="text-xs font-medium">Total Stories</span>
           </div>
-          {!isContributor && (
-            <Button onClick={openCreate} data-testid="button-add-motivational-story">
-              <Plus className="w-4 h-4 mr-2" /> Add Story
-            </Button>
+          {stats ? <p className="text-2xl font-bold">{stats.total}</p> : <Skeleton className="h-7 w-12 mt-1" />}
+        </Card>
+        <Card className="p-4" data-testid="stat-total-views">
+          <div className="flex items-center gap-2 mb-1 text-muted-foreground">
+            <BarChart2 className="w-4 h-4" />
+            <span className="text-xs font-medium">Total Views</span>
+          </div>
+          {stats ? <p className="text-2xl font-bold">{stats.totalViews.toLocaleString()}</p> : <Skeleton className="h-7 w-12 mt-1" />}
+        </Card>
+        <Card className="p-4" data-testid="stat-published-stories">
+          <div className="flex items-center gap-2 mb-1 text-muted-foreground">
+            <BookOpen className="w-4 h-4" />
+            <span className="text-xs font-medium">Published</span>
+          </div>
+          {stats ? <p className="text-2xl font-bold">{stats.published}</p> : <Skeleton className="h-7 w-12 mt-1" />}
+        </Card>
+        <Card className="p-4" data-testid="stat-rating">
+          <div className="flex items-center gap-2 mb-1 text-muted-foreground">
+            <Star className="w-4 h-4" />
+            <span className="text-xs font-medium">Total Rating</span>
+          </div>
+          {stats ? (
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground flex items-center gap-0.5">⭐ 5-Star</span>
+                <span className="text-sm font-bold">{stats.fiveStarCount}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground flex items-center gap-0.5">⭐ 4-Star</span>
+                <span className="text-sm font-bold">{stats.fourStarCount}</span>
+              </div>
+            </div>
+          ) : <Skeleton className="h-10 w-full mt-1" />}
+        </Card>
+        <Card className="p-4" data-testid="stat-recent">
+          <div className="flex items-center gap-2 mb-1 text-muted-foreground">
+            <CalendarDays className="w-4 h-4" />
+            <span className="text-xs font-medium">Recent (30d)</span>
+          </div>
+          {stats ? <p className="text-2xl font-bold">{stats.recentCount}</p> : <Skeleton className="h-7 w-12 mt-1" />}
+        </Card>
+      </div>
+
+      <Card>
+        <div className="flex items-center gap-3 p-4 border-b flex-wrap">
+          <div className="relative flex-1 min-w-48">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search stories..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+              data-testid="input-search-motivational-stories"
+            />
+          </div>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-48" data-testid="select-category-filter">
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {(categoriesData || []).map((cat) => (
+                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as MotivStatusFilter)}>
+            <SelectTrigger className="w-40" data-testid="select-status-filter">
+              <SelectValue placeholder="All Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="published">Published</SelectItem>
+              <SelectItem value="draft">Draft</SelectItem>
+              <SelectItem value="recent">Recent Stories</SelectItem>
+              <SelectItem value="most-viewed">Most Viewed</SelectItem>
+              <SelectItem value="best-rating">Best Rating</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {statusFilter === "recent" ? (
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
+              <span className="text-sm text-muted-foreground whitespace-nowrap">Last</span>
+              <Input
+                type="number"
+                min="1"
+                max="365"
+                value={recentDays}
+                onChange={(e) => setRecentDays(e.target.value)}
+                className="w-20 text-center"
+                data-testid="input-recent-days"
+              />
+              <span className="text-sm text-muted-foreground whitespace-nowrap">days</span>
+            </div>
+          ) : showDateFilter && (
+            <>
+              <Select value={dateFilter} onValueChange={(v) => setDateFilter(v as MotivDateFilter)}>
+                <SelectTrigger className="w-36" data-testid="select-date-filter">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="7d">Last 7 days</SelectItem>
+                  <SelectItem value="30d">Last 30 days</SelectItem>
+                  <SelectItem value="90d">Last 90 days</SelectItem>
+                  <SelectItem value="month">By Month</SelectItem>
+                  <SelectItem value="custom">Custom Days</SelectItem>
+                </SelectContent>
+              </Select>
+              {showCustomDaysInput && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">Last</span>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="365"
+                    value={customDays}
+                    onChange={(e) => setCustomDays(e.target.value)}
+                    className="w-20 text-center"
+                    data-testid="input-custom-days"
+                  />
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">days</span>
+                </div>
+              )}
+              {showMonthInput && (
+                <Input
+                  type="month"
+                  value={filterMonth}
+                  onChange={(e) => setFilterMonth(e.target.value)}
+                  className="w-40"
+                  data-testid="input-filter-month"
+                />
+              )}
+            </>
           )}
         </div>
 
-        {stories.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="p-4">
-              <p className="text-sm text-muted-foreground">Total Stories</p>
-              <p className="text-2xl font-bold" data-testid="stat-total-stories">{stories.length}</p>
-            </Card>
-            <Card className="p-4">
-              <p className="text-sm text-muted-foreground">Published</p>
-              <p className="text-2xl font-bold" data-testid="stat-published-stories">{publishedCount}</p>
-            </Card>
-            <Card className="p-4">
-              <p className="text-sm text-muted-foreground">Most Viewed</p>
-              <p className="text-sm font-medium truncate" data-testid="stat-most-viewed-story">{mostViewed?.title || "—"}</p>
-              <p className="text-xs text-muted-foreground">{mostViewed?.views || 0} views</p>
-            </Card>
-            <Card className="p-4">
-              <p className="text-sm text-muted-foreground">Highest Rated</p>
-              <p className="text-sm font-medium truncate" data-testid="stat-highest-rated-story">{highestRated?.title || "—"}</p>
-              <p className="text-xs text-muted-foreground">{(highestRated?.averageRating || 0).toFixed(1)} stars</p>
-            </Card>
+        {isLoading ? (
+          <div className="p-4 space-y-3">
+            {[1, 2, 3].map((i) => <Skeleton key={i} className="h-12 w-full" />)}
+          </div>
+        ) : stories.length === 0 ? (
+          <div className="p-12 text-center">
+            <BookOpen className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+            <h2 className="font-semibold mb-2">No stories found</h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              {!stats?.total ? "Add your first motivational story." : "Try adjusting your filters."}
+            </p>
+            {!stats?.total && (
+              <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" /> Add Story</Button>
+            )}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table data-testid="table-motivational-stories">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Title</TableHead>
+                  <TableHead className="hidden sm:table-cell">Category</TableHead>
+                  <TableHead>Views</TableHead>
+                  <TableHead>Rating</TableHead>
+                  <TableHead>Published</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {stories.map((story) => (
+                  <TableRow key={story.id} data-testid={`row-motivational-story-${story.id}`}>
+                    <TableCell>
+                      <span className="font-medium line-clamp-1" data-testid={`text-story-title-${story.id}`}>{story.title}</span>
+                      <span className="text-xs text-muted-foreground block mt-0.5">/{story.slug}</span>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      {story.category ? (
+                        <Badge variant="secondary">{story.category}</Badge>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <Eye className="w-3.5 h-3.5" />
+                        {story.views || 0}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1 text-sm">
+                        <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                        {(story.averageRating || 0).toFixed(1)}
+                        <span className="text-muted-foreground">({story.totalRatings || 0})</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Switch
+                        checked={!!story.published}
+                        onCheckedChange={(checked) => togglePublishMutation.mutate({ id: story.id, published: checked })}
+                        data-testid={`switch-publish-${story.id}`}
+                      />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        {!isContributor && (
+                          <>
+                            <Button size="icon" variant="ghost" onClick={() => openEdit(story)} data-testid={`button-edit-story-${story.id}`}>
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => duplicateMutation.mutate(story.id)}
+                              disabled={duplicateMutation.isPending}
+                              title="Duplicate story"
+                              data-testid={`button-duplicate-story-${story.id}`}
+                            >
+                              {duplicateMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Copy className="w-3.5 h-3.5" />}
+                            </Button>
+                            <Button size="icon" variant="ghost" onClick={() => handleDelete(story.id)} data-testid={`button-delete-story-${story.id}`}>
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         )}
-
-        <Card>
-          <div className="flex items-center gap-3 p-4 border-b flex-wrap">
-            <div className="relative flex-1 min-w-48">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search stories..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
-                data-testid="input-search-motivational-stories"
-              />
-            </div>
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-48" data-testid="select-category-filter">
-                <SelectValue placeholder="All Categories" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {Array.from(new Set(stories.map(s => s.category).filter(Boolean))).map((cat) => (
-                  <SelectItem key={cat as string} value={cat as string}>{cat as string}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-36" data-testid="select-status-filter">
-                <SelectValue placeholder="All Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="published">Published</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {isLoading ? (
-            <div className="p-4 space-y-3">
-              {[1, 2, 3].map((i) => <Skeleton key={i} className="h-12 w-full" />)}
-            </div>
-          ) : filteredStories.length === 0 ? (
-            <div className="p-12 text-center">
-              <BookOpen className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-              <h2 className="font-semibold mb-2">No stories found</h2>
-              <p className="text-sm text-muted-foreground mb-4">
-                {stories.length === 0 ? "Add your first motivational story." : "Try adjusting your filters."}
-              </p>
-              {stories.length === 0 && (
-                <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" /> Add Story</Button>
-              )}
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table data-testid="table-motivational-stories">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Title</TableHead>
-                    <TableHead className="hidden sm:table-cell">Category</TableHead>
-                    <TableHead>Views</TableHead>
-                    <TableHead>Rating</TableHead>
-                    <TableHead>Published</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredStories.map((story) => (
-                    <TableRow key={story.id} data-testid={`row-motivational-story-${story.id}`}>
-                      <TableCell>
-                        <span className="font-medium line-clamp-1" data-testid={`text-story-title-${story.id}`}>{story.title}</span>
-                        <span className="text-xs text-muted-foreground block mt-0.5">/{story.slug}</span>
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        {story.category ? (
-                          <Badge variant="secondary">{story.category}</Badge>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Eye className="w-3.5 h-3.5" />
-                          {story.views || 0}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1 text-sm">
-                          <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                          {(story.averageRating || 0).toFixed(1)}
-                          <span className="text-muted-foreground">({story.totalRatings || 0})</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Switch
-                          checked={!!story.published}
-                          onCheckedChange={(checked) => togglePublishMutation.mutate({ id: story.id, published: checked })}
-                          data-testid={`switch-publish-${story.id}`}
-                        />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          {!isContributor && (
-                            <>
-                              <Button size="icon" variant="ghost" onClick={() => openEdit(story)} data-testid={`button-edit-story-${story.id}`}>
-                                <Pencil className="w-3.5 h-3.5" />
-                              </Button>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={() => duplicateMutation.mutate(story.id)}
-                                disabled={duplicateMutation.isPending}
-                                title="Duplicate story"
-                                data-testid={`button-duplicate-story-${story.id}`}
-                              >
-                                {duplicateMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Copy className="w-3.5 h-3.5" />}
-                              </Button>
-                              <Button size="icon" variant="ghost" onClick={() => handleDelete(story.id)} data-testid={`button-delete-story-${story.id}`}>
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </Card>
-      </div>
+      </Card>
 
       <StoryFormDialog
         key={editingStory?.id || "new"}
