@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { AdminLayout } from "@/components/admin-layout";
@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, BookOpen, Save, Search, ExternalLink, Eye, Copy, GripVertical, X, ImageIcon, Settings2 } from "lucide-react";
+import { Plus, Pencil, Trash2, BookOpen, Save, Search, ExternalLink, Eye, Copy, GripVertical, X, ImageIcon, Settings2, Clock, BarChart2, CalendarDays, FileText, Star } from "lucide-react";
 import type { Dua } from "@shared/schema";
 
 type DuaListResult = { duas: Dua[]; total: number };
@@ -49,12 +49,24 @@ function newPartDraft(): PartDraft {
   return { id: Math.random().toString(36).slice(2), title: "", arabicText: "", transliteration: "", translation: "", explanation: "" };
 }
 
+type DuaStatusFilter = "all" | "published" | "draft" | "recent" | "most-viewed" | "best-rating";
+type DuaDateFilter = "all" | "7d" | "30d" | "90d" | "month" | "custom";
+
 export default function AdminDuasPage() {
   const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [dialog, setDialog] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editing, setEditing] = useState<Dua | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<DuaStatusFilter>("all");
+  const [dateFilter, setDateFilter] = useState<DuaDateFilter>("all");
+  const [customDays, setCustomDays] = useState("30");
+  const [recentDays, setRecentDays] = useState("30");
+  const [filterMonth, setFilterMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
 
   const { user, isAdmin } = useAuth();
   const { viewAs, viewMeMode } = useViewAs();
@@ -73,13 +85,67 @@ export default function AdminDuasPage() {
   const [removedPartDbIds, setRemovedPartDbIds] = useState<number[]>([]);
   const [partsLoading, setPartsLoading] = useState(false);
 
+  const { startDate, endDate, apiSort } = useMemo(() => {
+    const ms = (d: number) => new Date(Date.now() - d * 86400000).toISOString();
+    if (statusFilter === "recent") {
+      const days = parseInt(recentDays) || 30;
+      return { startDate: ms(days), endDate: undefined, apiSort: "newest" };
+    }
+    if (statusFilter === "most-viewed") {
+      const base = { apiSort: "most-viewed" };
+      if (dateFilter === "7d") return { ...base, startDate: ms(7), endDate: undefined };
+      if (dateFilter === "30d") return { ...base, startDate: ms(30), endDate: undefined };
+      if (dateFilter === "90d") return { ...base, startDate: ms(90), endDate: undefined };
+      if (dateFilter === "custom") { const d = parseInt(customDays) || 30; return { ...base, startDate: ms(d), endDate: undefined }; }
+      if (dateFilter === "month") {
+        const [y, m] = filterMonth.split("-").map(Number);
+        return { ...base, startDate: new Date(y, m - 1, 1).toISOString(), endDate: new Date(y, m, 0, 23, 59, 59).toISOString() };
+      }
+      return { ...base, startDate: undefined, endDate: undefined };
+    }
+    const base = { apiSort: "newest" };
+    if (dateFilter === "7d") return { ...base, startDate: ms(7), endDate: undefined };
+    if (dateFilter === "30d") return { ...base, startDate: ms(30), endDate: undefined };
+    if (dateFilter === "90d") return { ...base, startDate: ms(90), endDate: undefined };
+    if (dateFilter === "custom") { const d = parseInt(customDays) || 30; return { ...base, startDate: ms(d), endDate: undefined }; }
+    if (dateFilter === "month") {
+      const [y, m] = filterMonth.split("-").map(Number);
+      return { ...base, startDate: new Date(y, m - 1, 1).toISOString(), endDate: new Date(y, m, 0, 23, 59, 59).toISOString() };
+    }
+    return { ...base, startDate: undefined, endDate: undefined };
+  }, [statusFilter, dateFilter, customDays, recentDays, filterMonth]);
+
+  const queryParams = new URLSearchParams({ limit: "50" });
+  if (viewMeUserId) queryParams.set("userId", viewMeUserId);
+  if (search) queryParams.set("search", search);
+  if (categoryFilter !== "all") queryParams.set("category", categoryFilter);
+  if (statusFilter === "published") queryParams.set("published", "true");
+  if (statusFilter === "draft") queryParams.set("published", "false");
+  if (apiSort) queryParams.set("sort", apiSort);
+  if (startDate) queryParams.set("startDate", startDate);
+  if (endDate) queryParams.set("endDate", endDate);
+  const queryString = queryParams.toString();
+
   const { data, isLoading } = useQuery<DuaListResult>({
-    queryKey: ["/api/admin/duas", search, viewMeUserId],
+    queryKey: ["/api/admin/duas", queryString],
     queryFn: async () => {
-      const params = new URLSearchParams({ limit: "50" });
-      if (search) params.set("search", search);
-      if (viewMeUserId) params.set("userId", viewMeUserId);
-      const res = await fetch(`/api/admin/duas?${params}`, { credentials: "include" });
+      const res = await fetch(`/api/admin/duas?${queryString}`, { credentials: "include" });
+      return res.json();
+    },
+  });
+
+  const { data: stats } = useQuery<{ total: number; published: number; totalViews: number; recentCount: number; fiveStarCount: number; fourStarCount: number }>({
+    queryKey: ["/api/admin/duas/stats"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/duas/stats", { credentials: "include" });
+      return res.json();
+    },
+  });
+
+  const { data: categoriesData } = useQuery<string[]>({
+    queryKey: ["/api/admin/duas/categories"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/duas/categories", { credentials: "include" });
       return res.json();
     },
   });
@@ -229,49 +295,180 @@ export default function AdminDuasPage() {
 
   const isSaving = createDua.isPending || updateDua.isPending;
 
+  const showDateFilter = statusFilter !== "recent";
+
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold">Duas</h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              Manage Islamic supplication collections — {data?.total ?? 0} total
-            </p>
+      {/* Header */}
+      <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold" data-testid="text-admin-duas-title">Duas</h1>
+          <p className="text-sm text-muted-foreground">Manage Islamic supplication collections</p>
+        </div>
+        {!isContributor && (
+          <Button onClick={openCreate} data-testid="button-create-dua">
+            <Plus className="w-4 h-4 mr-2" />New Dua
+          </Button>
+        )}
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+        <Card className="p-4" data-testid="stat-total-duas">
+          <div className="flex items-center gap-2 mb-1 text-muted-foreground">
+            <FileText className="w-4 h-4" />
+            <span className="text-xs font-medium">Total Duas</span>
           </div>
-          {!isContributor && (
-            <Button onClick={openCreate} data-testid="button-create-dua">
-              <Plus className="w-4 h-4 mr-2" />New Dua
-            </Button>
+          {stats ? <p className="text-2xl font-bold">{stats.total}</p> : <Skeleton className="h-7 w-12 mt-1" />}
+        </Card>
+        <Card className="p-4" data-testid="stat-total-views">
+          <div className="flex items-center gap-2 mb-1 text-muted-foreground">
+            <BarChart2 className="w-4 h-4" />
+            <span className="text-xs font-medium">Total Views</span>
+          </div>
+          {stats ? <p className="text-2xl font-bold">{stats.totalViews.toLocaleString()}</p> : <Skeleton className="h-7 w-12 mt-1" />}
+        </Card>
+        <Card className="p-4" data-testid="stat-published-duas">
+          <div className="flex items-center gap-2 mb-1 text-muted-foreground">
+            <BookOpen className="w-4 h-4" />
+            <span className="text-xs font-medium">Published</span>
+          </div>
+          {stats ? <p className="text-2xl font-bold">{stats.published}</p> : <Skeleton className="h-7 w-12 mt-1" />}
+        </Card>
+        <Card className="p-4" data-testid="stat-rating">
+          <div className="flex items-center gap-2 mb-1 text-muted-foreground">
+            <Star className="w-4 h-4" />
+            <span className="text-xs font-medium">Total Rating</span>
+          </div>
+          {stats ? (
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">⭐ 5-Star</span>
+                <span className="text-sm font-bold">{stats.fiveStarCount}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">⭐ 4-Star</span>
+                <span className="text-sm font-bold">{stats.fourStarCount}</span>
+              </div>
+            </div>
+          ) : <Skeleton className="h-10 w-full mt-1" />}
+        </Card>
+        <Card className="p-4" data-testid="stat-recent">
+          <div className="flex items-center gap-2 mb-1 text-muted-foreground">
+            <CalendarDays className="w-4 h-4" />
+            <span className="text-xs font-medium">Recent (30d)</span>
+          </div>
+          {stats ? <p className="text-2xl font-bold">{stats.recentCount}</p> : <Skeleton className="h-7 w-12 mt-1" />}
+        </Card>
+      </div>
+
+      {/* Table Card */}
+      <Card>
+        <div className="flex items-center gap-3 p-4 border-b flex-wrap">
+          <div className="relative flex-1 min-w-48">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              className="pl-9"
+              placeholder="Search duas..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              data-testid="input-dua-search"
+            />
+          </div>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-48" data-testid="select-dua-category-filter">
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {(categoriesData || []).map((cat) => (
+                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as DuaStatusFilter)}>
+            <SelectTrigger className="w-40" data-testid="select-dua-status-filter">
+              <SelectValue placeholder="All Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="published">Published</SelectItem>
+              <SelectItem value="draft">Draft</SelectItem>
+              <SelectItem value="recent">Recent Duas</SelectItem>
+              <SelectItem value="most-viewed">Most Viewed</SelectItem>
+              <SelectItem value="best-rating">Best Rating</SelectItem>
+            </SelectContent>
+          </Select>
+          {statusFilter === "recent" ? (
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
+              <span className="text-sm text-muted-foreground whitespace-nowrap">Last</span>
+              <Input
+                type="number"
+                min="1"
+                max="365"
+                value={recentDays}
+                onChange={(e) => setRecentDays(e.target.value)}
+                className="w-20 text-center"
+                data-testid="input-recent-days"
+              />
+              <span className="text-sm text-muted-foreground whitespace-nowrap">days</span>
+            </div>
+          ) : showDateFilter && (
+            <>
+              <Select value={dateFilter} onValueChange={(v) => setDateFilter(v as DuaDateFilter)}>
+                <SelectTrigger className="w-36" data-testid="select-dua-date-filter">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="7d">Last 7 days</SelectItem>
+                  <SelectItem value="30d">Last 30 days</SelectItem>
+                  <SelectItem value="90d">Last 90 days</SelectItem>
+                  <SelectItem value="month">By Month</SelectItem>
+                  <SelectItem value="custom">Custom Days</SelectItem>
+                </SelectContent>
+              </Select>
+              {dateFilter === "custom" && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">Last</span>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="365"
+                    value={customDays}
+                    onChange={(e) => setCustomDays(e.target.value)}
+                    className="w-20 text-center"
+                    data-testid="input-custom-days"
+                  />
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">days</span>
+                </div>
+              )}
+              {dateFilter === "month" && (
+                <Input
+                  type="month"
+                  value={filterMonth}
+                  onChange={(e) => setFilterMonth(e.target.value)}
+                  className="w-40"
+                  data-testid="input-filter-month"
+                />
+              )}
+            </>
           )}
         </div>
 
-        {/* Search */}
-        <div className="relative max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            className="pl-9"
-            placeholder="Search duas..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            data-testid="input-dua-search"
-          />
-        </div>
-
-        {/* Table */}
         {isLoading ? (
-          <div className="space-y-2">
+          <div className="p-4 space-y-2">
             {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}
           </div>
         ) : duas.length === 0 ? (
-          <div className="text-center py-16 text-muted-foreground border rounded-lg">
+          <div className="text-center py-16 text-muted-foreground">
             <BookOpen className="w-10 h-10 mx-auto mb-4 opacity-40" />
-            <p className="font-medium">{search ? "No results found." : "No duas yet."}</p>
-            {!search && <p className="text-sm mt-1">Create your first Dua to get started.</p>}
+            <p className="font-medium">{!stats?.total ? "No duas yet." : "No results found."}</p>
+            {!stats?.total && <p className="text-sm mt-1">Create your first Dua to get started.</p>}
           </div>
         ) : (
-          <div className="border rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -358,7 +555,7 @@ export default function AdminDuasPage() {
             </Table>
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Create / Edit Dialog */}
       <Dialog open={dialog} onOpenChange={setDialog}>
@@ -420,8 +617,14 @@ export default function AdminDuasPage() {
                     onChange={e => setCategory(e.target.value)}
                     placeholder="e.g. Morning, Evening, Protection..."
                     className="mt-1"
+                    list="dua-category-suggestions"
                     data-testid="input-dua-category"
                   />
+                  <datalist id="dua-category-suggestions">
+                    {(categoriesData || []).map(cat => (
+                      <option key={cat} value={cat} />
+                    ))}
+                  </datalist>
                 </div>
               </div>
 

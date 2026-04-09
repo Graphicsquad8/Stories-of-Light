@@ -1856,9 +1856,34 @@ export async function registerRoutes(
   });
 
   // Admin Duas
+  app.get("/api/admin/duas/stats", requireStaff, async (_req, res) => {
+    const [total, published, totalViews, recentCount, ratingDist] = await Promise.all([
+      storage.getDuas({ limit: 0 }).then(r => r.total),
+      storage.getDuas({ published: true, limit: 0 }).then(r => r.total),
+      storage.getDuaTotalViews(),
+      storage.getRecentDuaCount(30),
+      storage.getDuaRatingDistribution(),
+    ]);
+    res.json({ total, published, totalViews, recentCount, ...ratingDist });
+  });
+
+  app.get("/api/admin/duas/categories", requireStaff, async (_req, res) => {
+    const categories = await storage.getDuaCategoriesAdmin();
+    res.json(categories);
+  });
+
   app.get("/api/admin/duas", requireStaff, async (req, res) => {
-    const { search, category, sort, limit, offset, userId } = req.query;
-    const result = await storage.getDuas({ search: search as string, category: category as string, sort: sort as string, limit: limit ? Number(limit) : 50, offset: offset ? Number(offset) : 0, userId: userId as string | undefined });
+    const { search, category, sort, limit, offset, userId, startDate, endDate } = req.query;
+    const result = await storage.getDuas({
+      search: search as string,
+      category: category as string,
+      sort: sort as string,
+      limit: limit ? Number(limit) : 50,
+      offset: offset ? Number(offset) : 0,
+      userId: userId as string | undefined,
+      startDate: startDate as string | undefined,
+      endDate: endDate as string | undefined,
+    });
     res.json(result);
   });
 

@@ -174,8 +174,12 @@ export interface IStorage {
   getRecentMotivationalCount(days: number): Promise<number>;
   getMotivationalRatingDistribution(): Promise<{ fiveStarCount: number; fourStarCount: number }>;
 
-  getDuas(opts?: { published?: boolean; search?: string; category?: string; sort?: string; limit?: number; offset?: number; userId?: string }): Promise<{ duas: Dua[]; total: number }>;
+  getDuas(opts?: { published?: boolean; search?: string; category?: string; sort?: string; limit?: number; offset?: number; userId?: string; startDate?: string; endDate?: string }): Promise<{ duas: Dua[]; total: number }>;
   getDuaCategories(): Promise<string[]>;
+  getDuaCategoriesAdmin(): Promise<string[]>;
+  getDuaTotalViews(): Promise<number>;
+  getRecentDuaCount(days: number): Promise<number>;
+  getDuaRatingDistribution(): Promise<{ fiveStarCount: number; fourStarCount: number }>;
   incrementDuaViews(id: string): Promise<void>;
   getDuaBySlug(slug: string): Promise<DuaWithParts | undefined>;
   getDuaById(id: string): Promise<DuaWithParts | undefined>;
@@ -1415,12 +1419,14 @@ export class DatabaseStorage implements IStorage {
     return newPage;
   }
 
-  async getDuas(opts: { published?: boolean; search?: string; category?: string; sort?: string; limit?: number; offset?: number; userId?: string } = {}): Promise<{ duas: Dua[]; total: number }> {
+  async getDuas(opts: { published?: boolean; search?: string; category?: string; sort?: string; limit?: number; offset?: number; userId?: string; startDate?: string; endDate?: string } = {}): Promise<{ duas: Dua[]; total: number }> {
     const conditions = [isNull(duas.deletedAt)];
     if (opts.published !== undefined) conditions.push(eq(duas.published, opts.published));
     if (opts.search) conditions.push(ilike(duas.title, `%${opts.search}%`));
     if (opts.category) conditions.push(eq(duas.category, opts.category));
     if (opts.userId) conditions.push(eq(duas.userId, opts.userId));
+    if (opts.startDate) conditions.push(gte(duas.createdAt, new Date(opts.startDate)));
+    if (opts.endDate) conditions.push(lte(duas.createdAt, new Date(opts.endDate)));
     const where = and(...conditions);
     let orderClause;
     if (opts.sort === "oldest") orderClause = [asc(duas.createdAt)];
@@ -1436,6 +1442,27 @@ export class DatabaseStorage implements IStorage {
   async getDuaCategories(): Promise<string[]> {
     const rows = await db.selectDistinct({ category: duas.category }).from(duas).where(and(isNull(duas.deletedAt), eq(duas.published, true)));
     return rows.map(r => r.category).filter((c): c is string => !!c).sort();
+  }
+
+  async getDuaCategoriesAdmin(): Promise<string[]> {
+    const rows = await db.selectDistinct({ category: duas.category }).from(duas).where(isNull(duas.deletedAt));
+    return rows.map(r => r.category).filter((c): c is string => !!c).sort();
+  }
+
+  async getDuaTotalViews(): Promise<number> {
+    const [result] = await db.select({ total: sum(duas.views) }).from(duas).where(isNull(duas.deletedAt));
+    return Number(result?.total) || 0;
+  }
+
+  async getRecentDuaCount(days: number): Promise<number> {
+    const since = new Date(Date.now() - days * 86400000);
+    const [result] = await db.select({ count: count() }).from(duas)
+      .where(and(isNull(duas.deletedAt), gte(duas.createdAt, since)));
+    return result?.count ?? 0;
+  }
+
+  async getDuaRatingDistribution(): Promise<{ fiveStarCount: number; fourStarCount: number }> {
+    return { fiveStarCount: 0, fourStarCount: 0 };
   }
 
   async incrementDuaViews(id: string): Promise<void> {
