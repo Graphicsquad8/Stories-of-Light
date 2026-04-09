@@ -120,14 +120,6 @@ function AdminSidebar() {
       permission: "categories",
     },
     {
-      key: "recent-articles",
-      title: "Recent Article",
-      href: "/image/stories/recent",
-      icon: Clock,
-      isActive: (loc) => loc === "/image/stories/recent",
-      permission: "articles",
-    },
-    {
       key: "articles",
       title: "All Articles",
       href: "/image/stories",
@@ -212,8 +204,7 @@ function AdminSidebar() {
   });
 
   const articlesAllActive = location.startsWith("/image/stories") &&
-    !location.startsWith("/image/stories/category/") &&
-    !location.startsWith("/image/stories/recent");
+    !location.startsWith("/image/stories/category/");
 
   return (
     <Sidebar>

@@ -78,7 +78,7 @@ export interface IStorage {
   getCategoryMotivationalViewCounts(): Promise<Record<string, number>>;
   getCategoryDuaViewCounts(): Promise<Record<string, number>>;
 
-  getStories(opts?: { status?: string; categoryId?: string; featured?: boolean; search?: string; limit?: number; offset?: number; userId?: string; startDate?: string; endDate?: string }): Promise<StoryWithCategory[]>;
+  getStories(opts?: { status?: string; categoryId?: string; featured?: boolean; search?: string; limit?: number; offset?: number; userId?: string; startDate?: string; endDate?: string; sortBy?: "views" | "date" }): Promise<StoryWithCategory[]>;
   getStoryById(id: string): Promise<StoryWithCategory | undefined>;
   getStoryBySlug(slug: string): Promise<StoryWithCategory | undefined>;
   createStory(story: InsertStory): Promise<Story>;
@@ -89,6 +89,8 @@ export interface IStorage {
   permanentDeleteStory(id: string): Promise<boolean>;
   getDeletedStories(): Promise<StoryWithCategory[]>;
   getStoryCount(status?: string): Promise<number>;
+  getStoryTotalViews(): Promise<number>;
+  getRecentStoryCount(days: number): Promise<number>;
   incrementStoryViews(id: string): Promise<void>;
   getRelatedStories(storyId: string, categoryId: string | null, limit?: number): Promise<StoryWithCategory[]>;
 
@@ -444,7 +446,7 @@ export class DatabaseStorage implements IStorage {
     return map;
   }
 
-  async getStories(opts?: { status?: string; categoryId?: string; featured?: boolean; search?: string; limit?: number; offset?: number; userId?: string; startDate?: string; endDate?: string }): Promise<StoryWithCategory[]> {
+  async getStories(opts?: { status?: string; categoryId?: string; featured?: boolean; search?: string; limit?: number; offset?: number; userId?: string; startDate?: string; endDate?: string; sortBy?: "views" | "date" }): Promise<StoryWithCategory[]> {
     const conditions: any[] = [isNull(stories.deletedAt)];
     if (opts?.status) conditions.push(eq(stories.status, opts.status));
     if (opts?.categoryId) conditions.push(eq(stories.categoryId, opts.categoryId));
@@ -454,12 +456,14 @@ export class DatabaseStorage implements IStorage {
     if (opts?.startDate) conditions.push(gte(stories.createdAt, new Date(opts.startDate)));
     if (opts?.endDate) conditions.push(lte(stories.createdAt, new Date(opts.endDate)));
 
+    const orderCol = opts?.sortBy === "views" ? desc(stories.views) : desc(stories.createdAt);
+
     const rows = await db
       .select({ story: stories, category: categories })
       .from(stories)
       .leftJoin(categories, eq(stories.categoryId, categories.id))
       .where(and(...conditions))
-      .orderBy(desc(stories.createdAt))
+      .orderBy(orderCol)
       .limit(opts?.limit ?? 50)
       .offset(opts?.offset ?? 0);
 
@@ -532,6 +536,18 @@ export class DatabaseStorage implements IStorage {
     const conditions: any[] = [isNull(stories.deletedAt)];
     if (status) conditions.push(eq(stories.status, status));
     const [result] = await db.select({ count: count() }).from(stories).where(and(...conditions));
+    return result?.count ?? 0;
+  }
+
+  async getStoryTotalViews(): Promise<number> {
+    const [result] = await db.select({ total: sum(stories.views) }).from(stories).where(isNull(stories.deletedAt));
+    return Number(result?.total) || 0;
+  }
+
+  async getRecentStoryCount(days: number): Promise<number> {
+    const since = new Date(Date.now() - days * 86400000);
+    const [result] = await db.select({ count: count() }).from(stories)
+      .where(and(isNull(stories.deletedAt), gte(stories.createdAt, since)));
     return result?.count ?? 0;
   }
 

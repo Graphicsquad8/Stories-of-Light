@@ -82,7 +82,6 @@ function Router() {
       <Route path="/image/login" component={AdminLoginPage} />
       <Route path="/image" component={AdminDashboardPage} />
       <Route path="/image/stories" component={AdminStoriesPage} />
-      <Route path="/image/stories/recent" component={AdminStoriesPage} />
       <Route path="/image/stories/category/:slug" component={AdminStoriesPage} />
       <Route path="/image/stories/new" component={AdminStoryEditorPage} />
       <Route path="/image/stories/:id/edit" component={AdminStoryEditorPage} />

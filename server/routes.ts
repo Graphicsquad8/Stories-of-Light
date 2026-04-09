@@ -881,7 +881,7 @@ export async function registerRoutes(
   });
 
   app.get("/api/stories", async (req, res) => {
-    const { status, categoryId, featured, search, limit, offset, userId, startDate, endDate } = req.query;
+    const { status, categoryId, featured, search, limit, offset, userId, startDate, endDate, sortBy } = req.query;
     const opts: any = {};
     if (status) opts.status = status;
     if (categoryId) opts.categoryId = categoryId;
@@ -892,16 +892,20 @@ export async function registerRoutes(
     if (userId) opts.userId = userId as string;
     if (startDate) opts.startDate = startDate as string;
     if (endDate) opts.endDate = endDate as string;
+    if (sortBy === "views") opts.sortBy = "views";
     const storiesList = await storage.getStories(opts);
     res.json(storiesList);
   });
 
   app.get("/api/stories/stats", requireStaff, async (_req, res) => {
-    const total = await storage.getStoryCount();
-    const published = await storage.getStoryCount("published");
-    const drafts = await storage.getStoryCount("draft");
-    const cats = await storage.getCategories();
-    res.json({ total, published, drafts, categories: cats.length });
+    const [total, published, drafts, totalViews, recentCount] = await Promise.all([
+      storage.getStoryCount(),
+      storage.getStoryCount("published"),
+      storage.getStoryCount("draft"),
+      storage.getStoryTotalViews(),
+      storage.getRecentStoryCount(30),
+    ]);
+    res.json({ total, published, drafts, totalViews, recentCount });
   });
 
   app.get("/api/admin/dashboard", requireStaff, async (_req, res) => {

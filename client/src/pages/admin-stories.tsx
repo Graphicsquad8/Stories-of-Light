@@ -26,18 +26,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, Trash2, Eye, Edit, Copy, Clock } from "lucide-react";
+import { Plus, Search, Trash2, Eye, Edit, Copy, Clock, FileText, BarChart2, TrendingUp, BookOpen, CalendarDays } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useMemo } from "react";
 import type { StoryWithCategory, Category } from "@shared/schema";
 import { format } from "date-fns";
 
+type StatusFilter = "all" | "published" | "draft" | "recent" | "most-viewed";
+type DateFilter = "all" | "7d" | "30d" | "90d" | "month" | "custom";
+
 export default function AdminStoriesPage() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [dateFilter, setDateFilter] = useState<DateFilter>("all");
+  const [customDays, setCustomDays] = useState("30");
+  const [recentDays, setRecentDays] = useState("30");
+  const [filterMonth, setFilterMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
@@ -47,49 +57,57 @@ export default function AdminStoriesPage() {
   const isContributor = !viewMeMode && (!!viewAs || !isAdmin);
   const viewMeUserId = viewMeMode ? (viewAs?.id ?? user?.id) : undefined;
 
-  const [matchRecent] = useRoute("/image/stories/recent");
   const [matchCat, catParams] = useRoute("/image/stories/category/:slug");
   const categorySlug = matchCat ? catParams?.slug : null;
-  const effectiveStatusFilter = matchRecent ? "recent" : statusFilter;
-
-  const [dateFilter, setDateFilter] = useState<"all" | "7d" | "30d" | "90d" | "month" | "custom">("all");
-  const [filterMonth, setFilterMonth] = useState(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  });
-  const [recentDays, setRecentDays] = useState("30");
-
-  const { startDate, endDate } = useMemo(() => {
-    if (matchRecent) {
-      const days = parseInt(recentDays) || 30;
-      const start = new Date(Date.now() - days * 86400000).toISOString();
-      return { startDate: start, endDate: undefined };
-    }
-    if (dateFilter === "7d") return { startDate: new Date(Date.now() - 7 * 86400000).toISOString(), endDate: undefined };
-    if (dateFilter === "30d") return { startDate: new Date(Date.now() - 30 * 86400000).toISOString(), endDate: undefined };
-    if (dateFilter === "90d") return { startDate: new Date(Date.now() - 90 * 86400000).toISOString(), endDate: undefined };
-    if (dateFilter === "month") {
-      const [y, m] = filterMonth.split("-").map(Number);
-      const start = new Date(y, m - 1, 1).toISOString();
-      const end = new Date(y, m, 0, 23, 59, 59).toISOString();
-      return { startDate: start, endDate: end };
-    }
-    return { startDate: undefined, endDate: undefined };
-  }, [matchRecent, recentDays, dateFilter, filterMonth]);
 
   const { data: categories } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
+  const activeCategory = categories?.find((c) => c.slug === categorySlug || c.urlSlug === categorySlug);
 
-  const activeCategory = categories?.find((c) => c.slug === categorySlug);
+  const { data: stats } = useQuery<{ total: number; published: number; drafts: number; totalViews: number; recentCount: number }>({
+    queryKey: ["/api/stories/stats"],
+  });
+
+  const { startDate, endDate, sortBy } = useMemo(() => {
+    const ms = (d: number) => new Date(Date.now() - d * 86400000).toISOString();
+
+    if (statusFilter === "recent") {
+      const days = parseInt(recentDays) || 30;
+      return { startDate: ms(days), endDate: undefined, sortBy: undefined };
+    }
+    if (statusFilter === "most-viewed") {
+      if (dateFilter === "7d") return { startDate: ms(7), endDate: undefined, sortBy: "views" as const };
+      if (dateFilter === "30d") return { startDate: ms(30), endDate: undefined, sortBy: "views" as const };
+      if (dateFilter === "90d") return { startDate: ms(90), endDate: undefined, sortBy: "views" as const };
+      if (dateFilter === "custom") { const d = parseInt(customDays) || 30; return { startDate: ms(d), endDate: undefined, sortBy: "views" as const }; }
+      if (dateFilter === "month") {
+        const [y, m] = filterMonth.split("-").map(Number);
+        return { startDate: new Date(y, m - 1, 1).toISOString(), endDate: new Date(y, m, 0, 23, 59, 59).toISOString(), sortBy: "views" as const };
+      }
+      return { startDate: undefined, endDate: undefined, sortBy: "views" as const };
+    }
+
+    if (dateFilter === "7d") return { startDate: ms(7), endDate: undefined, sortBy: undefined };
+    if (dateFilter === "30d") return { startDate: ms(30), endDate: undefined, sortBy: undefined };
+    if (dateFilter === "90d") return { startDate: ms(90), endDate: undefined, sortBy: undefined };
+    if (dateFilter === "custom") { const d = parseInt(customDays) || 30; return { startDate: ms(d), endDate: undefined, sortBy: undefined }; }
+    if (dateFilter === "month") {
+      const [y, m] = filterMonth.split("-").map(Number);
+      return { startDate: new Date(y, m - 1, 1).toISOString(), endDate: new Date(y, m, 0, 23, 59, 59).toISOString(), sortBy: undefined };
+    }
+    return { startDate: undefined, endDate: undefined, sortBy: undefined };
+  }, [statusFilter, dateFilter, customDays, recentDays, filterMonth]);
 
   const queryParams = new URLSearchParams();
   if (search) queryParams.set("search", search);
-  if (effectiveStatusFilter && effectiveStatusFilter !== "all" && effectiveStatusFilter !== "recent") queryParams.set("status", effectiveStatusFilter);
+  const apiStatus = statusFilter === "published" ? "published" : statusFilter === "draft" ? "draft" : undefined;
+  if (apiStatus) queryParams.set("status", apiStatus);
   if (activeCategory?.id) queryParams.set("categoryId", activeCategory.id);
   if (viewMeUserId) queryParams.set("userId", viewMeUserId);
   if (startDate) queryParams.set("startDate", startDate);
   if (endDate) queryParams.set("endDate", endDate);
+  if (sortBy) queryParams.set("sortBy", sortBy);
   const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
 
   const { data: stories, isLoading } = useQuery<StoryWithCategory[]>({
@@ -140,11 +158,8 @@ export default function AdminStoriesPage() {
 
   const toggleSelectAll = () => {
     if (!stories) return;
-    if (selectedIds.size === stories.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(stories.map((s) => s.id)));
-    }
+    if (selectedIds.size === stories.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(stories.map((s) => s.id)));
   };
 
   const handleDelete = (id: string) => {
@@ -153,19 +168,19 @@ export default function AdminStoriesPage() {
   };
 
   const confirmDelete = () => {
-    if (deleteTarget) {
-      deleteMutation.mutate(deleteTarget);
-    }
+    if (deleteTarget) deleteMutation.mutate(deleteTarget);
     setDeleteDialogOpen(false);
     setDeleteTarget(null);
   };
 
-  const pageTitle = matchRecent ? "Recent Article" : activeCategory ? activeCategory.name : "All Articles";
-  const pageDescription = matchRecent
-    ? "Recently uploaded articles across the website"
-    : activeCategory
+  const pageTitle = activeCategory ? activeCategory.name : "All Articles";
+  const pageDescription = activeCategory
     ? `Manage articles in ${activeCategory.name}`
     : "Manage all your stories and articles";
+
+  const showDateFilter = statusFilter !== "recent";
+  const showCustomDaysInput = dateFilter === "custom";
+  const showMonthInput = dateFilter === "month";
 
   return (
     <AdminLayout>
@@ -184,6 +199,66 @@ export default function AdminStoriesPage() {
         )}
       </div>
 
+      {!activeCategory && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+          <Card className="p-4" data-testid="stat-total-articles">
+            <div className="flex items-center gap-2 mb-1 text-muted-foreground">
+              <FileText className="w-4 h-4" />
+              <span className="text-xs font-medium">Total Articles</span>
+            </div>
+            {stats ? (
+              <p className="text-2xl font-bold">{stats.total}</p>
+            ) : (
+              <Skeleton className="h-7 w-12 mt-1" />
+            )}
+          </Card>
+          <Card className="p-4" data-testid="stat-total-views">
+            <div className="flex items-center gap-2 mb-1 text-muted-foreground">
+              <BarChart2 className="w-4 h-4" />
+              <span className="text-xs font-medium">Total Views</span>
+            </div>
+            {stats ? (
+              <p className="text-2xl font-bold">{stats.totalViews.toLocaleString()}</p>
+            ) : (
+              <Skeleton className="h-7 w-12 mt-1" />
+            )}
+          </Card>
+          <Card className="p-4" data-testid="stat-published">
+            <div className="flex items-center gap-2 mb-1 text-muted-foreground">
+              <BookOpen className="w-4 h-4" />
+              <span className="text-xs font-medium">Published</span>
+            </div>
+            {stats ? (
+              <p className="text-2xl font-bold">{stats.published}</p>
+            ) : (
+              <Skeleton className="h-7 w-12 mt-1" />
+            )}
+          </Card>
+          <Card className="p-4" data-testid="stat-drafts">
+            <div className="flex items-center gap-2 mb-1 text-muted-foreground">
+              <TrendingUp className="w-4 h-4" />
+              <span className="text-xs font-medium">Draft</span>
+            </div>
+            {stats ? (
+              <p className="text-2xl font-bold">{stats.drafts}</p>
+            ) : (
+              <Skeleton className="h-7 w-12 mt-1" />
+            )}
+          </Card>
+          <Card className="p-4" data-testid="stat-recent">
+            <div className="flex items-center gap-2 mb-1 text-muted-foreground">
+              <CalendarDays className="w-4 h-4" />
+              <span className="text-xs font-medium">Recent (30d)</span>
+            </div>
+            {stats ? (
+              <p className="text-2xl font-bold">{stats.recentCount}</p>
+            ) : (
+              <Skeleton className="h-7 w-12 mt-1" />
+            )}
+          </Card>
+        </div>
+      )}
+
       <Card>
         <div className="flex items-center gap-3 p-4 border-b flex-wrap">
           <div className="relative flex-1 min-w-48">
@@ -196,19 +271,21 @@ export default function AdminStoriesPage() {
               data-testid="input-search-stories"
             />
           </div>
-          {!matchRecent && (
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-36" data-testid="select-status-filter">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all" data-testid="filter-all">All Status</SelectItem>
-                <SelectItem value="published" data-testid="filter-published">Published</SelectItem>
-                <SelectItem value="draft" data-testid="filter-draft">Draft</SelectItem>
-              </SelectContent>
-            </Select>
-          )}
-          {matchRecent ? (
+
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+            <SelectTrigger className="w-40" data-testid="select-status-filter">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="published">Published</SelectItem>
+              <SelectItem value="draft">Draft</SelectItem>
+              <SelectItem value="recent">Recent Articles</SelectItem>
+              <SelectItem value="most-viewed">Most Viewed</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {statusFilter === "recent" ? (
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
               <span className="text-sm text-muted-foreground whitespace-nowrap">Last</span>
@@ -223,9 +300,9 @@ export default function AdminStoriesPage() {
               />
               <span className="text-sm text-muted-foreground whitespace-nowrap">days</span>
             </div>
-          ) : (
+          ) : showDateFilter && (
             <>
-              <Select value={dateFilter} onValueChange={(v) => setDateFilter(v as typeof dateFilter)}>
+              <Select value={dateFilter} onValueChange={(v) => setDateFilter(v as DateFilter)}>
                 <SelectTrigger className="w-36" data-testid="select-date-filter">
                   <SelectValue />
                 </SelectTrigger>
@@ -235,9 +312,25 @@ export default function AdminStoriesPage() {
                   <SelectItem value="30d">Last 30 days</SelectItem>
                   <SelectItem value="90d">Last 90 days</SelectItem>
                   <SelectItem value="month">By Month</SelectItem>
+                  <SelectItem value="custom">Custom Days</SelectItem>
                 </SelectContent>
               </Select>
-              {dateFilter === "month" && (
+              {showCustomDaysInput && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">Last</span>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="365"
+                    value={customDays}
+                    onChange={(e) => setCustomDays(e.target.value)}
+                    className="w-20 text-center"
+                    data-testid="input-custom-days"
+                  />
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">days</span>
+                </div>
+              )}
+              {showMonthInput && (
                 <Input
                   type="month"
                   value={filterMonth}
@@ -248,6 +341,7 @@ export default function AdminStoriesPage() {
               )}
             </>
           )}
+
           {!isContributor && selectedIds.size > 0 && (
             <Button
               variant="destructive"
@@ -278,6 +372,9 @@ export default function AdminStoriesPage() {
                   <th className="text-left p-3 font-medium hidden sm:table-cell">Category</th>
                 )}
                 <th className="text-left p-3 font-medium hidden md:table-cell">Status</th>
+                <th className="text-left p-3 font-medium hidden md:table-cell">
+                  <span className="flex items-center gap-1"><Eye className="w-3.5 h-3.5" />Views</span>
+                </th>
                 <th className="text-left p-3 font-medium hidden lg:table-cell">Date</th>
                 <th className="text-right p-3 font-medium">Actions</th>
               </tr>
@@ -290,13 +387,14 @@ export default function AdminStoriesPage() {
                     <td className="p-3"><Skeleton className="h-4 w-48" /></td>
                     {!activeCategory && <td className="p-3 hidden sm:table-cell"><Skeleton className="h-4 w-24" /></td>}
                     <td className="p-3 hidden md:table-cell"><Skeleton className="h-5 w-16" /></td>
+                    <td className="p-3 hidden md:table-cell"><Skeleton className="h-4 w-10" /></td>
                     <td className="p-3 hidden lg:table-cell"><Skeleton className="h-4 w-20" /></td>
                     <td className="p-3 text-right"><Skeleton className="h-8 w-20 ml-auto" /></td>
                   </tr>
                 ))
               ) : stories && stories.length > 0 ? (
                 stories.map((story) => (
-                  <tr key={story.id} className="border-b" data-testid={`row-story-${story.id}`}>
+                  <tr key={story.id} className="border-b hover:bg-muted/20" data-testid={`row-story-${story.id}`}>
                     <td className="p-3">
                       <Checkbox
                         checked={selectedIds.has(story.id)}
@@ -323,6 +421,12 @@ export default function AdminStoriesPage() {
                       <Badge variant={story.status === "published" ? "default" : "secondary"}>
                         {story.status}
                       </Badge>
+                    </td>
+                    <td className="p-3 hidden md:table-cell text-muted-foreground" data-testid={`text-views-${story.id}`}>
+                      <span className="flex items-center gap-1">
+                        <Eye className="w-3 h-3" />
+                        {story.views ?? 0}
+                      </span>
                     </td>
                     <td className="p-3 hidden lg:table-cell text-muted-foreground">
                       <span className="flex items-center gap-1">
@@ -370,10 +474,10 @@ export default function AdminStoriesPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="p-12 text-center text-muted-foreground">
+                  <td colSpan={7} className="p-12 text-center text-muted-foreground">
                     {categorySlug && !activeCategory
                       ? "Loading category..."
-                      : `No articles found${activeCategory ? ` in ${activeCategory.name}` : ""}. Create your first article to get started.`}
+                      : `No articles found${activeCategory ? ` in ${activeCategory.name}` : ""}${statusFilter === "recent" ? ` in the last ${recentDays} days` : ""}. ${statusFilter === "most-viewed" ? "No articles with views yet." : ""}`}
                   </td>
                 </tr>
               )}
