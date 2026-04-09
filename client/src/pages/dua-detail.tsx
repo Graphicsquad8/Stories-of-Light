@@ -249,6 +249,13 @@ export default function DuaDetailPage() {
                     {dua.category && (
                       <Badge variant="secondary" data-testid="badge-dua-category">{dua.category}</Badge>
                     )}
+                    {(dua as any).ratingEnabled && (dua as any).totalRatings > 0 && (
+                      <div className="flex items-center gap-1 text-sm" data-testid="text-dua-avg-rating">
+                        <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                        <span className="font-medium">{((dua as any).averageRating || 0).toFixed(1)}</span>
+                        <span className="text-muted-foreground">({(dua as any).totalRatings})</span>
+                      </div>
+                    )}
                   </div>
                   {dua.description && (() => {
                     const MAX = 90;

@@ -219,18 +219,20 @@ export default function MotivationalStoryDetailPage() {
                     )}
                   </div>
                   <div className="flex items-center gap-4 text-sm flex-wrap">
-                    <div className="flex items-center gap-1">
-                      {[1, 2, 3, 4, 5].map((s) => (
-                        <Star
-                          key={s}
-                          className={`w-3.5 h-3.5 ${s <= Math.round(story.averageRating || 0) ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/20"}`}
-                          data-testid={`star-display-${s}`}
-                        />
-                      ))}
-                      <span className="ml-1 text-muted-foreground" data-testid="text-rating-count">
-                        ({story.totalRatings || 0} reviews)
-                      </span>
-                    </div>
+                    {story.ratingEnabled && (
+                      <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star
+                            key={s}
+                            className={`w-3.5 h-3.5 ${s <= Math.round(story.averageRating || 0) ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/20"}`}
+                            data-testid={`star-display-${s}`}
+                          />
+                        ))}
+                        <span className="ml-1 text-muted-foreground" data-testid="text-rating-count">
+                          ({story.totalRatings || 0} reviews)
+                        </span>
+                      </div>
+                    )}
                     <div className="flex items-center gap-1 text-muted-foreground" data-testid="text-views-count">
                       <Eye className="w-3.5 h-3.5" /> {story.views || 0} views
                     </div>
@@ -335,7 +337,7 @@ export default function MotivationalStoryDetailPage() {
                   </div>
                 )}
 
-                {user && (
+                {story.ratingEnabled && user && (
                   <Card className="p-6 mt-8" data-testid="card-rating-form">
                     <h3 className="font-serif text-lg font-semibold mb-4">Rate This Story</h3>
                     <div className="space-y-3">
@@ -359,7 +361,7 @@ export default function MotivationalStoryDetailPage() {
                   </Card>
                 )}
 
-                {ratings && ratings.length > 0 && (
+                {story.ratingEnabled && ratings && ratings.length > 0 && (
                   <div className="mt-8" data-testid="section-reviews">
                     <h3 className="font-serif text-lg font-semibold mb-4" data-testid="text-reviews-heading">
                       Reviews ({ratings.length})

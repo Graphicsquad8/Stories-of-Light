@@ -269,11 +269,11 @@ export async function registerRoutes(
       if (res.statusCode < 400) {
         const p = req.path;
         let keys: string[] = [];
-        if (p.startsWith("/api/stories")) keys = ["/api/stories"];
-        else if (p.startsWith("/api/books")) keys = ["/api/books"];
-        else if (p.startsWith("/api/categories")) keys = ["/api/categories"];
-        else if (p.startsWith("/api/duas")) keys = ["/api/duas"];
-        else if (p.startsWith("/api/motivational-stories")) keys = ["/api/motivational-stories"];
+        if (p.startsWith("/api/stories") || p.startsWith("/api/admin/stories")) keys = ["/api/stories"];
+        else if (p.startsWith("/api/books") || p.startsWith("/api/admin/books")) keys = ["/api/books"];
+        else if (p.startsWith("/api/categories") || p.startsWith("/api/admin/categories")) keys = ["/api/categories"];
+        else if (p.startsWith("/api/duas") || p.startsWith("/api/admin/duas") || p.startsWith("/api/admin/dua-parts")) keys = ["/api/duas"];
+        else if (p.startsWith("/api/motivational-stories") || p.startsWith("/api/admin/motivational")) keys = ["/api/motivational-stories"];
         else if (p.startsWith("/api/admin/footer-pages")) keys = ["/api/admin/footer-pages"];
         if (keys.length) broadcast({ type: "invalidate", keys });
       }

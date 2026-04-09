@@ -342,6 +342,13 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
                   <span className="text-muted-foreground" data-testid="text-part-page-indicator">
                     Part {activePartIndex + 1} — Page {activePageIndex + 1}/{totalPages}
                   </span>
+                  {(story as any).ratingEnabled && (story as any).totalRatings > 0 && (
+                    <div className="flex items-center gap-1 text-sm" data-testid="text-story-avg-rating">
+                      <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                      <span className="font-medium">{((story as any).averageRating || 0).toFixed(1)}</span>
+                      <span className="text-muted-foreground">({(story as any).totalRatings})</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -624,6 +631,13 @@ function LegacyView({ story }: { story: StoryWithCategory }) {
                     {format(new Date(story.publishedAt), "MMMM d, yyyy")}
                   </span>
                 )}
+                {(story as any).ratingEnabled && (story as any).totalRatings > 0 && (
+                  <div className="flex items-center gap-1 text-sm text-white/80" data-testid="text-story-avg-rating">
+                    <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                    <span className="font-medium">{((story as any).averageRating || 0).toFixed(1)}</span>
+                    <span className="text-white/60">({(story as any).totalRatings})</span>
+                  </div>
+                )}
               </div>
               <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-4 text-white" data-testid="text-story-title" dangerouslySetInnerHTML={{ __html: story.title }} />
               {story.excerpt && (
@@ -652,6 +666,13 @@ function LegacyView({ story }: { story: StoryWithCategory }) {
                   <Clock className="w-3.5 h-3.5" />
                   {format(new Date(story.publishedAt), "MMMM d, yyyy")}
                 </span>
+              )}
+              {(story as any).ratingEnabled && (story as any).totalRatings > 0 && (
+                <div className="flex items-center gap-1 text-sm" data-testid="text-story-avg-rating">
+                  <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                  <span className="font-medium">{((story as any).averageRating || 0).toFixed(1)}</span>
+                  <span className="text-muted-foreground">({(story as any).totalRatings})</span>
+                </div>
               )}
             </div>
             <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-4" data-testid="text-story-title" dangerouslySetInnerHTML={{ __html: story.title }} />

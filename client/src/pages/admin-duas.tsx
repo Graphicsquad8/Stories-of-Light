@@ -476,6 +476,7 @@ export default function AdminDuasPage() {
                   <TableHead>Title</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead className="text-center">Views</TableHead>
+                  <TableHead className="text-center">Rating</TableHead>
                   <TableHead className="text-center">Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -500,6 +501,13 @@ export default function AdminDuasPage() {
                       <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground">
                         <Eye className="w-3.5 h-3.5" />
                         {dua.views ?? 0}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center gap-1 text-sm">
+                        <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                        {((dua as any).averageRating || 0).toFixed(1)}
+                        <span className="text-muted-foreground">({(dua as any).totalRatings || 0})</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-center">

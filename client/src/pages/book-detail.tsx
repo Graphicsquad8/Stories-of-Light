@@ -224,13 +224,15 @@ export default function BookDetailPage() {
             </div>
 
             <div className="flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-1">
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <Star key={s} className={`w-4 h-4 ${s <= Math.round(book.averageRating || 0) ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/20"}`} />
-                ))}
-                <span className="ml-1 font-medium">{(book.averageRating || 0).toFixed(1)}</span>
-                <span className="text-muted-foreground">({book.totalRatings || 0} ratings)</span>
-              </div>
+              {book.ratingEnabled && (
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Star key={s} className={`w-4 h-4 ${s <= Math.round(book.averageRating || 0) ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/20"}`} />
+                  ))}
+                  <span className="ml-1 font-medium">{(book.averageRating || 0).toFixed(1)}</span>
+                  <span className="text-muted-foreground">({book.totalRatings || 0} ratings)</span>
+                </div>
+              )}
               <div className="flex items-center gap-1 text-muted-foreground">
                 <Eye className="w-4 h-4" /> {book.views || 0} views
               </div>
