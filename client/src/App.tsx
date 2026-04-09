@@ -101,6 +101,7 @@ function Router() {
       <Route path="/duas" component={DuasPage} />
       <Route path="/duas/:slug" component={DuaDetailPage} />
       <Route path="/page/:slug" component={FooterPageView} />
+      <Route path="/:slug" component={CategoryPage} />
       <Route component={NotFound} />
     </Switch>
     </>

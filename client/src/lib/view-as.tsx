@@ -49,7 +49,11 @@ export function ViewAsProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const clearViewAs = useCallback(() => setViewAs(null), [setViewAs]);
+  const clearViewAs = useCallback(() => {
+    setViewAs(null);
+    setViewMeModeState(false);
+    sessionStorage.removeItem(VIEW_ME_KEY);
+  }, [setViewAs]);
 
   const setViewMeMode = useCallback((mode: boolean) => {
     setViewMeModeState(mode);

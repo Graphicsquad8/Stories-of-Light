@@ -33,7 +33,7 @@ import {
   bookParts, bookPages, footerPages,
   duas, duaParts, duaBookmarks
 } from "@shared/schema";
-import { eq, desc, and, ilike, sql, count, sum, inArray, asc, gte, ne, isNull, isNotNull } from "drizzle-orm";
+import { eq, desc, and, ilike, sql, count, sum, inArray, asc, gte, lte, ne, isNull, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 
@@ -78,7 +78,7 @@ export interface IStorage {
   getCategoryMotivationalViewCounts(): Promise<Record<string, number>>;
   getCategoryDuaViewCounts(): Promise<Record<string, number>>;
 
-  getStories(opts?: { status?: string; categoryId?: string; featured?: boolean; search?: string; limit?: number; offset?: number; userId?: string }): Promise<StoryWithCategory[]>;
+  getStories(opts?: { status?: string; categoryId?: string; featured?: boolean; search?: string; limit?: number; offset?: number; userId?: string; startDate?: string; endDate?: string }): Promise<StoryWithCategory[]>;
   getStoryById(id: string): Promise<StoryWithCategory | undefined>;
   getStoryBySlug(slug: string): Promise<StoryWithCategory | undefined>;
   createStory(story: InsertStory): Promise<Story>;
@@ -444,13 +444,15 @@ export class DatabaseStorage implements IStorage {
     return map;
   }
 
-  async getStories(opts?: { status?: string; categoryId?: string; featured?: boolean; search?: string; limit?: number; offset?: number; userId?: string }): Promise<StoryWithCategory[]> {
+  async getStories(opts?: { status?: string; categoryId?: string; featured?: boolean; search?: string; limit?: number; offset?: number; userId?: string; startDate?: string; endDate?: string }): Promise<StoryWithCategory[]> {
     const conditions: any[] = [isNull(stories.deletedAt)];
     if (opts?.status) conditions.push(eq(stories.status, opts.status));
     if (opts?.categoryId) conditions.push(eq(stories.categoryId, opts.categoryId));
     if (opts?.featured !== undefined) conditions.push(eq(stories.featured, opts.featured));
     if (opts?.search) conditions.push(ilike(stories.title, `%${opts.search}%`));
     if (opts?.userId) conditions.push(eq(stories.userId, opts.userId));
+    if (opts?.startDate) conditions.push(gte(stories.createdAt, new Date(opts.startDate)));
+    if (opts?.endDate) conditions.push(lte(stories.createdAt, new Date(opts.endDate)));
 
     const rows = await db
       .select({ story: stories, category: categories })

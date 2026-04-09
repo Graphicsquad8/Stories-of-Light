@@ -29,7 +29,7 @@ import {
 import { Plus, Search, Trash2, Eye, Edit, Copy, Clock } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import type { StoryWithCategory, Category } from "@shared/schema";
 import { format } from "date-fns";
 
@@ -52,6 +52,31 @@ export default function AdminStoriesPage() {
   const categorySlug = matchCat ? catParams?.slug : null;
   const effectiveStatusFilter = matchRecent ? "recent" : statusFilter;
 
+  const [dateFilter, setDateFilter] = useState<"all" | "7d" | "30d" | "90d" | "month" | "custom">("all");
+  const [filterMonth, setFilterMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
+  const [recentDays, setRecentDays] = useState("30");
+
+  const { startDate, endDate } = useMemo(() => {
+    if (matchRecent) {
+      const days = parseInt(recentDays) || 30;
+      const start = new Date(Date.now() - days * 86400000).toISOString();
+      return { startDate: start, endDate: undefined };
+    }
+    if (dateFilter === "7d") return { startDate: new Date(Date.now() - 7 * 86400000).toISOString(), endDate: undefined };
+    if (dateFilter === "30d") return { startDate: new Date(Date.now() - 30 * 86400000).toISOString(), endDate: undefined };
+    if (dateFilter === "90d") return { startDate: new Date(Date.now() - 90 * 86400000).toISOString(), endDate: undefined };
+    if (dateFilter === "month") {
+      const [y, m] = filterMonth.split("-").map(Number);
+      const start = new Date(y, m - 1, 1).toISOString();
+      const end = new Date(y, m, 0, 23, 59, 59).toISOString();
+      return { startDate: start, endDate: end };
+    }
+    return { startDate: undefined, endDate: undefined };
+  }, [matchRecent, recentDays, dateFilter, filterMonth]);
+
   const { data: categories } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
@@ -61,9 +86,10 @@ export default function AdminStoriesPage() {
   const queryParams = new URLSearchParams();
   if (search) queryParams.set("search", search);
   if (effectiveStatusFilter && effectiveStatusFilter !== "all" && effectiveStatusFilter !== "recent") queryParams.set("status", effectiveStatusFilter);
-  if (effectiveStatusFilter === "recent") queryParams.set("limit", "20");
   if (activeCategory?.id) queryParams.set("categoryId", activeCategory.id);
   if (viewMeUserId) queryParams.set("userId", viewMeUserId);
+  if (startDate) queryParams.set("startDate", startDate);
+  if (endDate) queryParams.set("endDate", endDate);
   const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
 
   const { data: stories, isLoading } = useQuery<StoryWithCategory[]>({
@@ -170,17 +196,58 @@ export default function AdminStoriesPage() {
               data-testid="input-search-stories"
             />
           </div>
-          <Select value={matchRecent ? "recent" : statusFilter} onValueChange={setStatusFilter} disabled={matchRecent}>
-            <SelectTrigger className="w-36" data-testid="select-status-filter">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all" data-testid="filter-all">All Status</SelectItem>
-              <SelectItem value="published" data-testid="filter-published">Published</SelectItem>
-              <SelectItem value="draft" data-testid="filter-draft">Draft</SelectItem>
-              {matchRecent && <SelectItem value="recent">Recent Article</SelectItem>}
-            </SelectContent>
-          </Select>
+          {!matchRecent && (
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-36" data-testid="select-status-filter">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" data-testid="filter-all">All Status</SelectItem>
+                <SelectItem value="published" data-testid="filter-published">Published</SelectItem>
+                <SelectItem value="draft" data-testid="filter-draft">Draft</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
+          {matchRecent ? (
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
+              <span className="text-sm text-muted-foreground whitespace-nowrap">Last</span>
+              <Input
+                type="number"
+                min="1"
+                max="365"
+                value={recentDays}
+                onChange={(e) => setRecentDays(e.target.value)}
+                className="w-20 text-center"
+                data-testid="input-recent-days"
+              />
+              <span className="text-sm text-muted-foreground whitespace-nowrap">days</span>
+            </div>
+          ) : (
+            <>
+              <Select value={dateFilter} onValueChange={(v) => setDateFilter(v as typeof dateFilter)}>
+                <SelectTrigger className="w-36" data-testid="select-date-filter">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="7d">Last 7 days</SelectItem>
+                  <SelectItem value="30d">Last 30 days</SelectItem>
+                  <SelectItem value="90d">Last 90 days</SelectItem>
+                  <SelectItem value="month">By Month</SelectItem>
+                </SelectContent>
+              </Select>
+              {dateFilter === "month" && (
+                <Input
+                  type="month"
+                  value={filterMonth}
+                  onChange={(e) => setFilterMonth(e.target.value)}
+                  className="w-40"
+                  data-testid="input-filter-month"
+                />
+              )}
+            </>
+          )}
           {!isContributor && selectedIds.size > 0 && (
             <Button
               variant="destructive"

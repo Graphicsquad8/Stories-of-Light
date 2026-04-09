@@ -248,7 +248,7 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
                 <h1 className="font-serif text-lg sm:text-xl font-bold truncate" data-testid="text-story-title" dangerouslySetInnerHTML={{ __html: story.title }} />
                 <div className="flex items-center gap-3 text-sm flex-wrap">
                   {story.category && (
-                    <Link href={`/category/${(story.category as any).urlSlug || story.category.slug}`}>
+                    <Link href={`/${(story.category as any).urlSlug || story.category.slug}`}>
                       <Badge variant="secondary" data-testid="badge-story-category">{story.category.name}</Badge>
                     </Link>
                   )}
@@ -499,7 +499,7 @@ function StoryAdBand() {
 
 function LegacyView({ story }: { story: StoryWithCategory }) {
   const categoryHref = story.category
-    ? `/category/${(story.category as any).urlSlug || story.category.slug}`
+    ? `/${(story.category as any).urlSlug || story.category.slug}`
     : "/";
 
   return (

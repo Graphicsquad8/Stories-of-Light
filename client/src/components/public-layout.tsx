@@ -156,7 +156,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
 
   const navLinks = [
     { label: "Home", href: "/" },
-    ...(categoryData ?? []).map((cat) => ({ label: cat.name, href: `/category/${cat.urlSlug || cat.slug}` })),
+    ...(categoryData ?? []).map((cat) => ({ label: cat.name, href: `/${cat.urlSlug || cat.slug}` })),
     { label: motivationalPage?.name || "Stories", href: "/motivational-stories" },
     { label: duaPage?.name || "Dua", href: "/duas" },
     { label: bookPage?.name || "Books", href: "/books" },
@@ -319,7 +319,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
                 {footerCategories.map((cat) => (
                   <li key={cat.id}>
                     <Link
-                      href={`/category/${cat.urlSlug || cat.slug}`}
+                      href={`/${cat.urlSlug || cat.slug}`}
                       className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                       data-testid={`link-footer-${cat.urlSlug || cat.slug}`}
                     >

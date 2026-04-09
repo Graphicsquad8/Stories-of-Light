@@ -120,6 +120,14 @@ function AdminSidebar() {
       permission: "categories",
     },
     {
+      key: "recent-articles",
+      title: "Recent Article",
+      href: "/image/stories/recent",
+      icon: Clock,
+      isActive: (loc) => loc === "/image/stories/recent",
+      permission: "articles",
+    },
+    {
       key: "articles",
       title: "All Articles",
       href: "/image/stories",
@@ -204,7 +212,8 @@ function AdminSidebar() {
   });
 
   const articlesAllActive = location.startsWith("/image/stories") &&
-    !location.startsWith("/image/stories/category/");
+    !location.startsWith("/image/stories/category/") &&
+    !location.startsWith("/image/stories/recent");
 
   return (
     <Sidebar>
@@ -304,14 +313,6 @@ function AdminSidebar() {
                                 <Link href="/image/stories" data-testid="link-admin-all-stories">
                                   <FileText className="w-3.5 h-3.5" />
                                   <span>All Articles</span>
-                                </Link>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                            <SidebarMenuSubItem>
-                              <SidebarMenuSubButton asChild data-active={location === "/image/stories/recent"}>
-                                <Link href="/image/stories/recent" data-testid="link-admin-recent-articles">
-                                  <Clock className="w-3.5 h-3.5" />
-                                  <span>Recent Article</span>
                                 </Link>
                               </SidebarMenuSubButton>
                             </SidebarMenuSubItem>

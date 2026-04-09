@@ -60,7 +60,7 @@ function HeroSection() {
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
-            <Link href="/category/awliya">
+            <Link href="/awliya">
               <Button variant="outline" size="lg" className="bg-white/10 backdrop-blur border-white/20 text-white" data-testid="button-browse-categories">
                 Browse Categories
               </Button>
@@ -85,7 +85,7 @@ function CategoryTiles({ categories }: { categories: (Category & { storyCount: n
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {categories.map((cat) => (
-          <Link key={cat.id} href={`/category/${cat.urlSlug || cat.slug}`}>
+          <Link key={cat.id} href={`/${cat.urlSlug || cat.slug}`}>
             <Card className="group relative h-48 overflow-hidden cursor-pointer" data-testid={`card-category-${cat.urlSlug || cat.slug}`}>
               <img
                 src={cat.image || fallbackImage}

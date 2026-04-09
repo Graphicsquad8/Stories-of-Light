@@ -881,7 +881,7 @@ export async function registerRoutes(
   });
 
   app.get("/api/stories", async (req, res) => {
-    const { status, categoryId, featured, search, limit, offset, userId } = req.query;
+    const { status, categoryId, featured, search, limit, offset, userId, startDate, endDate } = req.query;
     const opts: any = {};
     if (status) opts.status = status;
     if (categoryId) opts.categoryId = categoryId;
@@ -890,6 +890,8 @@ export async function registerRoutes(
     if (limit) opts.limit = parseInt(limit as string);
     if (offset) opts.offset = parseInt(offset as string);
     if (userId) opts.userId = userId as string;
+    if (startDate) opts.startDate = startDate as string;
+    if (endDate) opts.endDate = endDate as string;
     const storiesList = await storage.getStories(opts);
     res.json(storiesList);
   });
