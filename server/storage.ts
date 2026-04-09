@@ -25,13 +25,14 @@ import {
   type DuaPart, type InsertDuaPart,
   type DuaWithParts,
   type DuaBookmark,
+  type DuaRating, type StoryRating,
   users, categories, stories, books, bookChapters, bookBookmarks, bookProgress,
   bookmarks, bookRatings, passwordResetTokens, siteSettings,
   motivationalStories, motivationalLessons, motivationalBookmarks,
   motivationalRatings, motivationalProgress,
   storyParts, storyPages, storyReadingProgress,
   bookParts, bookPages, footerPages,
-  duas, duaParts, duaBookmarks
+  duas, duaParts, duaBookmarks, duaRatings, storyRatings
 } from "@shared/schema";
 import { eq, desc, and, ilike, sql, count, sum, inArray, asc, gte, lte, ne, isNull, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
@@ -180,6 +181,16 @@ export interface IStorage {
   getDuaTotalViews(): Promise<number>;
   getRecentDuaCount(days: number): Promise<number>;
   getDuaRatingDistribution(): Promise<{ fiveStarCount: number; fourStarCount: number }>;
+  getDuaRatings(duaId: string): Promise<DuaRating[]>;
+  getUserDuaRating(userId: string, duaId: string): Promise<DuaRating | undefined>;
+  createDuaRating(userId: string, duaId: string, rating: number, comment?: string): Promise<DuaRating>;
+  updateDuaAverageRating(duaId: string): Promise<void>;
+
+  getStoryRatings(storyId: string): Promise<StoryRating[]>;
+  getUserStoryRating(userId: string, storyId: string): Promise<StoryRating | undefined>;
+  createStoryRating(userId: string, storyId: string, rating: number, comment?: string): Promise<StoryRating>;
+  updateStoryAverageRating(storyId: string): Promise<void>;
+
   incrementDuaViews(id: string): Promise<void>;
   getDuaBySlug(slug: string): Promise<DuaWithParts | undefined>;
   getDuaById(id: string): Promise<DuaWithParts | undefined>;
@@ -1462,7 +1473,67 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getDuaRatingDistribution(): Promise<{ fiveStarCount: number; fourStarCount: number }> {
-    return { fiveStarCount: 0, fourStarCount: 0 };
+    const [fiveStar] = await db.select({ count: count() }).from(duaRatings).where(eq(duaRatings.rating, 5));
+    const [fourStar] = await db.select({ count: count() }).from(duaRatings).where(eq(duaRatings.rating, 4));
+    return { fiveStarCount: fiveStar?.count ?? 0, fourStarCount: fourStar?.count ?? 0 };
+  }
+
+  async getDuaRatings(duaId: string): Promise<DuaRating[]> {
+    return db.select().from(duaRatings).where(eq(duaRatings.duaId, duaId)).orderBy(desc(duaRatings.createdAt));
+  }
+
+  async getUserDuaRating(userId: string, duaId: string): Promise<DuaRating | undefined> {
+    const [r] = await db.select().from(duaRatings).where(and(eq(duaRatings.userId, userId), eq(duaRatings.duaId, duaId)));
+    return r;
+  }
+
+  async createDuaRating(userId: string, duaId: string, rating: number, comment?: string): Promise<DuaRating> {
+    const existing = await this.getUserDuaRating(userId, duaId);
+    if (existing) {
+      const [updated] = await db.update(duaRatings).set({ rating, comment }).where(eq(duaRatings.id, existing.id)).returning();
+      await this.updateDuaAverageRating(duaId);
+      return updated;
+    }
+    const [created] = await db.insert(duaRatings).values({ userId, duaId, rating, comment }).returning();
+    await this.updateDuaAverageRating(duaId);
+    return created;
+  }
+
+  async updateDuaAverageRating(duaId: string): Promise<void> {
+    const [result] = await db.select({
+      avg: sql<number>`COALESCE(AVG(${duaRatings.rating}), 0)`,
+      total: count(),
+    }).from(duaRatings).where(eq(duaRatings.duaId, duaId));
+    await db.update(duas).set({ averageRating: result.avg, totalRatings: result.total, updatedAt: new Date() }).where(eq(duas.id, duaId));
+  }
+
+  async getStoryRatings(storyId: string): Promise<StoryRating[]> {
+    return db.select().from(storyRatings).where(eq(storyRatings.storyId, storyId)).orderBy(desc(storyRatings.createdAt));
+  }
+
+  async getUserStoryRating(userId: string, storyId: string): Promise<StoryRating | undefined> {
+    const [r] = await db.select().from(storyRatings).where(and(eq(storyRatings.userId, userId), eq(storyRatings.storyId, storyId)));
+    return r;
+  }
+
+  async createStoryRating(userId: string, storyId: string, rating: number, comment?: string): Promise<StoryRating> {
+    const existing = await this.getUserStoryRating(userId, storyId);
+    if (existing) {
+      const [updated] = await db.update(storyRatings).set({ rating, comment }).where(eq(storyRatings.id, existing.id)).returning();
+      await this.updateStoryAverageRating(storyId);
+      return updated;
+    }
+    const [created] = await db.insert(storyRatings).values({ userId, storyId, rating, comment }).returning();
+    await this.updateStoryAverageRating(storyId);
+    return created;
+  }
+
+  async updateStoryAverageRating(storyId: string): Promise<void> {
+    const [result] = await db.select({
+      avg: sql<number>`COALESCE(AVG(${storyRatings.rating}), 0)`,
+      total: count(),
+    }).from(storyRatings).where(eq(storyRatings.storyId, storyId));
+    await db.update(stories).set({ averageRating: result.avg, totalRatings: result.total, updatedAt: new Date() }).where(eq(stories.id, storyId));
   }
 
   async incrementDuaViews(id: string): Promise<void> {

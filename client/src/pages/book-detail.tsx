@@ -293,7 +293,7 @@ export default function BookDetailPage() {
           </div>
         </div>
 
-        {user && (
+        {book.ratingEnabled && user && (
           <Card className="p-6 mb-8" data-testid="card-rating-form">
             <h3 className="font-serif text-lg font-semibold mb-4">Rate This Book</h3>
             <div className="space-y-3">
@@ -317,7 +317,7 @@ export default function BookDetailPage() {
           </Card>
         )}
 
-        {ratings && ratings.length > 0 && (
+        {book.ratingEnabled && ratings && ratings.length > 0 && (
           <div className="mb-8">
             <h3 className="font-serif text-lg font-semibold mb-4" data-testid="text-reviews-heading">Reviews ({ratings.length})</h3>
             <div className="space-y-3">

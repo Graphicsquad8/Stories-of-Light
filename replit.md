@@ -117,6 +117,16 @@ Key architectural decisions include:
 - **Duas**: `RelatedDuas` component on `dua-detail.tsx` fetches `/api/duas/:id/related` (new endpoint) — returns duas in the same category. If no category match, returns empty (no section shown).
 - **Dynamic categories**: Since all content types have a `category` field and the related endpoints filter by it, any new admin-created categories automatically produce relevant suggested content for their articles.
 
+## Rating System
+- **DB columns**: `average_rating`, `total_ratings`, `rating_enabled` added to `stories`, `duas`, `books`, `motivational_stories` tables. `story_ratings` and `dua_ratings` junction tables store individual user ratings (rating 1–5, optional comment).
+- **Admin toggles**: Every content admin form (Stories editor, Duas admin, Books admin, Motivational Stories admin) has an "Enable Ratings" switch. Defaults to `true`. When disabled, rating UI is hidden on public pages.
+- **Category datalist autocomplete**: Category inputs in admin forms for Duas, Books, and Motivational Stories use `<datalist>` connected to live category data from their respective `/api/.../categories` endpoints.
+- **Public rating UI**: Story detail pages (`story.tsx`), Dua detail pages (`dua-detail.tsx`), and Book detail pages (`book-detail.tsx`) all display a star rating form (1–5 stars + optional comment) when the user is logged in AND `ratingEnabled` is true. Existing ratings from all users are shown below the form.
+- **API routes (stories)**: `GET /api/stories/:id/ratings`, `POST /api/stories/:id/rate`, `GET /api/stories/:id/my-rating`
+- **API routes (duas)**: `GET /api/duas/:id/ratings`, `POST /api/duas/:id/rate`, `GET /api/duas/:id/my-rating`
+- **API routes (books)**: `GET /api/books/:id/ratings`, `POST /api/books/:id/rate`, `GET /api/books/:id/my-rating`
+- **Average rating update**: After each rating submission, `average_rating` and `total_ratings` are recalculated from the ratings table.
+
 ## External Dependencies
 - **PostgreSQL**: Primary database for all application data.
 - **Passport.js**: Authentication middleware for Express.js.

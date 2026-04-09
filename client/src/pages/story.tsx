@@ -12,8 +12,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   ArrowLeft, Clock, Tag, Share2, Bookmark, BookmarkCheck,
   ChevronLeft, ChevronRight, Video, Headphones, Menu, X,
-  PanelLeftClose, PanelLeftOpen, PlayCircle, PauseCircle,
+  PanelLeftClose, PanelLeftOpen, PlayCircle, PauseCircle, Star, Loader2,
 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import type { StoryWithCategory, StoryPartWithPages } from "@shared/schema";
 import { format } from "date-fns";
 import { useAuth } from "@/lib/auth";
@@ -138,6 +139,92 @@ function SidebarAds() {
         </div>
       </div>
     </aside>
+  );
+}
+
+function StarRatingInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const [hover, setHover] = useState(0);
+  return (
+    <div className="flex items-center gap-1">
+      {[1, 2, 3, 4, 5].map((s) => (
+        <button key={s} type="button" onMouseEnter={() => setHover(s)} onMouseLeave={() => setHover(0)} onClick={() => onChange(s)} className="p-0.5" data-testid={`star-input-${s}`}>
+          <Star className={`w-6 h-6 transition-colors ${s <= (hover || value) ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/20"}`} />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function StoryRatingSection({ story }: { story: StoryWithCategory }) {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [ratingValue, setRatingValue] = useState(0);
+  const [ratingComment, setRatingComment] = useState("");
+
+  const { data: myRating } = useQuery<any>({
+    queryKey: ["/api/stories", story.id, "my-rating"],
+    queryFn: () => fetch(`/api/stories/${story.id}/my-rating`, { credentials: "include" }).then(r => r.ok ? r.json() : null),
+    enabled: !!user,
+  });
+
+  const { data: ratings } = useQuery<any[]>({
+    queryKey: ["/api/stories", story.id, "ratings"],
+    queryFn: () => fetch(`/api/stories/${story.id}/ratings`).then(r => r.json()),
+  });
+
+  useEffect(() => {
+    if (myRating) {
+      setRatingValue(myRating.rating);
+      setRatingComment(myRating.comment || "");
+    }
+  }, [myRating]);
+
+  const rateMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", `/api/stories/${story.id}/rate`, { rating: ratingValue, comment: ratingComment });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/stories", story.id, "ratings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stories", story.id, "my-rating"] });
+      toast({ title: "Rating submitted" });
+    },
+  });
+
+  if (!(story as any).ratingEnabled) return null;
+
+  return (
+    <>
+      {user && (
+        <Card className="p-6 mt-8" data-testid="card-rating-form">
+          <h3 className="font-serif text-lg font-semibold mb-4">Rate This Story</h3>
+          <div className="space-y-3">
+            <StarRatingInput value={ratingValue} onChange={setRatingValue} />
+            <Textarea value={ratingComment} onChange={(e) => setRatingComment(e.target.value)} placeholder="Write a short review (optional)..." rows={3} data-testid="input-rating-comment" />
+            <Button onClick={() => rateMutation.mutate()} disabled={ratingValue === 0 || rateMutation.isPending} data-testid="button-submit-rating">
+              {rateMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {myRating ? "Update Rating" : "Submit Rating"}
+            </Button>
+          </div>
+        </Card>
+      )}
+      {ratings && ratings.length > 0 && (
+        <div className="mt-8">
+          <h3 className="font-serif text-lg font-semibold mb-4" data-testid="text-reviews-heading">Reviews ({ratings.length})</h3>
+          <div className="space-y-3">
+            {ratings.map((r: any) => (
+              <Card key={r.id} className="p-4" data-testid={`review-${r.id}`}>
+                <div className="flex items-center gap-2 mb-2">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Star key={s} className={`w-3.5 h-3.5 ${s <= r.rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/20"}`} />
+                  ))}
+                </div>
+                {r.comment && <p className="text-sm text-muted-foreground">{r.comment}</p>}
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -469,6 +556,8 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
                 <StoryAdBand />
               </div>
 
+              <StoryRatingSection story={story} />
+
               <RelatedStories storyId={story.id} />
             </div>
           </main>
@@ -623,6 +712,8 @@ function LegacyView({ story }: { story: StoryWithCategory }) {
             <div className="mt-8">
               <StoryAdBand />
             </div>
+
+            <StoryRatingSection story={story} />
 
             <RelatedStories storyId={story.id} />
           </article>

@@ -79,6 +79,7 @@ export default function AdminDuasPage() {
   const [category, setCategory] = useState("");
   const [thumbnail, setThumbnail] = useState("");
   const [published, setPublished] = useState(false);
+  const [ratingEnabled, setRatingEnabled] = useState(true);
   const [slugManual, setSlugManual] = useState(false);
 
   const [parts, setParts] = useState<PartDraft[]>([newPartDraft()]);
@@ -178,7 +179,7 @@ export default function AdminDuasPage() {
 
   const openCreate = () => {
     setEditing(null);
-    setTitle(""); setSlug(""); setDescription(""); setCategory(""); setThumbnail(""); setPublished(false); setSlugManual(false);
+    setTitle(""); setSlug(""); setDescription(""); setCategory(""); setThumbnail(""); setPublished(false); setRatingEnabled(true); setSlugManual(false);
     setParts([newPartDraft()]);
     setDialog(true);
   };
@@ -187,7 +188,7 @@ export default function AdminDuasPage() {
     setEditing(dua);
     setTitle(dua.title); setSlug(dua.slug); setDescription(dua.description ?? "");
     setCategory(dua.category ?? ""); setThumbnail(dua.thumbnail ?? "");
-    setPublished(dua.published ?? false); setSlugManual(true);
+    setPublished(dua.published ?? false); setRatingEnabled(dua.ratingEnabled ?? true); setSlugManual(true);
     setRemovedPartDbIds([]);
     setParts([]);
     setDialog(true);
@@ -238,7 +239,7 @@ export default function AdminDuasPage() {
     }
     try {
       if (editing) {
-        await updateDua.mutateAsync({ id: editing.id, data: { title, slug, description, category, thumbnail, published } });
+        await updateDua.mutateAsync({ id: editing.id, data: { title, slug, description, category, thumbnail, published, ratingEnabled } });
         for (const dbId of removedPartDbIds) {
           await apiRequest("DELETE", `/api/admin/dua-parts/${dbId}`);
         }
@@ -260,7 +261,7 @@ export default function AdminDuasPage() {
         queryClient.invalidateQueries({ queryKey: ["/api/admin/duas"] });
         toast({ title: "Saved", description: "Dua updated." });
       } else {
-        const res = await apiRequest("POST", "/api/admin/duas", { title, slug, description, category, thumbnail, published });
+        const res = await apiRequest("POST", "/api/admin/duas", { title, slug, description, category, thumbnail, published, ratingEnabled });
         const created = await res.json();
         const filledParts = parts.filter(p => p.title || p.arabicText || p.transliteration || p.translation || p.explanation);
         for (const part of filledParts) {
@@ -657,6 +658,10 @@ export default function AdminDuasPage() {
               <div className="flex items-center gap-3 py-1">
                 <Switch checked={published} onCheckedChange={setPublished} id="dua-published" data-testid="switch-dua-published" />
                 <Label htmlFor="dua-published" className="cursor-pointer">Published (visible to visitors)</Label>
+              </div>
+              <div className="flex items-center gap-3 py-1">
+                <Switch checked={ratingEnabled} onCheckedChange={setRatingEnabled} id="dua-rating-enabled" data-testid="switch-dua-rating-enabled" />
+                <Label htmlFor="dua-rating-enabled" className="cursor-pointer">Enable Ratings (allow users to rate this dua)</Label>
               </div>
             </div>
 

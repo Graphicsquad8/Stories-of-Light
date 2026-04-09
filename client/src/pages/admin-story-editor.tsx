@@ -834,6 +834,7 @@ export default function AdminStoryEditorPage() {
   const [tagsString, setTagsString] = useState("");
   const [status, setStatus] = useState("draft");
   const [featured, setFeatured] = useState(false);
+  const [ratingEnabled, setRatingEnabled] = useState(true);
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   const [deleteStoryOpen, setDeleteStoryOpen] = useState(false);
 
@@ -892,6 +893,7 @@ export default function AdminStoryEditorPage() {
       setTagsString((story.tags || []).join(", "));
       setStatus(story.status || "draft");
       setFeatured(story.featured || false);
+      setRatingEnabled(story.ratingEnabled ?? true);
       setSlugManuallyEdited(true);
     }
   }, [story, isEdit]);
@@ -943,6 +945,7 @@ export default function AdminStoryEditorPage() {
         tags,
         status,
         featured,
+        ratingEnabled,
         publishedAt: status === "published" ? new Date().toISOString() : null,
       };
 
@@ -1322,6 +1325,15 @@ export default function AdminStoryEditorPage() {
                   data-testid="switch-featured"
                 />
                 <Label>Featured story</Label>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Switch
+                  checked={ratingEnabled}
+                  onCheckedChange={setRatingEnabled}
+                  data-testid="switch-rating-enabled"
+                />
+                <Label>Enable Ratings (allow users to rate this story)</Label>
               </div>
             </div>
           </Card>

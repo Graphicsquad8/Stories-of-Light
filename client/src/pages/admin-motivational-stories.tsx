@@ -225,10 +225,11 @@ function LessonsManager({ storyId }: { storyId: string }) {
   );
 }
 
-function StoryFormDialog({ story, open, onOpenChange }: {
+function StoryFormDialog({ story, open, onOpenChange, categoriesData }: {
   story?: MotivationalStory;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  categoriesData?: string[];
 }) {
   const { toast } = useToast();
   const isEdit = !!story;
@@ -239,6 +240,7 @@ function StoryFormDialog({ story, open, onOpenChange }: {
   const [description, setDescription] = useState(story?.description || "");
   const [content, setContent] = useState(story?.content || "");
   const [published, setPublished] = useState(story?.published || false);
+  const [ratingEnabled, setRatingEnabled] = useState(story?.ratingEnabled ?? true);
 
   const handleTitleChange = (val: string) => {
     setTitle(val);
@@ -248,7 +250,7 @@ function StoryFormDialog({ story, open, onOpenChange }: {
   const saveMutation = useMutation({
     mutationFn: async () => {
       const data: any = {
-        title, slug, category: category || null, description, content, published,
+        title, slug, category: category || null, description, content, published, ratingEnabled,
       };
       if (isEdit) {
         await apiRequest("PATCH", `/api/admin/motivational-stories/${story.id}`, data);
@@ -287,8 +289,14 @@ function StoryFormDialog({ story, open, onOpenChange }: {
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               placeholder="e.g. Patience, Gratitude, Faith..."
+              list="motiv-category-suggestions"
               data-testid="input-story-category"
             />
+            <datalist id="motiv-category-suggestions">
+              {(categoriesData || []).map(cat => (
+                <option key={cat} value={cat} />
+              ))}
+            </datalist>
           </div>
           <div className="space-y-2">
             <Label>Description</Label>
@@ -301,6 +309,10 @@ function StoryFormDialog({ story, open, onOpenChange }: {
           <div className="flex items-center gap-3">
             <Switch checked={published} onCheckedChange={setPublished} data-testid="switch-story-published" />
             <Label>Published</Label>
+          </div>
+          <div className="flex items-center gap-3">
+            <Switch checked={ratingEnabled} onCheckedChange={setRatingEnabled} data-testid="switch-story-rating-enabled" />
+            <Label>Enable Ratings (allow users to rate this story)</Label>
           </div>
 
           {isEdit && story && (
@@ -735,6 +747,7 @@ export default function AdminMotivationalStoriesPage() {
         story={editingStory}
         open={formOpen}
         onOpenChange={setFormOpen}
+        categoriesData={categoriesData}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/table";
 import { Plus, Pencil, Trash2, BookOpen, Loader2, Star, Eye, Copy, Upload, FileText, Info } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useRef } from "react";
@@ -51,7 +52,13 @@ function BookFormDialog({ book, open, onOpenChange }: {
   const [price, setPrice] = useState(book?.price || "");
   const [previewPages, setPreviewPages] = useState<string[]>(book?.previewPages || []);
   const [buyButtonLabel, setBuyButtonLabel] = useState(book?.buyButtonLabel || "");
+  const [ratingEnabled, setRatingEnabled] = useState(book?.ratingEnabled ?? true);
   const [uploading, setUploading] = useState(false);
+
+  const { data: categoriesData } = useQuery<string[]>({
+    queryKey: ["/api/books/categories"],
+    queryFn: () => fetch("/api/books/categories", { credentials: "include" }).then(r => r.json()),
+  });
 
   const handleTitleChange = (val: string) => {
     setTitle(val);
@@ -82,7 +89,7 @@ function BookFormDialog({ book, open, onOpenChange }: {
     mutationFn: async () => {
       const data: any = {
         title, slug, author, description, coverUrl, affiliateLink,
-        amazonAffiliateLink, category, type,
+        amazonAffiliateLink, category, type, ratingEnabled,
         price: price || null,
         fullContentUrl: null,
         previewPages: type === "paid" ? previewPages : [],
@@ -139,8 +146,14 @@ function BookFormDialog({ book, open, onOpenChange }: {
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 placeholder="e.g. Seerah, Aqeedah..."
+                list="book-category-suggestions"
                 data-testid="input-book-category"
               />
+              <datalist id="book-category-suggestions">
+                {(categoriesData || []).map(cat => (
+                  <option key={cat} value={cat} />
+                ))}
+              </datalist>
             </div>
           </div>
           <div className="space-y-2">
@@ -214,6 +227,11 @@ function BookFormDialog({ book, open, onOpenChange }: {
           <div className="space-y-2">
             <Label>Affiliate / External Link</Label>
             <Input value={affiliateLink} onChange={(e) => setAffiliateLink(e.target.value)} placeholder="https://..." data-testid="input-book-affiliate" />
+          </div>
+
+          <div className="flex items-center gap-3 py-1">
+            <Switch checked={ratingEnabled} onCheckedChange={setRatingEnabled} id="book-rating-enabled" data-testid="switch-book-rating-enabled" />
+            <Label htmlFor="book-rating-enabled" className="cursor-pointer">Enable Ratings (allow users to rate this book)</Label>
           </div>
 
           <div className="flex justify-end gap-3 pt-2">

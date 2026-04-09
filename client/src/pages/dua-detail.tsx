@@ -9,12 +9,27 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   ChevronLeft, ChevronRight, BookOpen, ArrowLeft, BookmarkIcon,
-  Menu, X,
+  Menu, X, Star, Loader2,
 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { AdSlot } from "@/components/ad-slot";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/lib/auth";
+import { useToast } from "@/hooks/use-toast";
 import type { DuaWithParts, Dua } from "@shared/schema";
+
+function StarRatingInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const [hover, setHover] = useState(0);
+  return (
+    <div className="flex items-center gap-1">
+      {[1, 2, 3, 4, 5].map((s) => (
+        <button key={s} type="button" onMouseEnter={() => setHover(s)} onMouseLeave={() => setHover(0)} onClick={() => onChange(s)} className="p-0.5" data-testid={`star-input-${s}`}>
+          <Star className={`w-6 h-6 transition-colors ${s <= (hover || value) ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/20"}`} />
+        </button>
+      ))}
+    </div>
+  );
+}
 
 function RelatedDuas({ duaId }: { duaId: string }) {
   const { data: related, isLoading } = useQuery<Dua[]>({
@@ -74,10 +89,13 @@ function getPartPages(part: { arabicText?: string | null; transliteration?: stri
 export default function DuaDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
+  const { toast } = useToast();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activePartId, setActivePartId] = useState<string | null>(null);
   const [selectedPageIndex, setSelectedPageIndex] = useState(0);
   const [descExpanded, setDescExpanded] = useState(false);
+  const [ratingValue, setRatingValue] = useState(0);
+  const [ratingComment, setRatingComment] = useState("");
 
   const { data: dua, isLoading, isError } = useQuery<DuaWithParts>({
     queryKey: ["/api/duas", slug],
@@ -114,6 +132,36 @@ export default function DuaDetailPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/duas", dua?.id, "bookmark"] });
       queryClient.invalidateQueries({ queryKey: ["/api/user/dua-bookmarks"] });
       queryClient.invalidateQueries({ queryKey: ["/api/profile/dashboard"] });
+    },
+  });
+
+  const { data: myRating } = useQuery<any>({
+    queryKey: ["/api/duas", dua?.id, "my-rating"],
+    queryFn: () => fetch(`/api/duas/${dua!.id}/my-rating`, { credentials: "include" }).then(r => r.ok ? r.json() : null),
+    enabled: !!user && !!dua?.id,
+  });
+
+  const { data: duaRatings } = useQuery<any[]>({
+    queryKey: ["/api/duas", dua?.id, "ratings"],
+    queryFn: () => fetch(`/api/duas/${dua!.id}/ratings`).then(r => r.json()),
+    enabled: !!dua?.id,
+  });
+
+  useEffect(() => {
+    if (myRating) {
+      setRatingValue(myRating.rating);
+      setRatingComment(myRating.comment || "");
+    }
+  }, [myRating]);
+
+  const rateMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", `/api/duas/${dua!.id}/rate`, { rating: ratingValue, comment: ratingComment });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/duas", dua?.id, "ratings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/duas", dua?.id, "my-rating"] });
+      toast({ title: "Rating submitted" });
     },
   });
 
@@ -407,6 +455,42 @@ export default function DuaDetailPage() {
                 <div className="mt-8" data-testid="ad-dua-bottom">
                   <AdSlot slot="banner" className="w-full" label="story-bottom" />
                 </div>
+
+                {/* Rating */}
+                {dua && (dua as any).ratingEnabled && (
+                  <>
+                    {user && (
+                      <Card className="p-6 mt-8" data-testid="card-rating-form">
+                        <h3 className="font-serif text-lg font-semibold mb-4">Rate This Dua</h3>
+                        <div className="space-y-3">
+                          <StarRatingInput value={ratingValue} onChange={setRatingValue} />
+                          <Textarea value={ratingComment} onChange={(e) => setRatingComment(e.target.value)} placeholder="Write a short review (optional)..." rows={3} data-testid="input-rating-comment" />
+                          <Button onClick={() => rateMutation.mutate()} disabled={ratingValue === 0 || rateMutation.isPending} data-testid="button-submit-rating">
+                            {rateMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                            {myRating ? "Update Rating" : "Submit Rating"}
+                          </Button>
+                        </div>
+                      </Card>
+                    )}
+                    {duaRatings && duaRatings.length > 0 && (
+                      <div className="mt-8">
+                        <h3 className="font-serif text-lg font-semibold mb-4" data-testid="text-reviews-heading">Reviews ({duaRatings.length})</h3>
+                        <div className="space-y-3">
+                          {duaRatings.map((r: any) => (
+                            <Card key={r.id} className="p-4" data-testid={`review-${r.id}`}>
+                              <div className="flex items-center gap-2 mb-2">
+                                {[1, 2, 3, 4, 5].map((s) => (
+                                  <Star key={s} className={`w-3.5 h-3.5 ${s <= r.rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/20"}`} />
+                                ))}
+                              </div>
+                              {r.comment && <p className="text-sm text-muted-foreground">{r.comment}</p>}
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
 
                 {/* Related */}
                 {dua && <RelatedDuas duaId={dua.id} />}

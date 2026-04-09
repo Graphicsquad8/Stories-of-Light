@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import { storage, pool } from "./storage";
-import { insertStorySchema, insertCategorySchema, insertBookSchema, insertBookChapterSchema, signupSchema, insertBookRatingSchema, insertMotivationalStorySchema, insertMotivationalLessonSchema, insertStoryPartSchema, insertStoryPageSchema } from "@shared/schema";
+import { insertStorySchema, insertCategorySchema, insertBookSchema, insertBookChapterSchema, signupSchema, insertBookRatingSchema, insertMotivationalStorySchema, insertMotivationalLessonSchema, insertStoryPartSchema, insertStoryPageSchema, insertDuaRatingSchema, insertStoryRatingSchema } from "@shared/schema";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import passport from "passport";
@@ -1538,6 +1538,40 @@ export async function registerRoutes(
   app.get("/api/user/dua-bookmarks", requireAuth, async (req: any, res) => {
     const bms = await storage.getDuaBookmarks(req.user.id);
     res.json(bms);
+  });
+
+  app.get("/api/duas/:id/ratings", async (req, res) => {
+    const ratings = await storage.getDuaRatings(req.params.id);
+    res.json(ratings);
+  });
+
+  app.get("/api/duas/:id/my-rating", requireAuth, async (req: any, res) => {
+    const rating = await storage.getUserDuaRating(req.user.id, req.params.id);
+    res.json(rating || null);
+  });
+
+  app.post("/api/duas/:id/rate", requireAuth, async (req: any, res) => {
+    const parsed = insertDuaRatingSchema.safeParse({ ...req.body, duaId: req.params.id });
+    if (!parsed.success) return res.status(400).json({ message: "Invalid rating data" });
+    const rating = await storage.createDuaRating(req.user.id, parsed.data.duaId, parsed.data.rating, parsed.data.comment);
+    res.json(rating);
+  });
+
+  app.get("/api/stories/:id/ratings", async (req, res) => {
+    const ratings = await storage.getStoryRatings(req.params.id);
+    res.json(ratings);
+  });
+
+  app.get("/api/stories/:id/my-rating", requireAuth, async (req: any, res) => {
+    const rating = await storage.getUserStoryRating(req.user.id, req.params.id);
+    res.json(rating || null);
+  });
+
+  app.post("/api/stories/:id/rate", requireAuth, async (req: any, res) => {
+    const parsed = insertStoryRatingSchema.safeParse({ ...req.body, storyId: req.params.id });
+    if (!parsed.success) return res.status(400).json({ message: "Invalid rating data" });
+    const rating = await storage.createStoryRating(req.user.id, parsed.data.storyId, parsed.data.rating, parsed.data.comment);
+    res.json(rating);
   });
 
   app.post("/api/motivational-stories/:id/rate", requireAuth, async (req: any, res) => {

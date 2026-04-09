@@ -45,6 +45,9 @@ export const stories = pgTable("stories", {
   audioUrl: text("audio_url"),
   tags: text("tags").array(),
   views: integer("views").default(0).notNull(),
+  averageRating: real("average_rating").default(0),
+  totalRatings: integer("total_ratings").default(0),
+  ratingEnabled: boolean("rating_enabled").default(true),
   status: text("status").notNull().default("draft"),
   featured: boolean("featured").default(false),
   publishedAt: timestamp("published_at"),
@@ -71,6 +74,7 @@ export const books = pgTable("books", {
   buyButtonLabel: text("buy_button_label"),
   averageRating: real("average_rating").default(0),
   totalRatings: integer("total_ratings").default(0),
+  ratingEnabled: boolean("rating_enabled").default(true),
   views: integer("views").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   deletedAt: timestamp("deleted_at"),
@@ -146,6 +150,8 @@ export const insertStorySchema = createInsertSchema(stories).omit({
   createdAt: true,
   updatedAt: true,
   deletedAt: true,
+  averageRating: true,
+  totalRatings: true,
 });
 
 export const insertBookSchema = createInsertSchema(books).omit({
@@ -198,6 +204,7 @@ export const motivationalStories = pgTable("motivational_stories", {
   views: integer("views").default(0),
   averageRating: real("average_rating").default(0),
   totalRatings: integer("total_ratings").default(0),
+  ratingEnabled: boolean("rating_enabled").default(true),
   published: boolean("published").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -330,11 +337,32 @@ export const duas = pgTable("duas", {
   thumbnail: text("thumbnail"),
   category: text("category"),
   views: integer("views").default(0),
+  averageRating: real("average_rating").default(0),
+  totalRatings: integer("total_ratings").default(0),
+  ratingEnabled: boolean("rating_enabled").default(true),
   orderIndex: integer("order_index").default(0).notNull(),
   published: boolean("published").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   deletedAt: timestamp("deleted_at"),
+});
+
+export const duaRatings = pgTable("dua_ratings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  duaId: varchar("dua_id").notNull().references(() => duas.id, { onDelete: "cascade" }),
+  rating: integer("rating").notNull(),
+  comment: text("comment"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const storyRatings = pgTable("story_ratings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  storyId: varchar("story_id").notNull().references(() => stories.id, { onDelete: "cascade" }),
+  rating: integer("rating").notNull(),
+  comment: text("comment"),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const duaParts = pgTable("dua_parts", {
@@ -349,13 +377,25 @@ export const duaParts = pgTable("dua_parts", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertDuaSchema = createInsertSchema(duas).omit({ id: true, createdAt: true, updatedAt: true, deletedAt: true });
+export const insertDuaSchema = createInsertSchema(duas).omit({ id: true, createdAt: true, updatedAt: true, deletedAt: true, averageRating: true, totalRatings: true });
 export const insertDuaPartSchema = createInsertSchema(duaParts).omit({ id: true, createdAt: true });
+export const insertDuaRatingSchema = z.object({
+  duaId: z.string(),
+  rating: z.number().int().min(1).max(5),
+  comment: z.string().optional(),
+});
+export const insertStoryRatingSchema = z.object({
+  storyId: z.string(),
+  rating: z.number().int().min(1).max(5),
+  comment: z.string().optional(),
+});
 export type InsertDua = z.infer<typeof insertDuaSchema>;
 export type Dua = typeof duas.$inferSelect;
 export type InsertDuaPart = z.infer<typeof insertDuaPartSchema>;
 export type DuaPart = typeof duaParts.$inferSelect;
 export type DuaWithParts = Dua & { parts: DuaPart[] };
+export type DuaRating = typeof duaRatings.$inferSelect;
+export type StoryRating = typeof storyRatings.$inferSelect;
 
 export const footerPages = pgTable("footer_pages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
