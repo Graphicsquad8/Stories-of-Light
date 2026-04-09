@@ -95,7 +95,7 @@ export interface IStorage {
   incrementStoryViews(id: string): Promise<void>;
   getRelatedStories(storyId: string, categoryId: string | null, limit?: number): Promise<StoryWithCategory[]>;
 
-  getBooks(opts?: { type?: string; category?: string; search?: string; sort?: string; minRating?: number; userId?: string }): Promise<Book[]>;
+  getBooks(opts?: { type?: string; category?: string; search?: string; sort?: string; minRating?: number; userId?: string; published?: boolean }): Promise<Book[]>;
   getBookById(id: string): Promise<Book | undefined>;
   getBookBySlug(slug: string): Promise<BookWithChapters | undefined>;
   createBook(book: InsertBook): Promise<Book>;
@@ -107,6 +107,9 @@ export interface IStorage {
   incrementBookViews(id: string): Promise<void>;
   getFeaturedFreeBooks(limit?: number): Promise<Book[]>;
   getBookCategories(): Promise<string[]>;
+  getBooksAdmin(opts?: { type?: string; category?: string; search?: string; sort?: string; published?: boolean; userId?: string; startDate?: string; endDate?: string; limit?: number; offset?: number }): Promise<{ books: Book[]; total: number }>;
+  getBooksAdminStats(): Promise<{ total: number; freeTotal: number; paidTotal: number; totalViews: number; freeViews: number; paidViews: number; published: number; publishedFree: number; publishedPaid: number; recentCount: number; recentFree: number; recentPaid: number; fiveStarCount: number; fourStarCount: number }>;
+  getBookCategoriesAdmin(): Promise<string[]>;
 
   getBookChapters(bookId: string): Promise<BookChapter[]>;
   createBookChapter(chapter: InsertBookChapter): Promise<BookChapter>;
@@ -592,13 +595,14 @@ export class DatabaseStorage implements IStorage {
     return rows.map((r) => ({ ...r.story, category: r.category }));
   }
 
-  async getBooks(opts?: { type?: string; category?: string; search?: string; sort?: string; minRating?: number; userId?: string }): Promise<Book[]> {
+  async getBooks(opts?: { type?: string; category?: string; search?: string; sort?: string; minRating?: number; userId?: string; published?: boolean }): Promise<Book[]> {
     const conditions: any[] = [isNull(books.deletedAt)];
     if (opts?.type && opts.type !== "all") conditions.push(eq(books.type, opts.type));
     if (opts?.category) conditions.push(eq(books.category, opts.category));
     if (opts?.search) conditions.push(ilike(books.title, `%${opts.search}%`));
     if (opts?.minRating) conditions.push(gte(books.averageRating, opts.minRating));
     if (opts?.userId) conditions.push(eq(books.userId, opts.userId));
+    if (opts?.published !== undefined) conditions.push(eq(books.published, opts.published));
 
     let orderBy;
     switch (opts?.sort) {
@@ -665,6 +669,80 @@ export class DatabaseStorage implements IStorage {
   async getBookCategories(): Promise<string[]> {
     const rows = await db.selectDistinct({ category: books.category }).from(books).where(sql`${books.category} IS NOT NULL`);
     return rows.map(r => r.category!).filter(Boolean);
+  }
+
+  async getBookCategoriesAdmin(): Promise<string[]> {
+    const rows = await db.selectDistinct({ category: books.category }).from(books).where(and(isNull(books.deletedAt), sql`${books.category} IS NOT NULL`));
+    return rows.map(r => r.category!).filter(Boolean).sort();
+  }
+
+  async getBooksAdmin(opts?: { type?: string; category?: string; search?: string; sort?: string; published?: boolean; userId?: string; startDate?: string; endDate?: string; limit?: number; offset?: number }): Promise<{ books: Book[]; total: number }> {
+    const conditions: any[] = [isNull(books.deletedAt)];
+    if (opts?.type && opts.type !== "all") conditions.push(eq(books.type, opts.type));
+    if (opts?.category && opts.category !== "all") conditions.push(eq(books.category, opts.category));
+    if (opts?.search) conditions.push(ilike(books.title, `%${opts.search}%`));
+    if (opts?.published !== undefined) conditions.push(eq(books.published, opts.published));
+    if (opts?.userId) conditions.push(eq(books.userId, opts.userId));
+    if (opts?.startDate) conditions.push(gte(books.createdAt, new Date(opts.startDate)));
+    if (opts?.endDate) conditions.push(lte(books.createdAt, new Date(opts.endDate)));
+
+    let orderBy;
+    switch (opts?.sort) {
+      case "most-viewed": orderBy = desc(books.views); break;
+      case "highest-rated": orderBy = desc(books.averageRating); break;
+      default: orderBy = desc(books.createdAt); break;
+    }
+
+    const lim = opts?.limit ?? 50;
+    const off = opts?.offset ?? 0;
+    const [allBooks, countResult] = await Promise.all([
+      db.select().from(books).where(and(...conditions)).orderBy(orderBy).limit(lim).offset(off),
+      db.select({ count: count() }).from(books).where(and(...conditions)),
+    ]);
+    return { books: allBooks, total: countResult[0]?.count ?? 0 };
+  }
+
+  async getBooksAdminStats(): Promise<{ total: number; freeTotal: number; paidTotal: number; totalViews: number; freeViews: number; paidViews: number; published: number; publishedFree: number; publishedPaid: number; recentCount: number; recentFree: number; recentPaid: number; fiveStarCount: number; fourStarCount: number }> {
+    const since30 = new Date(Date.now() - 30 * 86400000);
+    const base = isNull(books.deletedAt);
+    const [
+      totalRes, freeRes, paidRes,
+      viewsRes, freeViewsRes, paidViewsRes,
+      pubRes, pubFreeRes, pubPaidRes,
+      recentRes, recentFreeRes, recentPaidRes,
+      fiveStarRes, fourStarRes,
+    ] = await Promise.all([
+      db.select({ c: count() }).from(books).where(base),
+      db.select({ c: count() }).from(books).where(and(base, eq(books.type, "free"))),
+      db.select({ c: count() }).from(books).where(and(base, eq(books.type, "paid"))),
+      db.select({ v: sum(books.views) }).from(books).where(base),
+      db.select({ v: sum(books.views) }).from(books).where(and(base, eq(books.type, "free"))),
+      db.select({ v: sum(books.views) }).from(books).where(and(base, eq(books.type, "paid"))),
+      db.select({ c: count() }).from(books).where(and(base, eq(books.published, true))),
+      db.select({ c: count() }).from(books).where(and(base, eq(books.type, "free"), eq(books.published, true))),
+      db.select({ c: count() }).from(books).where(and(base, eq(books.type, "paid"), eq(books.published, true))),
+      db.select({ c: count() }).from(books).where(and(base, gte(books.createdAt, since30))),
+      db.select({ c: count() }).from(books).where(and(base, eq(books.type, "free"), gte(books.createdAt, since30))),
+      db.select({ c: count() }).from(books).where(and(base, eq(books.type, "paid"), gte(books.createdAt, since30))),
+      db.select({ c: count() }).from(books).where(and(base, gte(books.averageRating, 4.1))),
+      db.select({ c: count() }).from(books).where(and(base, gte(books.averageRating, 3.5), lte(books.averageRating, 4.0))),
+    ]);
+    return {
+      total: totalRes[0]?.c ?? 0,
+      freeTotal: freeRes[0]?.c ?? 0,
+      paidTotal: paidRes[0]?.c ?? 0,
+      totalViews: Number(viewsRes[0]?.v) || 0,
+      freeViews: Number(freeViewsRes[0]?.v) || 0,
+      paidViews: Number(paidViewsRes[0]?.v) || 0,
+      published: pubRes[0]?.c ?? 0,
+      publishedFree: pubFreeRes[0]?.c ?? 0,
+      publishedPaid: pubPaidRes[0]?.c ?? 0,
+      recentCount: recentRes[0]?.c ?? 0,
+      recentFree: recentFreeRes[0]?.c ?? 0,
+      recentPaid: recentPaidRes[0]?.c ?? 0,
+      fiveStarCount: fiveStarRes[0]?.c ?? 0,
+      fourStarCount: fourStarRes[0]?.c ?? 0,
+    };
   }
 
   async getBookChapters(bookId: string): Promise<BookChapter[]> {

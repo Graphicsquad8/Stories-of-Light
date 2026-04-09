@@ -117,6 +117,13 @@ Key architectural decisions include:
 - **Duas**: `RelatedDuas` component on `dua-detail.tsx` fetches `/api/duas/:id/related` (new endpoint) — returns duas in the same category. If no category match, returns empty (no section shown).
 - **Dynamic categories**: Since all content types have a `category` field and the related endpoints filter by it, any new admin-created categories automatically produce relevant suggested content for their articles.
 
+## Books Admin Section (v2)
+- **Stats dashboard**: 5 stat cards matching Motivational Stories layout — Total Books (free/paid breakdown), Total Views (free/paid), Published (free/paid), Total Rating (5★: 4.1–5.0, 4★: 3.5–4.0), Recent 30d (free/paid). All fetched from `/api/admin/books/stats`.
+- **Published/Draft toggle**: Books now have a `published` boolean column (DB default: true). Each book row has a Switch to toggle publish state. Public `/api/books` route filters by `published: true` so drafts are hidden from public. Admin route `/api/admin/books` shows all.
+- **Search + 4 filters**: Search bar + Type filter (All/Free/Paid) + Category dropdown (dynamic, from `/api/admin/books/categories`) + Status filter (All/Published/Draft/Recent Books/Most Viewed/Best Rating) + All Time filter (All Time/7d/30d/90d/By Month/Custom Days). Matches Motivational Stories filter behavior exactly.
+- **Admin routes**: `GET /api/admin/books/stats`, `GET /api/admin/books/categories`, `GET /api/admin/books` (all requireStaff), `PATCH /api/admin/books/:id/publish`.
+- **Storage methods**: `getBooksAdmin()`, `getBooksAdminStats()`, `getBookCategoriesAdmin()` added to `IStorage` and `DatabaseStorage`.
+
 ## Rating System
 - **DB columns**: `average_rating`, `total_ratings`, `rating_enabled` added to `stories`, `duas`, `books`, `motivational_stories` tables. `story_ratings` and `dua_ratings` junction tables store individual user ratings (rating 1–5, optional comment).
 - **Admin toggles**: Every content admin form (Stories editor, Duas admin, Books admin, Motivational Stories admin) has an "Enable Ratings" switch. Defaults to `true`. When disabled, rating UI is hidden on public pages.

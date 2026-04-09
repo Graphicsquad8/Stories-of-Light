@@ -10,18 +10,23 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, BookOpen, Loader2, Star, Eye, Copy, Upload, FileText, Info } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
+  Plus, Pencil, Trash2, BookOpen, Loader2, Star, Eye, Copy, Upload,
+  FileText, Info, Search, Clock, BarChart2, CalendarDays, BookMarked,
+} from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useRef } from "react";
+import { useState, useMemo, useRef } from "react";
 import { Link, useLocation } from "wouter";
 
 function slugify(text: string): string {
@@ -37,8 +42,6 @@ function BookFormDialog({ book, open, onOpenChange }: {
   const [, navigate] = useLocation();
   const isEdit = !!book;
   const coverInputRef = useRef<HTMLInputElement>(null);
-  const previewInputRef = useRef<HTMLInputElement>(null);
-
 
   const [title, setTitle] = useState(book?.title || "");
   const [slug, setSlug] = useState(book?.slug || "");
@@ -53,11 +56,12 @@ function BookFormDialog({ book, open, onOpenChange }: {
   const [previewPages, setPreviewPages] = useState<string[]>(book?.previewPages || []);
   const [buyButtonLabel, setBuyButtonLabel] = useState(book?.buyButtonLabel || "");
   const [ratingEnabled, setRatingEnabled] = useState(book?.ratingEnabled ?? true);
+  const [published, setPublished] = useState(book?.published ?? true);
   const [uploading, setUploading] = useState(false);
 
   const { data: categoriesData } = useQuery<string[]>({
-    queryKey: ["/api/books/categories"],
-    queryFn: () => fetch("/api/books/categories", { credentials: "include" }).then(r => r.json()),
+    queryKey: ["/api/admin/books/categories"],
+    queryFn: () => fetch("/api/admin/books/categories", { credentials: "include" }).then(r => r.json()),
   });
 
   const handleTitleChange = (val: string) => {
@@ -75,21 +79,11 @@ function BookFormDialog({ book, open, onOpenChange }: {
     setUploading(false);
   };
 
-  const uploadPreview = async (file: File) => {
-    setUploading(true);
-    const fd = new FormData();
-    fd.append("preview", file);
-    const res = await fetch("/api/upload/preview", { method: "POST", body: fd });
-    const data = await res.json();
-    setPreviewPages([...previewPages, data.url]);
-    setUploading(false);
-  };
-
   const saveMutation = useMutation({
     mutationFn: async () => {
       const data: any = {
         title, slug, author, description, coverUrl, affiliateLink,
-        amazonAffiliateLink, category, type, ratingEnabled,
+        amazonAffiliateLink, category, type, ratingEnabled, published,
         price: price || null,
         fullContentUrl: null,
         previewPages: type === "paid" ? previewPages : [],
@@ -105,6 +99,9 @@ function BookFormDialog({ book, open, onOpenChange }: {
       }
     },
     onSuccess: (created) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/books"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/books/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/books/categories"] });
       queryClient.invalidateQueries({ queryKey: ["/api/books"] });
       if (!isEdit && created) {
         toast({ title: "Book created", description: "Opening Parts & Pages editor to add preview content…" });
@@ -230,6 +227,11 @@ function BookFormDialog({ book, open, onOpenChange }: {
           </div>
 
           <div className="flex items-center gap-3 py-1">
+            <Switch checked={published} onCheckedChange={setPublished} id="book-published" data-testid="switch-book-published" />
+            <Label htmlFor="book-published" className="cursor-pointer">Published</Label>
+          </div>
+
+          <div className="flex items-center gap-3 py-1">
             <Switch checked={ratingEnabled} onCheckedChange={setRatingEnabled} id="book-rating-enabled" data-testid="switch-book-rating-enabled" />
             <Label htmlFor="book-rating-enabled" className="cursor-pointer">Enable Ratings (allow users to rate this book)</Label>
           </div>
@@ -270,9 +272,7 @@ function ChaptersDialog({ book, open, onOpenChange }: { book: Book; open: boolea
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/books", book.id, "chapters"] });
-      setNewTitle("");
-      setNewStart("1");
-      setNewEnd("1");
+      setNewTitle(""); setNewStart("1"); setNewEnd("1");
       toast({ title: "Chapter added" });
     },
   });
@@ -333,33 +333,126 @@ function ChaptersDialog({ book, open, onOpenChange }: { book: Book; open: boolea
   );
 }
 
+type BookStatusFilter = "all" | "published" | "draft" | "recent" | "most-viewed" | "best-rating";
+type BookDateFilter = "all" | "7d" | "30d" | "90d" | "month" | "custom";
+
 export default function AdminBooksPage() {
   const { toast } = useToast();
   const [formOpen, setFormOpen] = useState(false);
   const [editingBook, setEditingBook] = useState<Book | undefined>();
   const [chaptersBook, setChaptersBook] = useState<Book | undefined>();
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<BookStatusFilter>("all");
+  const [dateFilter, setDateFilter] = useState<BookDateFilter>("all");
+  const [customDays, setCustomDays] = useState("30");
+  const [recentDays, setRecentDays] = useState("30");
+  const [filterMonth, setFilterMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
 
   const { user, isAdmin } = useAuth();
   const { viewAs, viewMeMode } = useViewAs();
   const isContributor = !viewMeMode && (!!viewAs || !isAdmin);
   const viewMeUserId = viewMeMode ? (viewAs?.id ?? user?.id) : undefined;
 
-  const booksQueryKey = viewMeUserId ? ["/api/books", { userId: viewMeUserId }] : ["/api/books"];
-  const booksUrl = viewMeUserId ? `/api/books?userId=${viewMeUserId}` : "/api/books";
+  const { startDate, endDate, apiSort } = useMemo(() => {
+    const ms = (d: number) => new Date(Date.now() - d * 86400000).toISOString();
 
-  const { data: books, isLoading } = useQuery<Book[]>({
-    queryKey: booksQueryKey,
+    if (statusFilter === "recent") {
+      const days = parseInt(recentDays) || 30;
+      return { startDate: ms(days), endDate: undefined, apiSort: "newest" };
+    }
+    if (statusFilter === "most-viewed") {
+      const base = { apiSort: "most-viewed" };
+      if (dateFilter === "7d") return { ...base, startDate: ms(7), endDate: undefined };
+      if (dateFilter === "30d") return { ...base, startDate: ms(30), endDate: undefined };
+      if (dateFilter === "90d") return { ...base, startDate: ms(90), endDate: undefined };
+      if (dateFilter === "custom") { const d = parseInt(customDays) || 30; return { ...base, startDate: ms(d), endDate: undefined }; }
+      if (dateFilter === "month") {
+        const [y, m] = filterMonth.split("-").map(Number);
+        return { ...base, startDate: new Date(y, m - 1, 1).toISOString(), endDate: new Date(y, m, 0, 23, 59, 59).toISOString() };
+      }
+      return { ...base, startDate: undefined, endDate: undefined };
+    }
+    if (statusFilter === "best-rating") {
+      const base = { apiSort: "highest-rated" };
+      if (dateFilter === "7d") return { ...base, startDate: ms(7), endDate: undefined };
+      if (dateFilter === "30d") return { ...base, startDate: ms(30), endDate: undefined };
+      if (dateFilter === "90d") return { ...base, startDate: ms(90), endDate: undefined };
+      if (dateFilter === "custom") { const d = parseInt(customDays) || 30; return { ...base, startDate: ms(d), endDate: undefined }; }
+      if (dateFilter === "month") {
+        const [y, m] = filterMonth.split("-").map(Number);
+        return { ...base, startDate: new Date(y, m - 1, 1).toISOString(), endDate: new Date(y, m, 0, 23, 59, 59).toISOString() };
+      }
+      return { ...base, startDate: undefined, endDate: undefined };
+    }
+
+    const base = { apiSort: "newest" };
+    if (dateFilter === "7d") return { ...base, startDate: ms(7), endDate: undefined };
+    if (dateFilter === "30d") return { ...base, startDate: ms(30), endDate: undefined };
+    if (dateFilter === "90d") return { ...base, startDate: ms(90), endDate: undefined };
+    if (dateFilter === "custom") { const d = parseInt(customDays) || 30; return { ...base, startDate: ms(d), endDate: undefined }; }
+    if (dateFilter === "month") {
+      const [y, m] = filterMonth.split("-").map(Number);
+      return { ...base, startDate: new Date(y, m - 1, 1).toISOString(), endDate: new Date(y, m, 0, 23, 59, 59).toISOString() };
+    }
+    return { ...base, startDate: undefined, endDate: undefined };
+  }, [statusFilter, dateFilter, customDays, recentDays, filterMonth]);
+
+  const queryParams = new URLSearchParams({ limit: "50" });
+  if (viewMeUserId) queryParams.set("userId", viewMeUserId);
+  if (search) queryParams.set("search", search);
+  if (typeFilter !== "all") queryParams.set("type", typeFilter);
+  if (categoryFilter !== "all") queryParams.set("category", categoryFilter);
+  if (statusFilter === "published") queryParams.set("published", "true");
+  if (statusFilter === "draft") queryParams.set("published", "false");
+  if (apiSort) queryParams.set("sort", apiSort);
+  if (startDate) queryParams.set("startDate", startDate);
+  if (endDate) queryParams.set("endDate", endDate);
+  const queryString = queryParams.toString();
+
+  const { data, isLoading } = useQuery<{ books: Book[]; total: number }>({
+    queryKey: ["/api/admin/books", queryString],
     queryFn: async () => {
-      const res = await fetch(booksUrl, { credentials: "include" });
+      const res = await fetch(`/api/admin/books?${queryString}`, { credentials: "include" });
       return res.json();
     },
   });
+
+  const { data: stats } = useQuery<{
+    total: number; freeTotal: number; paidTotal: number;
+    totalViews: number; freeViews: number; paidViews: number;
+    published: number; publishedFree: number; publishedPaid: number;
+    recentCount: number; recentFree: number; recentPaid: number;
+    fiveStarCount: number; fourStarCount: number;
+  }>({
+    queryKey: ["/api/admin/books/stats"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/books/stats", { credentials: "include" });
+      return res.json();
+    },
+  });
+
+  const { data: categoriesData } = useQuery<string[]>({
+    queryKey: ["/api/admin/books/categories"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/books/categories", { credentials: "include" });
+      return res.json();
+    },
+  });
+
+  const booksList = data?.books || [];
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       await apiRequest("DELETE", `/api/books/${id}`);
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/books"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/books/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/books"] });
       toast({ title: "Book deleted" });
     },
@@ -370,91 +463,299 @@ export default function AdminBooksPage() {
       await apiRequest("POST", `/api/books/${id}/duplicate`);
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/books"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/books/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/books"] });
       toast({ title: "Book duplicated" });
+    },
+  });
+
+  const togglePublishMutation = useMutation({
+    mutationFn: async ({ id, published }: { id: string; published: boolean }) => {
+      await apiRequest("PATCH", `/api/admin/books/${id}/publish`, { published });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/books"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/books/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/books"] });
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
     },
   });
 
   const openCreate = () => { setEditingBook(undefined); setFormOpen(true); };
   const openEdit = (book: Book) => { setEditingBook(book); setFormOpen(true); };
 
-  const mostViewed = books?.reduce((prev, curr) => ((curr.views || 0) > (prev.views || 0) ? curr : prev), books[0]);
-  const highestRated = books?.reduce((prev, curr) => ((curr.averageRating || 0) > (prev.averageRating || 0) ? curr : prev), books[0]);
+  const showDateFilter = statusFilter !== "recent";
+  const showCustomDaysInput = dateFilter === "custom";
+  const showMonthInput = dateFilter === "month";
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold" data-testid="text-admin-books-title">Books</h1>
-            <p className="text-sm text-muted-foreground">Manage your Islamic library</p>
+      <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold" data-testid="text-admin-books-title">Books</h1>
+          <p className="text-sm text-muted-foreground">Manage your Islamic library</p>
+        </div>
+        {!isContributor && (
+          <Button onClick={openCreate} data-testid="button-add-book">
+            <Plus className="w-4 h-4 mr-2" /> Add Book
+          </Button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+        <Card className="p-4" data-testid="stat-total-books">
+          <div className="flex items-center gap-2 mb-1 text-muted-foreground">
+            <FileText className="w-4 h-4" />
+            <span className="text-xs font-medium">Total Books</span>
           </div>
-          {!isContributor && (
-            <Button onClick={openCreate} data-testid="button-add-book">
-              <Plus className="w-4 h-4 mr-2" /> Add Book
-            </Button>
+          {stats ? (
+            <div>
+              <p className="text-2xl font-bold">{stats.total}</p>
+              <div className="flex gap-2 mt-1 text-xs text-muted-foreground">
+                <span>Free: {stats.freeTotal}</span>
+                <span>·</span>
+                <span>Paid: {stats.paidTotal}</span>
+              </div>
+            </div>
+          ) : <Skeleton className="h-10 w-full mt-1" />}
+        </Card>
+
+        <Card className="p-4" data-testid="stat-total-views">
+          <div className="flex items-center gap-2 mb-1 text-muted-foreground">
+            <BarChart2 className="w-4 h-4" />
+            <span className="text-xs font-medium">Total Views</span>
+          </div>
+          {stats ? (
+            <div>
+              <p className="text-2xl font-bold">{stats.totalViews.toLocaleString()}</p>
+              <div className="flex gap-2 mt-1 text-xs text-muted-foreground">
+                <span>Free: {stats.freeViews.toLocaleString()}</span>
+                <span>·</span>
+                <span>Paid: {stats.paidViews.toLocaleString()}</span>
+              </div>
+            </div>
+          ) : <Skeleton className="h-10 w-full mt-1" />}
+        </Card>
+
+        <Card className="p-4" data-testid="stat-published-books">
+          <div className="flex items-center gap-2 mb-1 text-muted-foreground">
+            <BookOpen className="w-4 h-4" />
+            <span className="text-xs font-medium">Published</span>
+          </div>
+          {stats ? (
+            <div>
+              <p className="text-2xl font-bold">{stats.published}</p>
+              <div className="flex gap-2 mt-1 text-xs text-muted-foreground">
+                <span>Free: {stats.publishedFree}</span>
+                <span>·</span>
+                <span>Paid: {stats.publishedPaid}</span>
+              </div>
+            </div>
+          ) : <Skeleton className="h-10 w-full mt-1" />}
+        </Card>
+
+        <Card className="p-4" data-testid="stat-rating">
+          <div className="flex items-center gap-2 mb-1 text-muted-foreground">
+            <Star className="w-4 h-4" />
+            <span className="text-xs font-medium">Total Rating</span>
+          </div>
+          {stats ? (
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">⭐ 5-Star</span>
+                <span className="text-sm font-bold">{stats.fiveStarCount}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">⭐ 4-Star</span>
+                <span className="text-sm font-bold">{stats.fourStarCount}</span>
+              </div>
+            </div>
+          ) : <Skeleton className="h-10 w-full mt-1" />}
+        </Card>
+
+        <Card className="p-4" data-testid="stat-recent">
+          <div className="flex items-center gap-2 mb-1 text-muted-foreground">
+            <CalendarDays className="w-4 h-4" />
+            <span className="text-xs font-medium">Recent (30d)</span>
+          </div>
+          {stats ? (
+            <div>
+              <p className="text-2xl font-bold">{stats.recentCount}</p>
+              <div className="flex gap-2 mt-1 text-xs text-muted-foreground">
+                <span>Free: {stats.recentFree}</span>
+                <span>·</span>
+                <span>Paid: {stats.recentPaid}</span>
+              </div>
+            </div>
+          ) : <Skeleton className="h-10 w-full mt-1" />}
+        </Card>
+      </div>
+
+      <Card>
+        <div className="flex items-center gap-3 p-4 border-b flex-wrap">
+          <div className="relative flex-1 min-w-48">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search books..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+              data-testid="input-search-books"
+            />
+          </div>
+
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-36" data-testid="select-type-filter">
+              <SelectValue placeholder="All Types" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="free">Free Books</SelectItem>
+              <SelectItem value="paid">Paid Books</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-48" data-testid="select-category-filter">
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {(categoriesData || []).map((cat) => (
+                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as BookStatusFilter)}>
+            <SelectTrigger className="w-40" data-testid="select-status-filter">
+              <SelectValue placeholder="All Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="published">Published</SelectItem>
+              <SelectItem value="draft">Draft</SelectItem>
+              <SelectItem value="recent">Recent Books</SelectItem>
+              <SelectItem value="most-viewed">Most Viewed</SelectItem>
+              <SelectItem value="best-rating">Best Rating</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {statusFilter === "recent" ? (
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
+              <span className="text-sm text-muted-foreground whitespace-nowrap">Last</span>
+              <Input
+                type="number"
+                min="1"
+                max="365"
+                value={recentDays}
+                onChange={(e) => setRecentDays(e.target.value)}
+                className="w-20 text-center"
+                data-testid="input-recent-days"
+              />
+              <span className="text-sm text-muted-foreground whitespace-nowrap">days</span>
+            </div>
+          ) : showDateFilter && (
+            <>
+              <Select value={dateFilter} onValueChange={(v) => setDateFilter(v as BookDateFilter)}>
+                <SelectTrigger className="w-36" data-testid="select-date-filter">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="7d">Last 7 days</SelectItem>
+                  <SelectItem value="30d">Last 30 days</SelectItem>
+                  <SelectItem value="90d">Last 90 days</SelectItem>
+                  <SelectItem value="month">By Month</SelectItem>
+                  <SelectItem value="custom">Custom Days</SelectItem>
+                </SelectContent>
+              </Select>
+              {showCustomDaysInput && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">Last</span>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="365"
+                    value={customDays}
+                    onChange={(e) => setCustomDays(e.target.value)}
+                    className="w-20 text-center"
+                    data-testid="input-custom-days"
+                  />
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">days</span>
+                </div>
+              )}
+              {showMonthInput && (
+                <Input
+                  type="month"
+                  value={filterMonth}
+                  onChange={(e) => setFilterMonth(e.target.value)}
+                  className="w-40"
+                  data-testid="input-filter-month"
+                />
+              )}
+            </>
           )}
         </div>
 
-        {books && books.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Card className="p-4">
-              <p className="text-sm text-muted-foreground">Total Books</p>
-              <p className="text-2xl font-bold" data-testid="stat-total-books">{books.length}</p>
-            </Card>
-            <Card className="p-4">
-              <p className="text-sm text-muted-foreground">Most Viewed</p>
-              <p className="text-sm font-medium truncate" data-testid="stat-most-viewed">{mostViewed?.title || "—"}</p>
-              <p className="text-xs text-muted-foreground">{mostViewed?.views || 0} views</p>
-            </Card>
-            <Card className="p-4">
-              <p className="text-sm text-muted-foreground">Highest Rated</p>
-              <p className="text-sm font-medium truncate" data-testid="stat-highest-rated">{highestRated?.title || "—"}</p>
-              <p className="text-xs text-muted-foreground">{(highestRated?.averageRating || 0).toFixed(1)} stars</p>
-            </Card>
-          </div>
-        )}
-
         {isLoading ? (
-          <Card className="p-4"><div className="space-y-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-12 w-full" />)}</div></Card>
-        ) : !books || books.length === 0 ? (
-          <Card className="p-12 text-center">
+          <div className="p-4 space-y-3">
+            {[1, 2, 3].map((i) => <Skeleton key={i} className="h-12 w-full" />)}
+          </div>
+        ) : booksList.length === 0 ? (
+          <div className="p-12 text-center">
             <BookOpen className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <h2 className="font-semibold mb-2">No books yet</h2>
-            <p className="text-sm text-muted-foreground mb-4">Add your first book.</p>
-            <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" /> Add Book</Button>
-          </Card>
+            <h2 className="font-semibold mb-2">No books found</h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              {!stats?.total ? "Add your first book." : "Try adjusting your filters."}
+            </p>
+            {!stats?.total && (
+              <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" /> Add Book</Button>
+            )}
+          </div>
         ) : (
-          <Card>
-            <Table>
+          <div className="overflow-x-auto">
+            <Table data-testid="table-books">
               <TableHeader>
                 <TableRow>
                   <TableHead>Book</TableHead>
-                  <TableHead>Author</TableHead>
-                  <TableHead>Category</TableHead>
+                  <TableHead className="hidden md:table-cell">Author</TableHead>
+                  <TableHead className="hidden sm:table-cell">Category</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Rating</TableHead>
                   <TableHead>Views</TableHead>
+                  <TableHead>Published</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {books.map((book) => (
+                {booksList.map((book) => (
                   <TableRow key={book.id} data-testid={`row-book-${book.id}`}>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         {book.coverUrl ? (
-                          <img src={book.coverUrl} alt="" className="w-8 h-12 object-cover rounded" />
+                          <img src={book.coverUrl} alt="" className="w-8 h-12 object-cover rounded shrink-0" />
                         ) : (
-                          <div className="w-8 h-12 bg-muted rounded flex items-center justify-center"><BookOpen className="w-4 h-4 text-muted-foreground" /></div>
+                          <div className="w-8 h-12 bg-muted rounded flex items-center justify-center shrink-0">
+                            <BookOpen className="w-4 h-4 text-muted-foreground" />
+                          </div>
                         )}
-                        <span className="font-medium" data-testid={`text-book-row-title-${book.id}`}>{book.title}</span>
+                        <div className="min-w-0">
+                          <span className="font-medium line-clamp-1" data-testid={`text-book-row-title-${book.id}`}>{book.title}</span>
+                          <span className="text-xs text-muted-foreground block mt-0.5">/{book.slug}</span>
+                        </div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{book.author}</TableCell>
-                    <TableCell className="text-muted-foreground">{book.category || "—"}</TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground">{book.author}</TableCell>
+                    <TableCell className="hidden sm:table-cell text-muted-foreground">{book.category || "—"}</TableCell>
                     <TableCell>
-                      <Badge variant={book.type === "free" ? "default" : "secondary"} className="capitalize text-xs">{book.type}</Badge>
+                      <Badge variant={book.type === "free" ? "default" : "secondary"} className="capitalize text-xs">
+                        {book.type}
+                      </Badge>
                       {book.price && <span className="text-xs text-muted-foreground ml-1">({book.price})</span>}
                     </TableCell>
                     <TableCell>
@@ -465,7 +766,16 @@ export default function AdminBooksPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground"><Eye className="w-3.5 h-3.5" />{book.views || 0}</div>
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <Eye className="w-3.5 h-3.5" />{book.views || 0}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Switch
+                        checked={!!book.published}
+                        onCheckedChange={(checked) => togglePublishMutation.mutate({ id: book.id, published: checked })}
+                        data-testid={`switch-publish-${book.id}`}
+                      />
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
@@ -482,7 +792,10 @@ export default function AdminBooksPage() {
                             <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(book)} data-testid={`button-edit-book-${book.id}`}>
                               <Pencil className="w-3.5 h-3.5" />
                             </Button>
-                            <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive"
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 text-destructive"
                               onClick={() => { if (confirm("Delete this book?")) deleteMutation.mutate(book.id); }}
                               data-testid={`button-delete-book-${book.id}`}
                             >
@@ -496,9 +809,9 @@ export default function AdminBooksPage() {
                 ))}
               </TableBody>
             </Table>
-          </Card>
+          </div>
         )}
-      </div>
+      </Card>
 
       <BookFormDialog key={editingBook?.id || "new"} book={editingBook} open={formOpen} onOpenChange={setFormOpen} />
       {chaptersBook && (

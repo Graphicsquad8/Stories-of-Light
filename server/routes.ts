@@ -1154,6 +1154,7 @@ export async function registerRoutes(
       sort: sort as string,
       minRating: minRating ? parseFloat(minRating as string) : undefined,
       userId: userId as string | undefined,
+      published: true,
     });
     res.json(booksList.map(sanitizeBook));
   });
@@ -1390,6 +1391,41 @@ export async function registerRoutes(
     const user = req.user as any;
     const rating = await storage.createBookRating(user.id, parsed.data.bookId, parsed.data.rating, parsed.data.comment);
     res.json(rating);
+  });
+
+  // Admin Books routes
+  app.get("/api/admin/books/stats", requireStaff, async (_req, res) => {
+    const stats = await storage.getBooksAdminStats();
+    res.json(stats);
+  });
+
+  app.get("/api/admin/books/categories", requireStaff, async (_req, res) => {
+    const cats = await storage.getBookCategoriesAdmin();
+    res.json(cats);
+  });
+
+  app.get("/api/admin/books", requireStaff, async (req, res) => {
+    const { type, category, search, sort, published, userId, startDate, endDate, limit, offset } = req.query;
+    const result = await storage.getBooksAdmin({
+      type: type as string,
+      category: category as string,
+      search: search as string,
+      sort: sort as string,
+      published: published === "true" ? true : published === "false" ? false : undefined,
+      userId: userId as string | undefined,
+      startDate: startDate as string | undefined,
+      endDate: endDate as string | undefined,
+      limit: limit ? parseInt(limit as string) : 50,
+      offset: offset ? parseInt(offset as string) : 0,
+    });
+    res.json(result);
+  });
+
+  app.patch("/api/admin/books/:id/publish", requireStaff, async (req, res) => {
+    const { published } = req.body;
+    const updated = await storage.updateBook(req.params.id, { published });
+    if (!updated) return res.status(404).json({ message: "Book not found" });
+    res.json(updated);
   });
 
   // Story Parts & Pages - Public routes

@@ -75,6 +75,7 @@ export const books = pgTable("books", {
   averageRating: real("average_rating").default(0),
   totalRatings: integer("total_ratings").default(0),
   ratingEnabled: boolean("rating_enabled").default(true),
+  published: boolean("published").default(true),
   views: integer("views").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   deletedAt: timestamp("deleted_at"),
