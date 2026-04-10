@@ -11,12 +11,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   Users, Pencil, Trash2, Loader2, Search, Eye, EyeOff, Copy,
-  KeyRound, UserCheck, ShieldCheck, UserCog, CalendarDays, Clock,
+  KeyRound, Bookmark, Star, CalendarDays, Clock, Download, UserCheck,
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useMemo } from "react";
 import { useAuth } from "@/lib/auth";
+import * as XLSX from "xlsx";
 
 interface AdminUser {
   id: string;
@@ -25,8 +26,13 @@ interface AdminUser {
   name: string | null;
   role: string;
   createdAt: string;
+  lastReadAt: string | null;
   plainPassword: string | null;
 }
+
+type ActiveFilter = "all" | "active" | "bookmarked" | "rated" | "new";
+type UserSortFilter = "newest" | "oldest" | "az" | "recent";
+type UserDateFilter = "all" | "7d" | "30d" | "90d" | "month" | "custom";
 
 function EditUserDialog({ user, open, onOpenChange }: { user: AdminUser; open: boolean; onOpenChange: (v: boolean) => void }) {
   const { toast } = useToast();
@@ -183,15 +189,20 @@ function UserCredentialsDialog({ user, open, onOpenChange }: { user: AdminUser; 
   );
 }
 
-type UserSortFilter = "all" | "newest" | "oldest" | "az" | "recent";
-type UserDateFilter = "all" | "7d" | "30d" | "90d" | "month" | "custom";
+const ACTIVE_FILTER_LABELS: Record<ActiveFilter, string> = {
+  all: "Total Users",
+  active: "Regular Users",
+  bookmarked: "Bookmark",
+  rated: "Total Rating",
+  new: "New (30d)",
+};
 
 export default function AdminUsersPage() {
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
   const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState("all");
-  const [sortFilter, setSortFilter] = useState<UserSortFilter>("all");
+  const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");
+  const [sortFilter, setSortFilter] = useState<UserSortFilter>("newest");
   const [dateFilter, setDateFilter] = useState<UserDateFilter>("all");
   const [customDays, setCustomDays] = useState("30");
   const [recentDays, setRecentDays] = useState("30");
@@ -226,7 +237,7 @@ export default function AdminUsersPage() {
 
   const queryParams = new URLSearchParams({ limit: "200" });
   if (search) queryParams.set("search", search);
-  if (roleFilter !== "all") queryParams.set("role", roleFilter);
+  if (activeFilter !== "all") queryParams.set("activeFilter", activeFilter);
   if (apiSort && apiSort !== "newest") queryParams.set("sort", apiSort);
   if (startDate) queryParams.set("startDate", startDate);
   if (endDate) queryParams.set("endDate", endDate);
@@ -241,7 +252,7 @@ export default function AdminUsersPage() {
   });
 
   const { data: stats } = useQuery<{
-    total: number; regularCount: number; adminCount: number; moderatorCount: number; recentCount: number;
+    total: number; activeCount: number; bookmarkCount: number; ratingCount: number; recentCount: number;
   }>({
     queryKey: ["/api/admin/users/stats"],
     queryFn: async () => {
@@ -266,80 +277,90 @@ export default function AdminUsersPage() {
     },
   });
 
-  const showDateFilter = sortFilter !== "recent" && sortFilter !== "oldest" && sortFilter !== "az";
+  const showDateFilter = sortFilter === "newest";
   const showCustomDaysInput = dateFilter === "custom";
   const showMonthInput = dateFilter === "month";
 
-  const roleBadgeVariant = (role: string) =>
-    role === "admin" ? "default" : role === "moderator" ? "secondary" : "outline";
+  const handleStatClick = (filter: ActiveFilter) => {
+    setActiveFilter(f => f === filter ? "all" : filter);
+  };
+
+  const exportToExcel = () => {
+    const label = ACTIVE_FILTER_LABELS[activeFilter];
+    const rows = usersList.map(u => ({
+      Username: u.username,
+      "Display Name": u.name || "",
+      Email: u.email || "",
+      Role: u.role,
+      Joined: new Date(u.createdAt).toLocaleDateString(),
+      "Last Active": u.lastReadAt ? new Date(u.lastReadAt).toLocaleDateString() : "",
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Users");
+    const filename = `users-${label.toLowerCase().replace(/\s+/g, "-")}-${new Date().toISOString().slice(0, 10)}.xlsx`;
+    XLSX.writeFile(wb, filename);
+    toast({ title: "Exported", description: `${rows.length} users exported to ${filename}` });
+  };
+
+  const statCards: { key: ActiveFilter; label: string; value: number | undefined; icon: any; desc: string }[] = [
+    { key: "all", label: "Total Users", value: stats?.total, icon: Users, desc: "All regular accounts" },
+    { key: "active", label: "Regular Users", value: stats?.activeCount, icon: UserCheck, desc: "Active in last 10 days" },
+    { key: "bookmarked", label: "Bookmark", value: stats?.bookmarkCount, icon: Bookmark, desc: "Have bookmarked content" },
+    { key: "rated", label: "Total Rating", value: stats?.ratingCount, icon: Star, desc: "Have submitted ratings" },
+    { key: "new", label: "New (30d)", value: stats?.recentCount, icon: CalendarDays, desc: "Joined in last 30 days" },
+  ];
 
   return (
     <AdminLayout>
       <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold" data-testid="text-users-title">User Accounts</h1>
-          <p className="text-sm text-muted-foreground">Manage all registered user accounts</p>
+          <p className="text-sm text-muted-foreground">Manage all regular user accounts</p>
         </div>
+        <Button variant="outline" onClick={exportToExcel} data-testid="button-export-users">
+          <Download className="w-4 h-4 mr-2" />
+          Export Excel
+        </Button>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
-        <Card className="p-4" data-testid="stat-total-users">
-          <div className="flex items-center gap-2 mb-1 text-muted-foreground">
-            <Users className="w-4 h-4" />
-            <span className="text-xs font-medium">Total Users</span>
-          </div>
-          {stats ? (
-            <div>
-              <p className="text-2xl font-bold">{stats.total}</p>
-              <div className="flex gap-2 mt-1 text-xs text-muted-foreground">
-                <span>Regular: {stats.regularCount}</span>
-                <span>·</span>
-                <span>Staff: {stats.adminCount + stats.moderatorCount}</span>
+        {statCards.map(({ key, label, value, icon: Icon, desc }) => {
+          const isActive = activeFilter === key;
+          return (
+            <Card
+              key={key}
+              className={`p-4 cursor-pointer transition-all hover:shadow-md hover:border-primary/40 ${isActive ? "border-primary ring-1 ring-primary/30 bg-primary/5" : ""}`}
+              onClick={() => handleStatClick(key)}
+              data-testid={`stat-card-${key}`}
+            >
+              <div className={`flex items-center gap-2 mb-1 ${isActive ? "text-primary" : "text-muted-foreground"}`}>
+                <Icon className="w-4 h-4" />
+                <span className="text-xs font-medium">{label}</span>
               </div>
-            </div>
-          ) : <Skeleton className="h-10 w-full mt-1" />}
-        </Card>
-
-        <Card className="p-4" data-testid="stat-regular-users">
-          <div className="flex items-center gap-2 mb-1 text-muted-foreground">
-            <UserCheck className="w-4 h-4" />
-            <span className="text-xs font-medium">Regular Users</span>
-          </div>
-          {stats ? (
-            <p className="text-2xl font-bold">{stats.regularCount}</p>
-          ) : <Skeleton className="h-7 w-12 mt-1" />}
-        </Card>
-
-        <Card className="p-4" data-testid="stat-admins">
-          <div className="flex items-center gap-2 mb-1 text-muted-foreground">
-            <UserCog className="w-4 h-4" />
-            <span className="text-xs font-medium">Admins</span>
-          </div>
-          {stats ? (
-            <p className="text-2xl font-bold">{stats.adminCount}</p>
-          ) : <Skeleton className="h-7 w-12 mt-1" />}
-        </Card>
-
-        <Card className="p-4" data-testid="stat-moderators">
-          <div className="flex items-center gap-2 mb-1 text-muted-foreground">
-            <ShieldCheck className="w-4 h-4" />
-            <span className="text-xs font-medium">Moderators</span>
-          </div>
-          {stats ? (
-            <p className="text-2xl font-bold">{stats.moderatorCount}</p>
-          ) : <Skeleton className="h-7 w-12 mt-1" />}
-        </Card>
-
-        <Card className="p-4" data-testid="stat-recent-users">
-          <div className="flex items-center gap-2 mb-1 text-muted-foreground">
-            <CalendarDays className="w-4 h-4" />
-            <span className="text-xs font-medium">New (30d)</span>
-          </div>
-          {stats ? (
-            <p className="text-2xl font-bold">{stats.recentCount}</p>
-          ) : <Skeleton className="h-7 w-12 mt-1" />}
-        </Card>
+              {value !== undefined ? (
+                <div>
+                  <p className={`text-2xl font-bold ${isActive ? "text-primary" : ""}`}>{value}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
+                </div>
+              ) : (
+                <Skeleton className="h-10 w-full mt-1" />
+              )}
+            </Card>
+          );
+        })}
       </div>
+
+      {activeFilter !== "all" && (
+        <div className="mb-4 flex items-center gap-2">
+          <Badge variant="secondary" className="text-xs px-3 py-1">
+            Filtered: {ACTIVE_FILTER_LABELS[activeFilter]}
+          </Badge>
+          <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground" onClick={() => setActiveFilter("all")}>
+            Clear filter ×
+          </Button>
+        </div>
+      )}
 
       <Card>
         <div className="flex items-center gap-3 p-4 border-b flex-wrap">
@@ -354,28 +375,15 @@ export default function AdminUsersPage() {
             />
           </div>
 
-          <Select value={roleFilter} onValueChange={setRoleFilter}>
-            <SelectTrigger className="w-36" data-testid="select-role-filter">
-              <SelectValue placeholder="All Roles" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Roles</SelectItem>
-              <SelectItem value="user">Regular</SelectItem>
-              <SelectItem value="moderator">Moderator</SelectItem>
-              <SelectItem value="admin">Admin</SelectItem>
-            </SelectContent>
-          </Select>
-
           <Select value={sortFilter} onValueChange={(v) => setSortFilter(v as UserSortFilter)}>
             <SelectTrigger className="w-44" data-testid="select-sort-filter">
               <SelectValue placeholder="All Members" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Members</SelectItem>
               <SelectItem value="newest">Newest First</SelectItem>
               <SelectItem value="oldest">Oldest First</SelectItem>
               <SelectItem value="az">A – Z</SelectItem>
-              <SelectItem value="recent">Recent Members</SelectItem>
+              <SelectItem value="recent">Regular</SelectItem>
             </SelectContent>
           </Select>
 
@@ -384,9 +392,7 @@ export default function AdminUsersPage() {
               <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
               <span className="text-sm text-muted-foreground whitespace-nowrap">Last</span>
               <Input
-                type="number"
-                min="1"
-                max="365"
+                type="number" min="1" max="365"
                 value={recentDays}
                 onChange={(e) => setRecentDays(e.target.value)}
                 className="w-20 text-center"
@@ -413,9 +419,7 @@ export default function AdminUsersPage() {
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground whitespace-nowrap">Last</span>
                   <Input
-                    type="number"
-                    min="1"
-                    max="365"
+                    type="number" min="1" max="365"
                     value={customDays}
                     onChange={(e) => setCustomDays(e.target.value)}
                     className="w-20 text-center"
@@ -426,8 +430,7 @@ export default function AdminUsersPage() {
               )}
               {showMonthInput && (
                 <Input
-                  type="month"
-                  value={filterMonth}
+                  type="month" value={filterMonth}
                   onChange={(e) => setFilterMonth(e.target.value)}
                   className="w-40"
                   data-testid="input-filter-month"
@@ -444,9 +447,9 @@ export default function AdminUsersPage() {
         ) : usersList.length === 0 ? (
           <div className="p-12 text-center">
             <Users className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <h2 className="font-semibold mb-2">{search || roleFilter !== "all" ? "No users found" : "No users yet"}</h2>
+            <h2 className="font-semibold mb-2">No users found</h2>
             <p className="text-sm text-muted-foreground">
-              {search || roleFilter !== "all" ? "Try adjusting your filters." : "Users who register on the website will appear here."}
+              {search ? "Try adjusting your search." : activeFilter !== "all" ? "No users match this filter." : "No regular users have registered yet."}
             </p>
           </div>
         ) : (
@@ -456,8 +459,8 @@ export default function AdminUsersPage() {
                 <TableRow>
                   <TableHead>User</TableHead>
                   <TableHead className="hidden sm:table-cell">Email</TableHead>
-                  <TableHead>Role</TableHead>
                   <TableHead className="hidden md:table-cell">Joined</TableHead>
+                  <TableHead className="hidden lg:table-cell">Last Active</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -478,13 +481,11 @@ export default function AdminUsersPage() {
                     <TableCell className="hidden sm:table-cell text-muted-foreground text-sm" data-testid={`text-email-${u.id}`}>
                       {u.email || "—"}
                     </TableCell>
-                    <TableCell>
-                      <Badge variant={roleBadgeVariant(u.role)} className="capitalize text-xs">
-                        {u.role}
-                      </Badge>
-                    </TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
                       {new Date(u.createdAt).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell text-muted-foreground text-sm">
+                      {u.lastReadAt ? new Date(u.lastReadAt).toLocaleDateString() : "—"}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
@@ -518,6 +519,13 @@ export default function AdminUsersPage() {
                 ))}
               </TableBody>
             </Table>
+
+            <div className="flex items-center justify-between px-4 py-3 border-t text-sm text-muted-foreground">
+              <span>Showing {usersList.length} of {data?.total ?? 0} users</span>
+              <Button variant="ghost" size="sm" onClick={exportToExcel} data-testid="button-export-bottom">
+                <Download className="w-3.5 h-3.5 mr-1.5" /> Export
+              </Button>
+            </div>
           </div>
         )}
       </Card>

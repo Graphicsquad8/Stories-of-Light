@@ -54,8 +54,8 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
   getUsersByRole(role: string): Promise<User[]>;
-  getUsersStats(): Promise<{ total: number; regularCount: number; adminCount: number; moderatorCount: number; recentCount: number }>;
-  getUsersFiltered(opts?: { search?: string; role?: string; sort?: string; startDate?: string; endDate?: string; limit?: number }): Promise<{ users: User[]; total: number }>;
+  getUsersStats(): Promise<{ total: number; activeCount: number; bookmarkCount: number; ratingCount: number; recentCount: number }>;
+  getUsersFiltered(opts?: { search?: string; activeFilter?: string; sort?: string; startDate?: string; endDate?: string; limit?: number }): Promise<{ users: User[]; total: number }>;
   createUser(user: InsertUser): Promise<User>;
   createUserWithEmail(data: { email: string; password: string; name?: string; username: string; role?: string; permissions?: string[]; plainPassword?: string }): Promise<User>;
   updateUser(id: string, data: Partial<User>): Promise<User | undefined>;
@@ -310,28 +310,41 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(users).where(eq(users.role, role)).orderBy(users.createdAt);
   }
 
-  async getUsersStats(): Promise<{ total: number; regularCount: number; adminCount: number; moderatorCount: number; recentCount: number }> {
+  async getUsersStats(): Promise<{ total: number; activeCount: number; bookmarkCount: number; ratingCount: number; recentCount: number }> {
+    const since10 = new Date(Date.now() - 10 * 86400000);
     const since30 = new Date(Date.now() - 30 * 86400000);
-    const [totalRes, regularRes, adminRes, modRes, recentRes] = await Promise.all([
-      db.select({ c: count() }).from(users),
+    const [totalRes, activeRes, recentRes, bookmarkRes, ratingRes] = await Promise.all([
       db.select({ c: count() }).from(users).where(eq(users.role, "user")),
-      db.select({ c: count() }).from(users).where(eq(users.role, "admin")),
-      db.select({ c: count() }).from(users).where(eq(users.role, "moderator")),
-      db.select({ c: count() }).from(users).where(gte(users.createdAt, since30)),
+      db.select({ c: count() }).from(users).where(and(eq(users.role, "user"), isNotNull(users.lastReadAt), gte(users.lastReadAt, since10))),
+      db.select({ c: count() }).from(users).where(and(eq(users.role, "user"), gte(users.createdAt, since30))),
+      pool.query(`SELECT COUNT(DISTINCT user_id)::int AS c FROM (
+        SELECT user_id FROM bookmarks
+        UNION ALL SELECT user_id FROM book_bookmarks
+        UNION ALL SELECT user_id FROM dua_bookmarks
+        UNION ALL SELECT user_id FROM motivational_bookmarks
+      ) t WHERE user_id IN (SELECT id FROM users WHERE role = 'user')`),
+      pool.query(`SELECT COUNT(DISTINCT user_id)::int AS c FROM (
+        SELECT user_id FROM story_ratings
+        UNION ALL SELECT user_id FROM book_ratings
+        UNION ALL SELECT user_id FROM dua_ratings
+        UNION ALL SELECT user_id FROM motivational_ratings
+      ) t WHERE user_id IN (SELECT id FROM users WHERE role = 'user')`),
     ]);
     return {
       total: totalRes[0]?.c ?? 0,
-      regularCount: regularRes[0]?.c ?? 0,
-      adminCount: adminRes[0]?.c ?? 0,
-      moderatorCount: modRes[0]?.c ?? 0,
+      activeCount: activeRes[0]?.c ?? 0,
+      bookmarkCount: bookmarkRes.rows[0]?.c ?? 0,
+      ratingCount: ratingRes.rows[0]?.c ?? 0,
       recentCount: recentRes[0]?.c ?? 0,
     };
   }
 
-  async getUsersFiltered(opts: { search?: string; role?: string; sort?: string; startDate?: string; endDate?: string; limit?: number } = {}): Promise<{ users: User[]; total: number }> {
-    const { search, role, sort, startDate, endDate, limit = 100 } = opts;
-    const conds: any[] = [];
-    if (role && role !== "all") conds.push(eq(users.role, role));
+  async getUsersFiltered(opts: { search?: string; activeFilter?: string; sort?: string; startDate?: string; endDate?: string; limit?: number } = {}): Promise<{ users: User[]; total: number }> {
+    const { search, activeFilter, sort, startDate, endDate, limit = 200 } = opts;
+    const since10 = new Date(Date.now() - 10 * 86400000);
+    const since30 = new Date(Date.now() - 30 * 86400000);
+
+    const conds: any[] = [eq(users.role, "user")];
     if (search) {
       const like = `%${search.toLowerCase()}%`;
       conds.push(or(
@@ -343,8 +356,35 @@ export class DatabaseStorage implements IStorage {
     if (startDate) conds.push(gte(users.createdAt, new Date(startDate)));
     if (endDate) conds.push(lte(users.createdAt, new Date(endDate)));
 
-    const where = conds.length > 0 ? and(...conds) : undefined;
-    const orderCol = sort === "oldest" ? asc(users.createdAt) : sort === "az" ? asc(users.username) : desc(users.createdAt);
+    if (activeFilter === "active") {
+      conds.push(isNotNull(users.lastReadAt));
+      conds.push(gte(users.lastReadAt, since10));
+    }
+    if (activeFilter === "new") conds.push(gte(users.createdAt, since30));
+
+    if (activeFilter === "bookmarked") {
+      conds.push(sql`${users.id} IN (
+        SELECT DISTINCT user_id FROM bookmarks
+        UNION ALL SELECT user_id FROM book_bookmarks
+        UNION ALL SELECT user_id FROM dua_bookmarks
+        UNION ALL SELECT user_id FROM motivational_bookmarks
+      )`);
+    }
+    if (activeFilter === "rated") {
+      conds.push(sql`${users.id} IN (
+        SELECT DISTINCT user_id FROM story_ratings
+        UNION ALL SELECT user_id FROM book_ratings
+        UNION ALL SELECT user_id FROM dua_ratings
+        UNION ALL SELECT user_id FROM motivational_ratings
+      )`);
+    }
+
+    const where = and(...conds);
+    const orderCol = activeFilter === "active"
+      ? desc(users.lastReadAt)
+      : sort === "oldest" ? asc(users.createdAt)
+      : sort === "az" ? asc(users.username)
+      : desc(users.createdAt);
 
     const [allUsers, countResult] = await Promise.all([
       db.select().from(users).where(where).orderBy(orderCol).limit(limit),

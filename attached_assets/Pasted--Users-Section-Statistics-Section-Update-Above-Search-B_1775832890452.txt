@@ -1,0 +1,74 @@
+📌 Users Section – Statistics Section Update (Above Search Bar)
+🔹 Statistics Section Structure
+The section below User Accounts and above the Search Bar should be structured as follows:
+
+📊 Required Fields:
+
+Total Users
+Regular Users
+Bookmark
+Total Rating
+New (30d)
+🔹 Field Definitions
+✅ Total Users
+Displays the total number of logged-in regular users on the website
+✅ Regular Users
+Counts users who have the highest number of visits within the last 10 days
+A user must visit within the 10-day window to be counted (visits after the 10th day are not included)
+
+📌 In the user list:
+
+Users with the highest visits appear at the top
+Others are shown in descending order based on visit count
+✅ Bookmark
+Displays the total number of users who have bookmarked any content on the website
+✅ Total Rating
+Displays the total number of users who have submitted ratings on any content
+✅ New (30d)
+Displays the total number of users who joined in the last 30 days
+🔹 Interactive Behavior
+
+📌 These 5 fields should behave like buttons:
+
+When the admin clicks on any field
+A filtered user list should be displayed below based on that selection
+🔹 Role Filter Update
+Remove the All Roles option completely
+
+📌 Instead:
+
+Add a “Regular” option under All Members
+🔹 User Scope Restriction (Important)
+
+⚠️ The User Accounts section should display only:
+
+Regular (normal) users who are logged into the website
+
+❌ Do NOT include:
+
+Admin
+Moderator
+Editor
+🔹 All Time Filter
+The All Time option should remain unchanged
+It should continue working as it currently does
+🔹 Data Export Feature
+The User Accounts data should be downloadable based on each filter/activity
+
+📌 Examples:
+
+Total Users
+Regular Users
+Bookmark Users
+Rating Users
+New Users (30d)
+
+➡️ Data must be exportable in Excel format
+
+✅ Summary
+Structured statistics section (5 key metrics)
+Button-based filtering system
+Simplified role filter (remove All Roles)
+Only regular users visible (exclude admin/moderator/editor)
+All Time filter unchanged
+Excel export functionality based on filters
