@@ -13,7 +13,7 @@ import {
   Save, Loader2, Upload, Globe, Home,
   BookOpen, Mail, Info, Eye, EyeOff, AtSign, Megaphone,
   CheckCircle2, X, ChevronDown, Type, Minus, Plus,
-  ToggleLeft, LogIn, Shield,
+  ToggleLeft, LogIn, Shield, KeyRound, Lock,
 } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -786,6 +786,37 @@ export default function AdminSettingsPage() {
   const [saving, setSaving] = useState<string | null>(null);
   const [booksHeroImage, setBooksHeroImage] = useState("");
 
+  const [credCurrentEmail, setCredCurrentEmail] = useState("");
+  const [credCurrentPassword, setCredCurrentPassword] = useState("");
+  const [credNewEmail, setCredNewEmail] = useState("");
+  const [credNewPassword, setCredNewPassword] = useState("");
+  const [showCredCurrentPwd, setShowCredCurrentPwd] = useState(false);
+  const [showCredNewPwd, setShowCredNewPwd] = useState(false);
+  const [credVerified, setCredVerified] = useState(false);
+
+  const verifyCredentialsMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/admin/owner/credentials", {
+        currentEmail: credCurrentEmail,
+        currentPassword: credCurrentPassword,
+        newEmail: credNewEmail || undefined,
+        newPassword: credNewPassword || undefined,
+      });
+      return res.json();
+    },
+    onSuccess: (data: any) => {
+      toast({ title: "Credentials updated", description: data.message || "Your credentials have been changed successfully." });
+      setCredCurrentEmail("");
+      setCredCurrentPassword("");
+      setCredNewEmail("");
+      setCredNewPassword("");
+      setCredVerified(false);
+    },
+    onError: (err: any) => {
+      toast({ title: "Update failed", description: err.message, variant: "destructive" });
+    },
+  });
+
   const { data: settings, isLoading } = useQuery<Record<string, string>>({
     queryKey: ["/api/admin/settings"],
   });
@@ -857,6 +888,104 @@ export default function AdminSettingsPage() {
           <h1 className="text-2xl font-bold" data-testid="text-settings-title">Site Settings</h1>
           <p className="text-sm text-muted-foreground">Configure and manage all aspects of your website</p>
         </div>
+
+        <AccordionSection
+          id="account-security"
+          title="Account Security"
+          description="Change your login email and password"
+          icon={KeyRound}
+        >
+          <div className="space-y-5">
+            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-sm text-amber-700 dark:text-amber-400 flex items-start gap-2">
+              <Lock className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>For security, you must verify your current credentials before making any changes.</span>
+            </div>
+
+            <div className="space-y-4">
+              <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Step 1 — Verify Current Credentials</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="cred-current-email">Current Email</Label>
+                  <Input
+                    id="cred-current-email"
+                    type="email"
+                    value={credCurrentEmail}
+                    onChange={e => setCredCurrentEmail(e.target.value)}
+                    placeholder="your@email.com"
+                    data-testid="input-cred-current-email"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cred-current-password">Current Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="cred-current-password"
+                      type={showCredCurrentPwd ? "text" : "password"}
+                      value={credCurrentPassword}
+                      onChange={e => setCredCurrentPassword(e.target.value)}
+                      placeholder="Enter current password"
+                      className="pr-10"
+                      data-testid="input-cred-current-password"
+                    />
+                    <Button type="button" size="icon" variant="ghost" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7" onClick={() => setShowCredCurrentPwd(s => !s)}>
+                      {showCredCurrentPwd ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-4">
+              <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Step 2 — Set New Credentials</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="cred-new-email">New Email <span className="text-muted-foreground font-normal text-xs">(optional)</span></Label>
+                  <Input
+                    id="cred-new-email"
+                    type="email"
+                    value={credNewEmail}
+                    onChange={e => setCredNewEmail(e.target.value)}
+                    placeholder="new@email.com"
+                    data-testid="input-cred-new-email"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cred-new-password">New Password <span className="text-muted-foreground font-normal text-xs">(optional)</span></Label>
+                  <div className="relative">
+                    <Input
+                      id="cred-new-password"
+                      type={showCredNewPwd ? "text" : "password"}
+                      value={credNewPassword}
+                      onChange={e => setCredNewPassword(e.target.value)}
+                      placeholder="Min. 6 characters"
+                      className="pr-10"
+                      data-testid="input-cred-new-password"
+                    />
+                    <Button type="button" size="icon" variant="ghost" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7" onClick={() => setShowCredNewPwd(s => !s)}>
+                      {showCredNewPwd ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <Button
+                onClick={() => verifyCredentialsMutation.mutate()}
+                disabled={verifyCredentialsMutation.isPending || !credCurrentEmail || !credCurrentPassword || (!credNewEmail && !credNewPassword)}
+                data-testid="button-update-credentials"
+              >
+                {verifyCredentialsMutation.isPending ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Verifying...</>
+                ) : (
+                  <><Shield className="w-4 h-4 mr-2" />Update Credentials</>
+                )}
+              </Button>
+            </div>
+          </div>
+        </AccordionSection>
 
         <AccordionSection
           id="general"

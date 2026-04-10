@@ -424,17 +424,20 @@ export async function registerRoutes(
     });
   });
 
-  app.get("/api/auth/me", (req, res) => {
+  app.get("/api/auth/me", async (req, res) => {
     if (req.isAuthenticated()) {
-      const user = req.user as any;
+      const sessionUser = req.user as any;
+      const freshUser = await storage.getUser(sessionUser.id);
+      if (!freshUser) return res.status(401).json({ message: "Not authenticated" });
+      Object.assign(sessionUser, { role: freshUser.role, permissions: freshUser.permissions, email: freshUser.email, name: freshUser.name });
       return res.json({
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        permissions: user.permissions || [],
-        avatarUrl: user.avatarUrl ?? null,
+        id: freshUser.id,
+        username: freshUser.username,
+        email: freshUser.email,
+        name: freshUser.name,
+        role: freshUser.role,
+        permissions: freshUser.permissions || [],
+        avatarUrl: freshUser.avatarUrl ?? null,
       });
     }
     return res.status(401).json({ message: "Not authenticated" });
@@ -1891,12 +1894,14 @@ export async function registerRoutes(
     const { id } = req.params;
     const currentUser = req.user as any;
     const { name, email, password, permissions, role } = req.body;
-    const target = await storage.updateUser(id, {});  // fetch target
+    const target = await storage.getUser(id);
     if (!target) return res.status(404).json({ message: "Contributor not found" });
-    if (target.role === "owner" && currentUser.role !== "admin") {
-      return res.status(403).json({ message: "Only the Super Owner can modify Owner accounts" });
+    if (target.role === "owner" && currentUser.role !== "owner") {
+      return res.status(403).json({ message: "Only an Owner can modify another Owner account" });
     }
-    const updateData: any = { name, email, permissions: permissions || [] };
+    const updateData: any = { permissions: permissions || [] };
+    if (name !== undefined) updateData.name = name;
+    if (email !== undefined) updateData.email = email;
     if (role) updateData.role = role;
     if (password) {
       updateData.password = await hashPassword(password);
@@ -1914,14 +1919,50 @@ export async function registerRoutes(
     const { id } = req.params;
     const currentUser = req.user as any;
     if (currentUser.id === id) return res.status(400).json({ message: "Cannot delete your own account" });
-    const target = await storage.updateUser(id, {});
+    const target = await storage.getUser(id);
     if (!target) return res.status(404).json({ message: "Contributor not found" });
-    if (target.role === "owner" && currentUser.role !== "admin") {
-      return res.status(403).json({ message: "Only the Super Owner can delete Owner accounts" });
+    if (target.role === "owner" && currentUser.role !== "owner") {
+      return res.status(403).json({ message: "Only an Owner can delete another Owner account" });
     }
     const ok = await storage.deleteUser(id);
     if (!ok) return res.status(404).json({ message: "Contributor not found" });
     res.json({ success: true });
+  });
+
+  app.post("/api/admin/owner/credentials", requireAdmin, async (req, res) => {
+    const currentUser = req.user as any;
+    const { currentEmail, currentPassword, newEmail, newPassword } = req.body;
+    if (!currentEmail || !currentPassword) {
+      return res.status(400).json({ message: "Current email and password are required for verification" });
+    }
+    const user = await storage.getUser(currentUser.id);
+    if (!user) return res.status(404).json({ message: "Account not found" });
+    if (user.email?.toLowerCase() !== currentEmail.toLowerCase()) {
+      return res.status(401).json({ message: "Current email is incorrect" });
+    }
+    if (!user.password) {
+      return res.status(400).json({ message: "Cannot verify password for this account type" });
+    }
+    const match = await comparePasswords(currentPassword, user.password);
+    if (!match) return res.status(401).json({ message: "Current password is incorrect" });
+    const updateData: any = {};
+    if (newEmail && newEmail !== user.email) {
+      const existing = await storage.getUserByEmail(newEmail);
+      if (existing && existing.id !== user.id) {
+        return res.status(400).json({ message: "That email is already in use by another account" });
+      }
+      updateData.email = newEmail;
+    }
+    if (newPassword) {
+      if (newPassword.length < 6) return res.status(400).json({ message: "New password must be at least 6 characters" });
+      updateData.password = await hashPassword(newPassword);
+      updateData.plainPassword = newPassword;
+    }
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ message: "No changes to apply" });
+    }
+    await storage.updateUser(user.id, updateData);
+    res.json({ message: "Credentials updated successfully" });
   });
 
   // Public Duas
