@@ -564,31 +564,27 @@ export default function AdminBooksPage() {
             <span className="text-xs font-medium">Total Rating</span>
           </div>
           {stats ? (
-            <div className="space-y-2">
-              <div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">⭐ 5-Star (4.1–5.0)</span>
-                  <span className="text-sm font-bold">{stats.fiveStarCount}</span>
+            <div className="space-y-2 mt-1">
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-xs text-muted-foreground shrink-0">⭐ 5-Star</span>
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span className="tabular-nums">{stats.fiveStarFree}</span>
+                  <span className="text-muted-foreground/40">|</span>
+                  <span className="tabular-nums">{stats.fiveStarPaid}</span>
                 </div>
-                <div className="flex gap-2 text-xs text-muted-foreground pl-1 mt-0.5">
-                  <span>Free: {stats.fiveStarFree}</span>
-                  <span>·</span>
-                  <span>Paid: {stats.fiveStarPaid}</span>
-                </div>
+                <span className="text-sm font-bold tabular-nums ml-1">{stats.fiveStarCount}</span>
               </div>
-              <div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">⭐ 4-Star (3.5–4.0)</span>
-                  <span className="text-sm font-bold">{stats.fourStarCount}</span>
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-xs text-muted-foreground shrink-0">⭐ 4-Star</span>
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span className="tabular-nums">{stats.fourStarFree}</span>
+                  <span className="text-muted-foreground/40">|</span>
+                  <span className="tabular-nums">{stats.fourStarPaid}</span>
                 </div>
-                <div className="flex gap-2 text-xs text-muted-foreground pl-1 mt-0.5">
-                  <span>Free: {stats.fourStarFree}</span>
-                  <span>·</span>
-                  <span>Paid: {stats.fourStarPaid}</span>
-                </div>
+                <span className="text-sm font-bold tabular-nums ml-1">{stats.fourStarCount}</span>
               </div>
             </div>
-          ) : <Skeleton className="h-16 w-full mt-1" />}
+          ) : <Skeleton className="h-14 w-full mt-1" />}
         </Card>
 
         <Card className="p-4" data-testid="stat-recent">

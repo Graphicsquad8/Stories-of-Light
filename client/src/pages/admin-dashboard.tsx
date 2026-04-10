@@ -1125,7 +1125,7 @@ export default function AdminDashboardPage() {
       sub: `${data.content.motivational.published} published`,
       icon: Star,
       color: "text-emerald-600 dark:text-emerald-400",
-      href: isContributor ? undefined : "/image/motivational",
+      href: isContributor ? undefined : "/image/motivational-stories",
     },
     {
       label: "Users",
