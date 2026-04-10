@@ -343,7 +343,7 @@ export default function AdminModeratorsPage() {
   });
 
   const { data: stats } = useQuery<{
-    superOwnerCount: number; ownerCount: number; adminCount: number; moderatorCount: number; editorCount: number; total: number;
+    superOwnerCount: number; adminCount: number; moderatorCount: number; editorCount: number; total: number;
   }>({
     queryKey: ["/api/admin/contributors/stats"],
     queryFn: async () => {
@@ -393,14 +393,25 @@ export default function AdminModeratorsPage() {
     return true;
   };
 
-  const statCards: { key: RoleFilter; label: string; value: number | undefined; icon: any; color: string }[] = [
-    { key: "super_owner", label: "Super Owner", value: stats?.superOwnerCount, icon: Crown, color: "text-purple-600" },
-    { key: "owner", label: "Owner", value: stats?.ownerCount, icon: ShieldCheck, color: "text-amber-600" },
-    { key: "admin", label: "Admin", value: stats?.adminCount, icon: UserCog, color: "text-red-600" },
-    { key: "moderator", label: "Moderator", value: stats?.moderatorCount, icon: UserCog, color: "text-blue-600" },
-    { key: "editor", label: "Editor", value: stats?.editorCount, icon: BookOpen, color: "text-green-600" },
-    { key: "all", label: "All Contributors", value: stats?.total, icon: Users, color: "text-primary" },
+  const allStatCards: { key: RoleFilter; label: string; value: number | undefined; icon: any; color: string; minRole: string }[] = [
+    { key: "super_owner", label: "Super Owner", value: stats?.superOwnerCount, icon: Crown, color: "text-purple-600", minRole: "super_owner" },
+    { key: "admin", label: "Admin", value: stats?.adminCount, icon: ShieldCheck, color: "text-red-600", minRole: "owner" },
+    { key: "moderator", label: "Moderator", value: stats?.moderatorCount, icon: UserCog, color: "text-blue-600", minRole: "admin" },
+    { key: "editor", label: "Editor", value: stats?.editorCount, icon: BookOpen, color: "text-green-600", minRole: "admin" },
+    { key: "all", label: "All Contributors", value: stats?.total, icon: Users, color: "text-primary", minRole: "admin" },
   ];
+
+  const ROLE_RANK: Record<string, number> = { super_owner: 4, owner: 3, admin: 2, moderator: 1, editor: 1 };
+  const currentRank = ROLE_RANK[currentUser?.role ?? ""] ?? 0;
+  const statCards = allStatCards.filter(c => currentRank >= (ROLE_RANK[c.minRole] ?? 99));
+
+  const dropdownRoleOptions: { value: string; label: string; minRole: string }[] = [
+    { value: "role:super_owner", label: "Super Owner", minRole: "super_owner" },
+    { value: "role:owner", label: "Owner", minRole: "super_owner" },
+    { value: "role:admin", label: "Admin", minRole: "owner" },
+    { value: "role:moderator", label: "Moderator", minRole: "admin" },
+    { value: "role:editor", label: "Editor", minRole: "admin" },
+  ].filter(o => currentRank >= (ROLE_RANK[o.minRole] ?? 99));
 
   return (
     <AdminLayout>
@@ -415,7 +426,7 @@ export default function AdminModeratorsPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+      <div className={`grid grid-cols-2 sm:grid-cols-3 ${statCards.length <= 4 ? "lg:grid-cols-4" : statCards.length === 5 ? "lg:grid-cols-5" : "lg:grid-cols-6"} gap-3 mb-6`}>
         {statCards.map(({ key, label, value, icon: Icon, color }) => {
           const isActive = roleFilter === key;
           return (
@@ -468,11 +479,9 @@ export default function AdminModeratorsPage() {
               <SelectValue placeholder="Team Member" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="role:super_owner">Super Owner</SelectItem>
-              <SelectItem value="role:owner">Owner</SelectItem>
-              <SelectItem value="role:admin">Admin</SelectItem>
-              <SelectItem value="role:moderator">Moderator</SelectItem>
-              <SelectItem value="role:editor">Editor</SelectItem>
+              {dropdownRoleOptions.map(o => (
+                <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+              ))}
               <SelectItem value="newest">Newest First</SelectItem>
               <SelectItem value="oldest">Oldest First</SelectItem>
             </SelectContent>

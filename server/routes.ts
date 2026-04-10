@@ -1846,30 +1846,43 @@ export async function registerRoutes(
   // ── Admin: Contributors (Owner / Admin / Moderator / Editor) ───────
   const CONTRIBUTOR_ROLES = ["super_owner", "owner", "admin", "moderator", "editor"];
 
-  app.get("/api/admin/contributors/stats", requireAdmin, async (_req, res) => {
-    const result = await pool.query(`
-      SELECT role, COUNT(*)::int AS c FROM users
-      WHERE role IN ('super_owner','owner','admin','moderator','editor')
-      GROUP BY role
-    `);
+  function visibleRolesFor(role: string): string[] {
+    if (role === "super_owner") return ["super_owner", "owner", "admin", "moderator", "editor"];
+    if (role === "owner") return ["admin", "moderator", "editor"];
+    if (role === "admin") return ["moderator", "editor"];
+    return [];
+  }
+
+  app.get("/api/admin/contributors/stats", requireAdmin, async (req, res) => {
+    const currentRole = (req.user as any)?.role;
+    const roles = visibleRolesFor(currentRole);
+    if (roles.length === 0) return res.json({ superOwnerCount: 0, adminCount: 0, moderatorCount: 0, editorCount: 0, total: 0 });
+    const placeholders = roles.map((_, i) => `$${i + 1}`).join(",");
+    const result = await pool.query(
+      `SELECT role, COUNT(*)::int AS c FROM users WHERE role IN (${placeholders}) GROUP BY role`,
+      roles
+    );
     const map: Record<string, number> = {};
     for (const row of result.rows) map[row.role] = row.c;
+    const total = Object.values(map).reduce((a, b) => a + b, 0);
     res.json({
       superOwnerCount: map.super_owner ?? 0,
-      ownerCount: map.owner ?? 0,
       adminCount: map.admin ?? 0,
       moderatorCount: map.moderator ?? 0,
       editorCount: map.editor ?? 0,
-      total: Object.values(map).reduce((a, b) => a + b, 0),
+      total,
     });
   });
 
-  app.get("/api/admin/moderators", requireAdmin, async (_req, res) => {
-    const result = await pool.query(`
-      SELECT id, username, email, name, role, permissions, plain_password, created_at
-      FROM users WHERE role IN ('super_owner','owner','admin','moderator','editor')
-      ORDER BY created_at ASC
-    `);
+  app.get("/api/admin/moderators", requireAdmin, async (req, res) => {
+    const currentRole = (req.user as any)?.role;
+    const roles = visibleRolesFor(currentRole);
+    if (roles.length === 0) return res.json([]);
+    const placeholders = roles.map((_, i) => `$${i + 1}`).join(",");
+    const result = await pool.query(
+      `SELECT id, username, email, name, role, permissions, plain_password, created_at FROM users WHERE role IN (${placeholders}) ORDER BY created_at ASC`,
+      roles
+    );
     res.json(result.rows.map((u: any) => ({
       id: u.id, username: u.username, email: u.email, name: u.name,
       role: u.role, permissions: u.permissions || [], plainPassword: u.plain_password,
