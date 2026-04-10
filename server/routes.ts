@@ -349,13 +349,14 @@ export async function registerRoutes(
   }
 
   function requireAdmin(req: any, res: any, next: any) {
-    if (req.isAuthenticated() && (req.user as any).role === "admin") return next();
+    const role = (req.user as any)?.role;
+    if (req.isAuthenticated() && (role === "admin" || role === "owner")) return next();
     return res.status(403).json({ message: "Forbidden" });
   }
 
   function requireStaff(req: any, res: any, next: any) {
     const role = (req.user as any)?.role;
-    if (req.isAuthenticated() && (role === "admin" || role === "moderator")) return next();
+    if (req.isAuthenticated() && ["admin", "owner", "moderator", "editor"].includes(role)) return next();
     return res.status(403).json({ message: "Forbidden" });
   }
 
@@ -1833,25 +1834,50 @@ export async function registerRoutes(
     res.json({ success: true });
   });
 
-  // ── Admin: Moderator Management ────────────────────────────────────
+  // ── Admin: Contributors (Owner / Admin / Moderator / Editor) ───────
+  const CONTRIBUTOR_ROLES = ["owner", "admin", "moderator", "editor"];
+
+  app.get("/api/admin/contributors/stats", requireAdmin, async (_req, res) => {
+    const result = await pool.query(`
+      SELECT role, COUNT(*)::int AS c FROM users
+      WHERE role IN ('owner','admin','moderator','editor')
+      GROUP BY role
+    `);
+    const map: Record<string, number> = {};
+    for (const row of result.rows) map[row.role] = row.c;
+    res.json({
+      ownerCount: map.owner ?? 0,
+      adminCount: map.admin ?? 0,
+      moderatorCount: map.moderator ?? 0,
+      editorCount: map.editor ?? 0,
+      total: Object.values(map).reduce((a, b) => a + b, 0),
+    });
+  });
+
   app.get("/api/admin/moderators", requireAdmin, async (_req, res) => {
-    const mods = await storage.getUsersByRole("moderator");
-    res.json(mods.map(u => ({
+    const result = await pool.query(`
+      SELECT id, username, email, name, role, permissions, plain_password, created_at
+      FROM users WHERE role IN ('owner','admin','moderator','editor')
+      ORDER BY created_at ASC
+    `);
+    res.json(result.rows.map((u: any) => ({
       id: u.id, username: u.username, email: u.email, name: u.name,
-      role: u.role, permissions: u.permissions || [], plainPassword: u.plainPassword,
-      createdAt: u.createdAt,
+      role: u.role, permissions: u.permissions || [], plainPassword: u.plain_password,
+      createdAt: u.created_at,
     })));
   });
 
   app.post("/api/admin/moderators", requireAdmin, async (req, res) => {
-    const { email, password, name, permissions } = req.body;
+    const { email, password, name, permissions, role: reqRole } = req.body;
     if (!email || !password) return res.status(400).json({ message: "Email and password required" });
     const existing = await storage.getUserByEmail(email);
     if (existing) return res.status(400).json({ message: "An account with this email already exists" });
-    const username = email.split("@")[0] + "-mod-" + randomBytes(3).toString("hex");
+    const role = CONTRIBUTOR_ROLES.includes(reqRole) ? reqRole : "moderator";
+    const suffix = role === "admin" ? "admin" : role === "owner" ? "owner" : role === "editor" ? "ed" : "mod";
+    const username = email.split("@")[0] + `-${suffix}-` + randomBytes(3).toString("hex");
     const hashedPass = await hashPassword(password);
     const user = await storage.createUserWithEmail({
-      email, password: hashedPass, name: name || null, username, role: "moderator",
+      email, password: hashedPass, name: name || null, username, role,
       permissions: permissions || [], plainPassword: password,
     });
     res.json({
@@ -1863,7 +1889,13 @@ export async function registerRoutes(
 
   app.patch("/api/admin/moderators/:id", requireAdmin, async (req, res) => {
     const { id } = req.params;
+    const currentUser = req.user as any;
     const { name, email, password, permissions, role } = req.body;
+    const target = await storage.updateUser(id, {});  // fetch target
+    if (!target) return res.status(404).json({ message: "Contributor not found" });
+    if (target.role === "owner" && currentUser.role !== "admin") {
+      return res.status(403).json({ message: "Only the Super Owner can modify Owner accounts" });
+    }
     const updateData: any = { name, email, permissions: permissions || [] };
     if (role) updateData.role = role;
     if (password) {
@@ -1871,7 +1903,7 @@ export async function registerRoutes(
       updateData.plainPassword = password;
     }
     const updated = await storage.updateUser(id, updateData);
-    if (!updated) return res.status(404).json({ message: "Moderator not found" });
+    if (!updated) return res.status(404).json({ message: "Contributor not found" });
     res.json({
       id: updated.id, username: updated.username, email: updated.email, name: updated.name,
       role: updated.role, permissions: (updated as any).permissions || [], plainPassword: (updated as any).plainPassword,
@@ -1882,8 +1914,13 @@ export async function registerRoutes(
     const { id } = req.params;
     const currentUser = req.user as any;
     if (currentUser.id === id) return res.status(400).json({ message: "Cannot delete your own account" });
+    const target = await storage.updateUser(id, {});
+    if (!target) return res.status(404).json({ message: "Contributor not found" });
+    if (target.role === "owner" && currentUser.role !== "admin") {
+      return res.status(403).json({ message: "Only the Super Owner can delete Owner accounts" });
+    }
     const ok = await storage.deleteUser(id);
-    if (!ok) return res.status(404).json({ message: "Moderator not found" });
+    if (!ok) return res.status(404).json({ message: "Contributor not found" });
     res.json({ success: true });
   });
 

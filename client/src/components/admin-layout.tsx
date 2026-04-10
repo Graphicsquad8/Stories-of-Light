@@ -162,7 +162,7 @@ function AdminSidebar() {
     },
     {
       key: "moderators",
-      title: "Moderators",
+      title: "Contributors",
       href: "/image/moderators",
       icon: ShieldCheck,
       isActive: (loc) => loc.startsWith("/image/moderators"),

@@ -66,8 +66,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }, []);
 
-  const isAdmin = user?.role === "admin";
-  const isModerator = user?.role === "moderator";
+  const isAdmin = user?.role === "admin" || user?.role === "owner";
+  const isModerator = user?.role === "moderator" || user?.role === "editor";
   const isStaff = isAdmin || isModerator;
   const permissions: string[] = user?.permissions || [];
 
