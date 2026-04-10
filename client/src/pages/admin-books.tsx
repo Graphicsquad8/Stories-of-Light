@@ -427,7 +427,8 @@ export default function AdminBooksPage() {
     totalViews: number; freeViews: number; paidViews: number;
     published: number; publishedFree: number; publishedPaid: number;
     recentCount: number; recentFree: number; recentPaid: number;
-    fiveStarCount: number; fourStarCount: number;
+    fiveStarCount: number; fiveStarFree: number; fiveStarPaid: number;
+    fourStarCount: number; fourStarFree: number; fourStarPaid: number;
   }>({
     queryKey: ["/api/admin/books/stats"],
     queryFn: async () => {
@@ -558,22 +559,36 @@ export default function AdminBooksPage() {
         </Card>
 
         <Card className="p-4" data-testid="stat-rating">
-          <div className="flex items-center gap-2 mb-1 text-muted-foreground">
+          <div className="flex items-center gap-2 mb-2 text-muted-foreground">
             <Star className="w-4 h-4" />
             <span className="text-xs font-medium">Total Rating</span>
           </div>
           {stats ? (
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">⭐ 5-Star</span>
-                <span className="text-sm font-bold">{stats.fiveStarCount}</span>
+            <div className="space-y-2">
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">⭐ 5-Star (4.1–5.0)</span>
+                  <span className="text-sm font-bold">{stats.fiveStarCount}</span>
+                </div>
+                <div className="flex gap-2 text-xs text-muted-foreground pl-1 mt-0.5">
+                  <span>Free: {stats.fiveStarFree}</span>
+                  <span>·</span>
+                  <span>Paid: {stats.fiveStarPaid}</span>
+                </div>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">⭐ 4-Star</span>
-                <span className="text-sm font-bold">{stats.fourStarCount}</span>
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">⭐ 4-Star (3.5–4.0)</span>
+                  <span className="text-sm font-bold">{stats.fourStarCount}</span>
+                </div>
+                <div className="flex gap-2 text-xs text-muted-foreground pl-1 mt-0.5">
+                  <span>Free: {stats.fourStarFree}</span>
+                  <span>·</span>
+                  <span>Paid: {stats.fourStarPaid}</span>
+                </div>
               </div>
             </div>
-          ) : <Skeleton className="h-10 w-full mt-1" />}
+          ) : <Skeleton className="h-16 w-full mt-1" />}
         </Card>
 
         <Card className="p-4" data-testid="stat-recent">

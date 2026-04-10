@@ -129,14 +129,6 @@ function AdminSidebar() {
       type: "collapsible",
     },
     {
-      key: "books",
-      title: "Books",
-      href: "/image/books",
-      icon: Book,
-      isActive: (loc) => loc.startsWith("/image/books"),
-      permission: "books",
-    },
-    {
       key: "motivational",
       title: "Motivational Stories",
       href: "/image/motivational-stories",
@@ -150,6 +142,14 @@ function AdminSidebar() {
       href: "/image/duas",
       icon: Moon,
       isActive: (loc) => loc.startsWith("/image/duas"),
+      permission: "books",
+    },
+    {
+      key: "books",
+      title: "Books",
+      href: "/image/books",
+      icon: Book,
+      isActive: (loc) => loc.startsWith("/image/books"),
       permission: "books",
     },
     {

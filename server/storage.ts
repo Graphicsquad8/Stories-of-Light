@@ -108,7 +108,7 @@ export interface IStorage {
   getFeaturedFreeBooks(limit?: number): Promise<Book[]>;
   getBookCategories(): Promise<string[]>;
   getBooksAdmin(opts?: { type?: string; category?: string; search?: string; sort?: string; published?: boolean; userId?: string; startDate?: string; endDate?: string; limit?: number; offset?: number }): Promise<{ books: Book[]; total: number }>;
-  getBooksAdminStats(): Promise<{ total: number; freeTotal: number; paidTotal: number; totalViews: number; freeViews: number; paidViews: number; published: number; publishedFree: number; publishedPaid: number; recentCount: number; recentFree: number; recentPaid: number; fiveStarCount: number; fourStarCount: number }>;
+  getBooksAdminStats(): Promise<{ total: number; freeTotal: number; paidTotal: number; totalViews: number; freeViews: number; paidViews: number; published: number; publishedFree: number; publishedPaid: number; recentCount: number; recentFree: number; recentPaid: number; fiveStarCount: number; fiveStarFree: number; fiveStarPaid: number; fourStarCount: number; fourStarFree: number; fourStarPaid: number }>;
   getBookCategoriesAdmin(): Promise<string[]>;
 
   getBookChapters(bookId: string): Promise<BookChapter[]>;
@@ -702,7 +702,7 @@ export class DatabaseStorage implements IStorage {
     return { books: allBooks, total: countResult[0]?.count ?? 0 };
   }
 
-  async getBooksAdminStats(): Promise<{ total: number; freeTotal: number; paidTotal: number; totalViews: number; freeViews: number; paidViews: number; published: number; publishedFree: number; publishedPaid: number; recentCount: number; recentFree: number; recentPaid: number; fiveStarCount: number; fourStarCount: number }> {
+  async getBooksAdminStats(): Promise<{ total: number; freeTotal: number; paidTotal: number; totalViews: number; freeViews: number; paidViews: number; published: number; publishedFree: number; publishedPaid: number; recentCount: number; recentFree: number; recentPaid: number; fiveStarCount: number; fiveStarFree: number; fiveStarPaid: number; fourStarCount: number; fourStarFree: number; fourStarPaid: number }> {
     const since30 = new Date(Date.now() - 30 * 86400000);
     const base = isNull(books.deletedAt);
     const [
@@ -710,7 +710,8 @@ export class DatabaseStorage implements IStorage {
       viewsRes, freeViewsRes, paidViewsRes,
       pubRes, pubFreeRes, pubPaidRes,
       recentRes, recentFreeRes, recentPaidRes,
-      fiveStarRes, fourStarRes,
+      fiveStarRes, fiveStarFreeRes, fiveStarPaidRes,
+      fourStarRes, fourStarFreeRes, fourStarPaidRes,
     ] = await Promise.all([
       db.select({ c: count() }).from(books).where(base),
       db.select({ c: count() }).from(books).where(and(base, eq(books.type, "free"))),
@@ -725,7 +726,11 @@ export class DatabaseStorage implements IStorage {
       db.select({ c: count() }).from(books).where(and(base, eq(books.type, "free"), gte(books.createdAt, since30))),
       db.select({ c: count() }).from(books).where(and(base, eq(books.type, "paid"), gte(books.createdAt, since30))),
       db.select({ c: count() }).from(books).where(and(base, gte(books.averageRating, 4.1))),
+      db.select({ c: count() }).from(books).where(and(base, eq(books.type, "free"), gte(books.averageRating, 4.1))),
+      db.select({ c: count() }).from(books).where(and(base, eq(books.type, "paid"), gte(books.averageRating, 4.1))),
       db.select({ c: count() }).from(books).where(and(base, gte(books.averageRating, 3.5), lte(books.averageRating, 4.0))),
+      db.select({ c: count() }).from(books).where(and(base, eq(books.type, "free"), gte(books.averageRating, 3.5), lte(books.averageRating, 4.0))),
+      db.select({ c: count() }).from(books).where(and(base, eq(books.type, "paid"), gte(books.averageRating, 3.5), lte(books.averageRating, 4.0))),
     ]);
     return {
       total: totalRes[0]?.c ?? 0,
@@ -741,7 +746,11 @@ export class DatabaseStorage implements IStorage {
       recentFree: recentFreeRes[0]?.c ?? 0,
       recentPaid: recentPaidRes[0]?.c ?? 0,
       fiveStarCount: fiveStarRes[0]?.c ?? 0,
+      fiveStarFree: fiveStarFreeRes[0]?.c ?? 0,
+      fiveStarPaid: fiveStarPaidRes[0]?.c ?? 0,
       fourStarCount: fourStarRes[0]?.c ?? 0,
+      fourStarFree: fourStarFreeRes[0]?.c ?? 0,
+      fourStarPaid: fourStarPaidRes[0]?.c ?? 0,
     };
   }
 

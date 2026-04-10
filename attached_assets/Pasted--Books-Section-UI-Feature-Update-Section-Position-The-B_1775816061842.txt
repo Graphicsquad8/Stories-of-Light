@@ -1,0 +1,84 @@
+:
+
+📌 Books Section – UI & Feature Update
+🔹 Section Position
+The Books section should be placed below the Duas section in the admin panel
+🔹 Top Design Alignment
+The top design of the Books section should match the Motivational Stories section
+Maintain the same layout, spacing, and UI structure
+🔹 Search Bar & Statistics Section
+A Search Bar should be placed below the Books section (same as Motivational Stories)
+The section above the Search Bar should be structured as follows:
+
+📊 Required Fields:
+
+Total Books
+Total Free Books
+Total Paid Books
+Total Views
+Free Books Views
+Paid Books Views
+Published
+Published Free Books
+Published Paid Books
+Total Rating
+Free Books Rating
+Paid Books Rating
+Recent (30d)
+Free Books (last 30 days)
+Paid Books (last 30 days)
+🔹 Total Rating System
+The Total Rating section should include two rating categories:
+⭐ 5-Star Category
+Ratings from 4.0 to 5.0 will be counted as 5-Star
+⭐ 4-Star Category
+Ratings from 3.5 to 4.0 will be counted as 4-Star
+
+📌 For each category:
+
+Display the total number of books that fall within each rating range
+🔹 Recent (30d)
+The Recent (30d) section should show:
+The number of Free Books and Paid Books uploaded in the last 30 days, separately
+🔹 Right Side Filter Options
+
+There should be 4 filter options on the right side of the Search Bar:
+
+1️⃣ Book Type Filter
+Admin can select:
+Free Books
+Paid Books
+2️⃣ All Categories (Dropdown)
+Displays all book categories available on the website
+If the admin creates a new category while uploading a book, it should automatically be added here
+
+📌 This category system should be:
+
+Dynamic
+Auto-synced across the section
+3️⃣ All Status (Dropdown)
+Should include:
+All Status
+Published
+Draft
+Recent Books
+Most Viewed
+Best Rating
+
+📌 This should function like the All Status system in the Motivational Stories section
+
+4️⃣ All Time Filter
+Add an All Time option after All Status
+
+📌 This option should:
+
+Work like the All Time filter in the Motivational Stories section
+Allow selecting custom time ranges (e.g., last X days, months, etc.)
+✅ Summary
+Books section positioned under Duas
+UI aligned with Motivational Stories
+Statistics with Free vs Paid breakdown
+Dual rating system (5★ & 4★ grouping)
+Recent uploads tracking (30 days)
+Advanced filtering (Type, Category, Status, Time)
+Dynamic category integration
