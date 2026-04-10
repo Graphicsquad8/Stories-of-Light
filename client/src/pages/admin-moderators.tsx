@@ -464,25 +464,32 @@ export default function AdminModeratorsPage() {
           </div>
 
           <Select
-            value={roleFilter !== "all" ? `role:${roleFilter}` : sortOption}
+            value={
+              roleFilter !== "all" ? `role:${roleFilter}`
+              : sortOption === "oldest" ? "oldest"
+              : "all"
+            }
             onValueChange={v => {
-              if (v.startsWith("role:")) {
+              if (v === "all") {
+                setRoleFilter("all");
+                setSortOption("newest");
+              } else if (v.startsWith("role:")) {
                 setRoleFilter(v.replace("role:", "") as RoleFilter);
                 setSortOption("newest");
-              } else {
-                setSortOption(v as SortOption);
+              } else if (v === "oldest") {
+                setSortOption("oldest");
                 setRoleFilter("all");
               }
             }}
           >
-            <SelectTrigger className="w-40" data-testid="select-team-member-filter">
-              <SelectValue placeholder="Team Member" />
+            <SelectTrigger className="w-44" data-testid="select-team-member-filter">
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="all">Team Member</SelectItem>
               {dropdownRoleOptions.map(o => (
                 <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
               ))}
-              <SelectItem value="newest">Newest First</SelectItem>
               <SelectItem value="oldest">Oldest First</SelectItem>
             </SelectContent>
           </Select>
