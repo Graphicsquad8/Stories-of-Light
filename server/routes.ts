@@ -1790,12 +1790,21 @@ export async function registerRoutes(
   });
 
   // ── Admin: User Management ─────────────────────────────────────────
-  app.get("/api/admin/users", requireAdmin, async (_req, res) => {
-    const allUsers = await storage.getAllUsers();
-    res.json(allUsers.map(u => ({
-      id: u.id, username: u.username, email: u.email, name: u.name,
-      role: u.role, createdAt: u.createdAt, plainPassword: u.plainPassword ?? null,
-    })));
+  app.get("/api/admin/users/stats", requireAdmin, async (_req, res) => {
+    const stats = await storage.getUsersStats();
+    res.json(stats);
+  });
+
+  app.get("/api/admin/users", requireAdmin, async (req, res) => {
+    const { search, role, sort, startDate, endDate } = req.query as Record<string, string>;
+    const result = await storage.getUsersFiltered({ search, role, sort, startDate, endDate, limit: 200 });
+    res.json({
+      users: result.users.map(u => ({
+        id: u.id, username: u.username, email: u.email, name: u.name,
+        role: u.role, createdAt: u.createdAt, plainPassword: u.plainPassword ?? null,
+      })),
+      total: result.total,
+    });
   });
 
   app.patch("/api/admin/users/:id", requireAdmin, async (req, res) => {

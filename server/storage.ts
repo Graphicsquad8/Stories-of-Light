@@ -34,7 +34,7 @@ import {
   bookParts, bookPages, footerPages,
   duas, duaParts, duaBookmarks, duaRatings, storyRatings
 } from "@shared/schema";
-import { eq, desc, and, ilike, sql, count, sum, inArray, asc, gte, lte, ne, isNull, isNotNull } from "drizzle-orm";
+import { eq, desc, and, or, ilike, sql, count, sum, inArray, asc, gte, lte, ne, isNull, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 
@@ -54,6 +54,8 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
   getUsersByRole(role: string): Promise<User[]>;
+  getUsersStats(): Promise<{ total: number; regularCount: number; adminCount: number; moderatorCount: number; recentCount: number }>;
+  getUsersFiltered(opts?: { search?: string; role?: string; sort?: string; startDate?: string; endDate?: string; limit?: number }): Promise<{ users: User[]; total: number }>;
   createUser(user: InsertUser): Promise<User>;
   createUserWithEmail(data: { email: string; password: string; name?: string; username: string; role?: string; permissions?: string[]; plainPassword?: string }): Promise<User>;
   updateUser(id: string, data: Partial<User>): Promise<User | undefined>;
@@ -306,6 +308,49 @@ export class DatabaseStorage implements IStorage {
 
   async getUsersByRole(role: string): Promise<User[]> {
     return db.select().from(users).where(eq(users.role, role)).orderBy(users.createdAt);
+  }
+
+  async getUsersStats(): Promise<{ total: number; regularCount: number; adminCount: number; moderatorCount: number; recentCount: number }> {
+    const since30 = new Date(Date.now() - 30 * 86400000);
+    const [totalRes, regularRes, adminRes, modRes, recentRes] = await Promise.all([
+      db.select({ c: count() }).from(users),
+      db.select({ c: count() }).from(users).where(eq(users.role, "user")),
+      db.select({ c: count() }).from(users).where(eq(users.role, "admin")),
+      db.select({ c: count() }).from(users).where(eq(users.role, "moderator")),
+      db.select({ c: count() }).from(users).where(gte(users.createdAt, since30)),
+    ]);
+    return {
+      total: totalRes[0]?.c ?? 0,
+      regularCount: regularRes[0]?.c ?? 0,
+      adminCount: adminRes[0]?.c ?? 0,
+      moderatorCount: modRes[0]?.c ?? 0,
+      recentCount: recentRes[0]?.c ?? 0,
+    };
+  }
+
+  async getUsersFiltered(opts: { search?: string; role?: string; sort?: string; startDate?: string; endDate?: string; limit?: number } = {}): Promise<{ users: User[]; total: number }> {
+    const { search, role, sort, startDate, endDate, limit = 100 } = opts;
+    const conds: any[] = [];
+    if (role && role !== "all") conds.push(eq(users.role, role));
+    if (search) {
+      const like = `%${search.toLowerCase()}%`;
+      conds.push(or(
+        sql`lower(${users.username}) like ${like}`,
+        sql`lower(coalesce(${users.email}, '')) like ${like}`,
+        sql`lower(coalesce(${users.name}, '')) like ${like}`,
+      ));
+    }
+    if (startDate) conds.push(gte(users.createdAt, new Date(startDate)));
+    if (endDate) conds.push(lte(users.createdAt, new Date(endDate)));
+
+    const where = conds.length > 0 ? and(...conds) : undefined;
+    const orderCol = sort === "oldest" ? asc(users.createdAt) : sort === "az" ? asc(users.username) : desc(users.createdAt);
+
+    const [allUsers, countResult] = await Promise.all([
+      db.select().from(users).where(where).orderBy(orderCol).limit(limit),
+      db.select({ count: count() }).from(users).where(where),
+    ]);
+    return { users: allUsers, total: countResult[0]?.count ?? 0 };
   }
 
   async deleteUser(id: string): Promise<boolean> {
