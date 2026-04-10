@@ -22,7 +22,7 @@ export async function seedDatabase() {
       email: "muktadirhoshin@gmail.com",
       password: hashedPassword,
       name: "Admin",
-      role: "owner",
+      role: "super_owner",
     });
 
     const cat1 = await storage.createCategory({
@@ -178,8 +178,8 @@ export async function seedDatabase() {
     console.log("Database seeded successfully");
   } else {
     const adminUser = await storage.getUserByUsername("admin");
-    if (adminUser && adminUser.role !== "owner" && adminUser.role !== "admin") {
-      await storage.updateUser(adminUser.id, { role: "owner" } as any);
+    if (adminUser && adminUser.role !== "super_owner") {
+      await storage.updateUser(adminUser.id, { role: "super_owner" } as any);
     }
     if (adminUser && !adminUser.email) {
       await storage.updateUser(adminUser.id, { email: "muktadirhoshin@gmail.com", name: "Admin" } as any);

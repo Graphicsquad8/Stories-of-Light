@@ -30,7 +30,7 @@ interface Contributor {
   createdAt: string;
 }
 
-type RoleFilter = "all" | "owner" | "admin" | "moderator" | "editor";
+type RoleFilter = "all" | "super_owner" | "owner" | "admin" | "moderator" | "editor";
 type SortOption = "newest" | "oldest" | "az";
 
 const ALL_PERMISSIONS = [
@@ -45,15 +45,25 @@ const ALL_PERMISSIONS = [
 ];
 
 const ROLE_COLORS: Record<string, string> = {
+  super_owner: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
   owner: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
   admin: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
   moderator: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
   editor: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
 };
 
+const ROLE_LABELS: Record<string, string> = {
+  super_owner: "Super Owner",
+  owner: "Owner",
+  admin: "Admin",
+  moderator: "Moderator",
+  editor: "Editor",
+  user: "User",
+};
+
 function RoleBadge({ role }: { role: string }) {
   const cls = ROLE_COLORS[role] ?? "bg-muted text-muted-foreground";
-  const label = role.charAt(0).toUpperCase() + role.slice(1);
+  const label = ROLE_LABELS[role] ?? (role.charAt(0).toUpperCase() + role.slice(1));
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${cls}`}>
       {label}
@@ -82,7 +92,7 @@ function PermissionCheckboxes({ value, onChange }: { value: string[]; onChange: 
   );
 }
 
-const FULL_ACCESS_ROLES = ["owner", "admin"];
+const FULL_ACCESS_ROLES = ["super_owner", "owner", "admin"];
 
 function ContributorFormDialog({
   contributor,
@@ -103,8 +113,8 @@ function ContributorFormDialog({
   const [role, setRole] = useState(contributor?.role || "moderator");
   const [permissions, setPermissions] = useState<string[]>(contributor?.permissions || []);
 
-  const isSuperOwner = currentUser?.role === "admin";
-  const targetIsOwner = contributor?.role === "owner";
+  const isSuperOwner = currentUser?.role === "super_owner";
+  const targetIsOwner = contributor?.role === "owner" || contributor?.role === "super_owner";
   const showPermissions = !FULL_ACCESS_ROLES.includes(role) && role !== "user";
 
   const createMutation = useMutation({
@@ -187,7 +197,7 @@ function ContributorFormDialog({
             {isEdit && targetIsOwner && !isSuperOwner ? (
               <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2 text-sm text-muted-foreground">
                 <AlertCircle className="w-4 h-4 shrink-0" />
-                Only the Super Owner can change an Owner's role.
+                Only the Super Owner can change an Owner or Super Owner's role.
               </div>
             ) : (
               <Select value={role} onValueChange={setRole}>
@@ -227,7 +237,7 @@ function ContributorFormDialog({
             <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-xs text-amber-700 dark:text-amber-400 flex items-start gap-2">
               <Crown className="w-4 h-4 shrink-0 mt-0.5" />
               <span>
-                <strong>{role === "owner" ? "Owner" : "Admin"}</strong> accounts have full access to all sections of the admin panel and do not require individual permissions.
+                <strong>{ROLE_LABELS[role] ?? role}</strong> accounts have full access to all sections of the admin panel and do not require individual permissions.
               </span>
             </div>
           )}
@@ -319,7 +329,7 @@ function CredentialsDialog({ contributor, open, onOpenChange }: {
 export default function AdminModeratorsPage() {
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
-  const isSuperOwner = currentUser?.role === "admin";
+  const isSuperOwner = currentUser?.role === "super_owner";
 
   const [showCreate, setShowCreate] = useState(false);
   const [editingContrib, setEditingContrib] = useState<Contributor | undefined>();
@@ -333,7 +343,7 @@ export default function AdminModeratorsPage() {
   });
 
   const { data: stats } = useQuery<{
-    ownerCount: number; adminCount: number; moderatorCount: number; editorCount: number; total: number;
+    superOwnerCount: number; ownerCount: number; adminCount: number; moderatorCount: number; editorCount: number; total: number;
   }>({
     queryKey: ["/api/admin/contributors/stats"],
     queryFn: async () => {
@@ -372,13 +382,21 @@ export default function AdminModeratorsPage() {
 
   const canDeleteContributor = (target: Contributor) => {
     if (currentUser?.id === target.id) return false;
+    if (target.role === "super_owner") return false;
+    if (target.role === "owner" && !isSuperOwner) return false;
+    return true;
+  };
+
+  const canEditContributor = (target: Contributor) => {
+    if (target.role === "super_owner" && !isSuperOwner) return false;
     if (target.role === "owner" && !isSuperOwner) return false;
     return true;
   };
 
   const statCards: { key: RoleFilter; label: string; value: number | undefined; icon: any; color: string }[] = [
-    { key: "owner", label: "Owner", value: stats?.ownerCount, icon: Crown, color: "text-amber-600" },
-    { key: "admin", label: "Admin", value: stats?.adminCount, icon: ShieldCheck, color: "text-red-600" },
+    { key: "super_owner", label: "Super Owner", value: stats?.superOwnerCount, icon: Crown, color: "text-purple-600" },
+    { key: "owner", label: "Owner", value: stats?.ownerCount, icon: ShieldCheck, color: "text-amber-600" },
+    { key: "admin", label: "Admin", value: stats?.adminCount, icon: UserCog, color: "text-red-600" },
     { key: "moderator", label: "Moderator", value: stats?.moderatorCount, icon: UserCog, color: "text-blue-600" },
     { key: "editor", label: "Editor", value: stats?.editorCount, icon: BookOpen, color: "text-green-600" },
     { key: "all", label: "All Contributors", value: stats?.total, icon: Users, color: "text-primary" },
@@ -397,7 +415,7 @@ export default function AdminModeratorsPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
         {statCards.map(({ key, label, value, icon: Icon, color }) => {
           const isActive = roleFilter === key;
           return (
@@ -434,14 +452,29 @@ export default function AdminModeratorsPage() {
             />
           </div>
 
-          <Select value={sortOption} onValueChange={v => setSortOption(v as SortOption)}>
-            <SelectTrigger className="w-36" data-testid="select-sort-contributors">
-              <SelectValue />
+          <Select
+            value={roleFilter !== "all" ? `role:${roleFilter}` : sortOption}
+            onValueChange={v => {
+              if (v.startsWith("role:")) {
+                setRoleFilter(v.replace("role:", "") as RoleFilter);
+                setSortOption("newest");
+              } else {
+                setSortOption(v as SortOption);
+                setRoleFilter("all");
+              }
+            }}
+          >
+            <SelectTrigger className="w-40" data-testid="select-team-member-filter">
+              <SelectValue placeholder="Team Member" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="role:super_owner">Super Owner</SelectItem>
+              <SelectItem value="role:owner">Owner</SelectItem>
+              <SelectItem value="role:admin">Admin</SelectItem>
+              <SelectItem value="role:moderator">Moderator</SelectItem>
+              <SelectItem value="role:editor">Editor</SelectItem>
               <SelectItem value="newest">Newest First</SelectItem>
               <SelectItem value="oldest">Oldest First</SelectItem>
-              <SelectItem value="az">A – Z</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -532,13 +565,15 @@ export default function AdminModeratorsPage() {
                         >
                           <Eye className="w-3.5 h-3.5" />
                         </Button>
-                        <Button
-                          size="icon" variant="ghost" className="h-8 w-8"
-                          onClick={() => setEditingContrib(c)}
-                          data-testid={`button-edit-contributor-${c.id}`}
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </Button>
+                        {canEditContributor(c) && (
+                          <Button
+                            size="icon" variant="ghost" className="h-8 w-8"
+                            onClick={() => setEditingContrib(c)}
+                            data-testid={`button-edit-contributor-${c.id}`}
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
                         {canDeleteContributor(c) && (
                           <Button
                             size="icon" variant="ghost" className="h-8 w-8 text-destructive"

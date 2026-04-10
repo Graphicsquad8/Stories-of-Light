@@ -348,15 +348,21 @@ export async function registerRoutes(
     return res.status(401).json({ message: "Unauthorized" });
   }
 
+  function requireSuperOwner(req: any, res: any, next: any) {
+    const role = (req.user as any)?.role;
+    if (req.isAuthenticated() && role === "super_owner") return next();
+    return res.status(403).json({ message: "Forbidden: Super Owner access required" });
+  }
+
   function requireAdmin(req: any, res: any, next: any) {
     const role = (req.user as any)?.role;
-    if (req.isAuthenticated() && (role === "admin" || role === "owner")) return next();
+    if (req.isAuthenticated() && (role === "super_owner" || role === "admin" || role === "owner")) return next();
     return res.status(403).json({ message: "Forbidden" });
   }
 
   function requireStaff(req: any, res: any, next: any) {
     const role = (req.user as any)?.role;
-    if (req.isAuthenticated() && ["admin", "owner", "moderator", "editor"].includes(role)) return next();
+    if (req.isAuthenticated() && ["super_owner", "admin", "owner", "moderator", "editor"].includes(role)) return next();
     return res.status(403).json({ message: "Forbidden" });
   }
 
@@ -1838,17 +1844,18 @@ export async function registerRoutes(
   });
 
   // ── Admin: Contributors (Owner / Admin / Moderator / Editor) ───────
-  const CONTRIBUTOR_ROLES = ["owner", "admin", "moderator", "editor"];
+  const CONTRIBUTOR_ROLES = ["super_owner", "owner", "admin", "moderator", "editor"];
 
   app.get("/api/admin/contributors/stats", requireAdmin, async (_req, res) => {
     const result = await pool.query(`
       SELECT role, COUNT(*)::int AS c FROM users
-      WHERE role IN ('owner','admin','moderator','editor')
+      WHERE role IN ('super_owner','owner','admin','moderator','editor')
       GROUP BY role
     `);
     const map: Record<string, number> = {};
     for (const row of result.rows) map[row.role] = row.c;
     res.json({
+      superOwnerCount: map.super_owner ?? 0,
       ownerCount: map.owner ?? 0,
       adminCount: map.admin ?? 0,
       moderatorCount: map.moderator ?? 0,
@@ -1860,7 +1867,7 @@ export async function registerRoutes(
   app.get("/api/admin/moderators", requireAdmin, async (_req, res) => {
     const result = await pool.query(`
       SELECT id, username, email, name, role, permissions, plain_password, created_at
-      FROM users WHERE role IN ('owner','admin','moderator','editor')
+      FROM users WHERE role IN ('super_owner','owner','admin','moderator','editor')
       ORDER BY created_at ASC
     `);
     res.json(result.rows.map((u: any) => ({
@@ -1871,12 +1878,16 @@ export async function registerRoutes(
   });
 
   app.post("/api/admin/moderators", requireAdmin, async (req, res) => {
+    const currentUser = req.user as any;
     const { email, password, name, permissions, role: reqRole } = req.body;
     if (!email || !password) return res.status(400).json({ message: "Email and password required" });
     const existing = await storage.getUserByEmail(email);
     if (existing) return res.status(400).json({ message: "An account with this email already exists" });
+    if (reqRole && (reqRole === "owner" || reqRole === "super_owner") && currentUser.role !== "super_owner") {
+      return res.status(403).json({ message: "Only the Super Owner can create an Owner account" });
+    }
     const role = CONTRIBUTOR_ROLES.includes(reqRole) ? reqRole : "moderator";
-    const suffix = role === "admin" ? "admin" : role === "owner" ? "owner" : role === "editor" ? "ed" : "mod";
+    const suffix = role === "super_owner" ? "superowner" : role === "admin" ? "admin" : role === "owner" ? "owner" : role === "editor" ? "ed" : "mod";
     const username = email.split("@")[0] + `-${suffix}-` + randomBytes(3).toString("hex");
     const hashedPass = await hashPassword(password);
     const user = await storage.createUserWithEmail({
@@ -1896,8 +1907,14 @@ export async function registerRoutes(
     const { name, email, password, permissions, role } = req.body;
     const target = await storage.getUser(id);
     if (!target) return res.status(404).json({ message: "Contributor not found" });
-    if (target.role === "owner" && currentUser.role !== "owner") {
-      return res.status(403).json({ message: "Only an Owner can modify another Owner account" });
+    if (target.role === "super_owner" && currentUser.role !== "super_owner") {
+      return res.status(403).json({ message: "Only the Super Owner can modify a Super Owner account" });
+    }
+    if (target.role === "owner" && currentUser.role !== "super_owner") {
+      return res.status(403).json({ message: "Only the Super Owner can modify an Owner account" });
+    }
+    if (role && (role === "owner" || role === "super_owner") && currentUser.role !== "super_owner") {
+      return res.status(403).json({ message: "Only the Super Owner can assign the Owner or Super Owner role" });
     }
     const updateData: any = { permissions: permissions || [] };
     if (name !== undefined) updateData.name = name;
@@ -1921,15 +1938,18 @@ export async function registerRoutes(
     if (currentUser.id === id) return res.status(400).json({ message: "Cannot delete your own account" });
     const target = await storage.getUser(id);
     if (!target) return res.status(404).json({ message: "Contributor not found" });
-    if (target.role === "owner" && currentUser.role !== "owner") {
-      return res.status(403).json({ message: "Only an Owner can delete another Owner account" });
+    if (target.role === "super_owner") {
+      return res.status(403).json({ message: "The Super Owner account cannot be deleted" });
+    }
+    if (target.role === "owner" && currentUser.role !== "super_owner") {
+      return res.status(403).json({ message: "Only the Super Owner can delete an Owner account" });
     }
     const ok = await storage.deleteUser(id);
     if (!ok) return res.status(404).json({ message: "Contributor not found" });
     res.json({ success: true });
   });
 
-  app.post("/api/admin/owner/credentials", requireAdmin, async (req, res) => {
+  app.post("/api/admin/owner/credentials", requireSuperOwner, async (req, res) => {
     const currentUser = req.user as any;
     const { currentEmail, currentPassword, newEmail, newPassword } = req.body;
     if (!currentEmail || !currentPassword) {

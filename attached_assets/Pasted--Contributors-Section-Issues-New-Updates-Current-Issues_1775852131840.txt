@@ -1,0 +1,70 @@
+📌 Contributors Section – Issues & New Updates
+🔹 Current Issues
+The Contributors section is not working properly
+There are issues in the role management and access control system, which must be fixed
+👑 Super Owner Role Update
+I must be added as a Super Owner as the website owner
+
+📌 Super Owner Permissions:
+
+Has the highest level (full system) access
+Can control all roles and permissions across the system
+🔐 Owner vs Super Owner Permission System
+🔹 Super Owner:
+Can promote any contributor to Owner
+Can manage all roles and permissions
+Has full access to the entire admin panel
+🔹 Owner (Other Users):
+Cannot promote other users to Owner
+Can perform all other role-based operations
+
+📌 Summary:
+
+Super Owner = Full system control
+Owner = Limited elevated access
+🔐 Security Feature – Email & Password Change
+As a Super Owner, I should be able to change my email and password
+🔹 Secure Flow:
+First, the system must require:
+Current Email
+Current Password
+After successful verification:
+User can set a new email
+User can set a new password
+
+📌 This must be a secure authentication-based update system
+
+🔄 Role-Based Access System (Critical Requirement)
+When Super Owner / Owner adds contributors:
+Access must be assigned strictly based on their role
+
+📌 Behavior:
+
+Contributors should access the admin panel exactly as permitted, similar to how Super Owner operates the system
+⚙️ Access Control Rules
+Each contributor can only access:
+Features explicitly allowed by the Super Owner
+
+❌ Unauthorized access must be strictly blocked
+
+📊 UI Update – Team Member Filter
+Replace the “Newest First” option in the search bar with:
+
+👉 Team Member
+
+📌 Dropdown options should include:
+
+Owner
+Admin
+Moderator
+Editor
+Newest
+Oldest
+✅ Summary
+Fix Contributors system bugs
+Implement Super Owner role
+Maintain strict role hierarchy (Super Owner > Owner > Others)
+Secure email/password change system
+Implement proper RBAC (Role-Based Access Control)
+Add Team Member filter dropdown
+Ensure strict permission-based access control

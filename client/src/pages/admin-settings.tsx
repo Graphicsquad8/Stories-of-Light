@@ -18,6 +18,7 @@ import {
 import { FcGoogle } from "react-icons/fc";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth";
 import { useState, useEffect } from "react";
 
 interface SettingField {
@@ -783,6 +784,7 @@ function AdvertisementsContent({
 
 export default function AdminSettingsPage() {
   const { toast } = useToast();
+  const { isSuperOwner } = useAuth();
   const [saving, setSaving] = useState<string | null>(null);
   const [booksHeroImage, setBooksHeroImage] = useState("");
 
@@ -889,10 +891,10 @@ export default function AdminSettingsPage() {
           <p className="text-sm text-muted-foreground">Configure and manage all aspects of your website</p>
         </div>
 
-        <AccordionSection
+        {isSuperOwner && <AccordionSection
           id="account-security"
           title="Account Security"
-          description="Change your login email and password"
+          description="Change your login email and password (Super Owner only)"
           icon={KeyRound}
         >
           <div className="space-y-5">
@@ -985,7 +987,7 @@ export default function AdminSettingsPage() {
               </Button>
             </div>
           </div>
-        </AccordionSection>
+        </AccordionSection>}
 
         <AccordionSection
           id="general"

@@ -62,7 +62,7 @@ function AdminSidebar() {
   const { logout, isAdmin, isModerator, hasPermission, user } = useAuth();
   const { viewAs, clearViewAs, viewMeMode, setViewMeMode } = useViewAs();
 
-  const effectiveIsAdmin = viewAs ? viewAs.role === "admin" : isAdmin;
+  const effectiveIsAdmin = viewAs ? (viewAs.role === "super_owner" || viewAs.role === "admin" || viewAs.role === "owner") : isAdmin;
   const effectiveIsModerator = viewAs ? viewAs.role === "moderator" : isModerator;
   const effectiveHasPermission = (section: string): boolean => {
     if (viewAs) {

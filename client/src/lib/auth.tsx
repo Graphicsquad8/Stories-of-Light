@@ -14,6 +14,7 @@ interface AuthUser {
 interface AuthContextType {
   user: AuthUser | null;
   isLoading: boolean;
+  isSuperOwner: boolean;
   isAdmin: boolean;
   isModerator: boolean;
   isStaff: boolean;
@@ -66,7 +67,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }, []);
 
-  const isAdmin = user?.role === "admin" || user?.role === "owner";
+  const isSuperOwner = user?.role === "super_owner";
+  const isAdmin = user?.role === "super_owner" || user?.role === "admin" || user?.role === "owner";
   const isModerator = user?.role === "moderator" || user?.role === "editor";
   const isStaff = isAdmin || isModerator;
   const permissions: string[] = user?.permissions || [];
@@ -78,7 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider value={{
-      user, isLoading, isAdmin, isModerator, isStaff, permissions, hasPermission,
+      user, isLoading, isSuperOwner, isAdmin, isModerator, isStaff, permissions, hasPermission,
       login, signup, logout, refreshUser: fetchUser,
     }}>
       {children}
