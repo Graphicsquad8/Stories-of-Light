@@ -109,7 +109,7 @@ function AdminSidebar() {
       href: "/image/overview",
       icon: UserCircle,
       isActive: (loc) => loc.startsWith("/image/overview"),
-      permission: "viewas-only",
+      permission: "staff-only",
     },
     {
       key: "categories",

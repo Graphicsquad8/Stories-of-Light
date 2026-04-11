@@ -1020,8 +1020,20 @@ export async function registerRoutes(
   app.get("/api/admin/contributors/:id/stats", requireStaff, async (req, res) => {
     try {
       const { id } = req.params;
-      const [userRes, siteStatsRes] = await Promise.all([
+      const [userRes, userContentRes, siteStatsRes] = await Promise.all([
         pool.query(`SELECT id, username, name, email, role, permissions, avatar_url, created_at FROM users WHERE id = $1`, [id]),
+        pool.query(`
+          SELECT
+            (SELECT COUNT(*) FROM stories WHERE deleted_at IS NULL AND user_id = $1) as my_articles,
+            (SELECT COUNT(*) FROM stories WHERE deleted_at IS NULL AND user_id = $1 AND status = 'published') as my_published_articles,
+            (SELECT COALESCE(SUM(views), 0) FROM stories WHERE deleted_at IS NULL AND user_id = $1) as my_article_views,
+            (SELECT COUNT(*) FROM duas WHERE deleted_at IS NULL AND user_id = $1) as my_duas,
+            (SELECT COALESCE(SUM(views), 0) FROM duas WHERE deleted_at IS NULL AND user_id = $1) as my_dua_views,
+            (SELECT COUNT(*) FROM books WHERE deleted_at IS NULL AND user_id = $1) as my_books,
+            (SELECT COALESCE(SUM(views), 0) FROM books WHERE deleted_at IS NULL AND user_id = $1) as my_book_views,
+            (SELECT COUNT(*) FROM motivational_stories WHERE deleted_at IS NULL AND user_id = $1) as my_motivational,
+            (SELECT COALESCE(SUM(views), 0) FROM motivational_stories WHERE deleted_at IS NULL AND user_id = $1) as my_motivational_views
+        `, [id]),
         pool.query(`
           SELECT
             (SELECT COUNT(*) FROM stories WHERE deleted_at IS NULL AND status = 'published') as total_articles,
@@ -1031,7 +1043,7 @@ export async function registerRoutes(
         `),
       ]);
       if (userRes.rows.length === 0) return res.status(404).json({ message: "Contributor not found" });
-      res.json({ contributor: userRes.rows[0], siteStats: siteStatsRes.rows[0] });
+      res.json({ contributor: userRes.rows[0], userContent: userContentRes.rows[0], siteStats: siteStatsRes.rows[0] });
     } catch (error) {
       console.error("Contributor stats error:", error);
       res.status(500).json({ message: "Failed to load contributor stats" });
