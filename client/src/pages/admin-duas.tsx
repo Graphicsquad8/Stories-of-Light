@@ -72,6 +72,7 @@ export default function AdminDuasPage() {
   const { viewAs, viewMeMode } = useViewAs();
   const isContributor = !viewMeMode && (!!viewAs || !isAdmin);
   const effectiveFilterUserId = viewMeMode ? (viewAs?.id ?? user?.id) : !isAdmin ? user?.id : undefined;
+  const shouldIncludeNull = viewMeMode && (user?.role === "super_owner" || user?.role === "owner");
 
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
@@ -118,6 +119,7 @@ export default function AdminDuasPage() {
 
   const queryParams = new URLSearchParams({ limit: "50" });
   if (effectiveFilterUserId) queryParams.set("userId", effectiveFilterUserId);
+  if (shouldIncludeNull) queryParams.set("includeNullUser", "true");
   if (search) queryParams.set("search", search);
   if (categoryFilter !== "all") queryParams.set("category", categoryFilter);
   if (statusFilter === "published") queryParams.set("published", "true");
@@ -136,9 +138,12 @@ export default function AdminDuasPage() {
   });
 
   const { data: stats } = useQuery<{ total: number; published: number; totalViews: number; recentCount: number; fiveStarCount: number; fourStarCount: number }>({
-    queryKey: ["/api/admin/duas/stats", effectiveFilterUserId],
+    queryKey: ["/api/admin/duas/stats", effectiveFilterUserId, shouldIncludeNull],
     queryFn: async () => {
-      const url = `/api/admin/duas/stats${effectiveFilterUserId ? `?viewAs=${effectiveFilterUserId}` : ""}`;
+      const p = new URLSearchParams();
+      if (effectiveFilterUserId) p.set("viewAs", effectiveFilterUserId);
+      if (shouldIncludeNull) p.set("includeNullUser", "true");
+      const url = `/api/admin/duas/stats${p.toString() ? `?${p.toString()}` : ""}`;
       const res = await fetch(url, { credentials: "include" });
       return res.json();
     },

@@ -44,6 +44,11 @@ export const pool = new pg.Pool({
 
 export const db = drizzle(pool);
 
+/** Returns `col = userId` OR `(col = userId OR col IS NULL)` when includeNull is true. */
+function uidCond(col: any, userId: string, includeNull?: boolean) {
+  return includeNull ? or(eq(col, userId), isNull(col)) : eq(col, userId);
+}
+
 function toUrlSlug(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
@@ -552,13 +557,13 @@ export class DatabaseStorage implements IStorage {
     return map;
   }
 
-  async getStories(opts?: { status?: string; categoryId?: string; featured?: boolean; search?: string; limit?: number; offset?: number; userId?: string; startDate?: string; endDate?: string; sortBy?: "views" | "date" }): Promise<StoryWithCategory[]> {
+  async getStories(opts?: { status?: string; categoryId?: string; featured?: boolean; search?: string; limit?: number; offset?: number; userId?: string; includeNullUser?: boolean; startDate?: string; endDate?: string; sortBy?: "views" | "date" }): Promise<StoryWithCategory[]> {
     const conditions: any[] = [isNull(stories.deletedAt)];
     if (opts?.status) conditions.push(eq(stories.status, opts.status));
     if (opts?.categoryId) conditions.push(eq(stories.categoryId, opts.categoryId));
     if (opts?.featured !== undefined) conditions.push(eq(stories.featured, opts.featured));
     if (opts?.search) conditions.push(ilike(stories.title, `%${opts.search}%`));
-    if (opts?.userId) conditions.push(eq(stories.userId, opts.userId));
+    if (opts?.userId) conditions.push(uidCond(stories.userId, opts.userId, opts.includeNullUser));
     if (opts?.startDate) conditions.push(gte(stories.createdAt, new Date(opts.startDate)));
     if (opts?.endDate) conditions.push(lte(stories.createdAt, new Date(opts.endDate)));
 
@@ -638,25 +643,25 @@ export class DatabaseStorage implements IStorage {
     return rows.map((r) => ({ ...r.story, category: r.category }));
   }
 
-  async getStoryCount(status?: string, userId?: string): Promise<number> {
+  async getStoryCount(status?: string, userId?: string, includeNullUser?: boolean): Promise<number> {
     const conditions: any[] = [isNull(stories.deletedAt)];
     if (status) conditions.push(eq(stories.status, status));
-    if (userId) conditions.push(eq(stories.userId, userId));
+    if (userId) conditions.push(uidCond(stories.userId, userId, includeNullUser));
     const [result] = await db.select({ count: count() }).from(stories).where(and(...conditions));
     return result?.count ?? 0;
   }
 
-  async getStoryTotalViews(userId?: string): Promise<number> {
+  async getStoryTotalViews(userId?: string, includeNullUser?: boolean): Promise<number> {
     const conditions: any[] = [isNull(stories.deletedAt)];
-    if (userId) conditions.push(eq(stories.userId, userId));
+    if (userId) conditions.push(uidCond(stories.userId, userId, includeNullUser));
     const [result] = await db.select({ total: sum(stories.views) }).from(stories).where(and(...conditions));
     return Number(result?.total) || 0;
   }
 
-  async getRecentStoryCount(days: number, userId?: string): Promise<number> {
+  async getRecentStoryCount(days: number, userId?: string, includeNullUser?: boolean): Promise<number> {
     const since = new Date(Date.now() - days * 86400000);
     const conditions: any[] = [isNull(stories.deletedAt), gte(stories.createdAt, since)];
-    if (userId) conditions.push(eq(stories.userId, userId));
+    if (userId) conditions.push(uidCond(stories.userId, userId, includeNullUser));
     const [result] = await db.select({ count: count() }).from(stories).where(and(...conditions));
     return result?.count ?? 0;
   }
@@ -765,13 +770,13 @@ export class DatabaseStorage implements IStorage {
     return rows.map(r => r.category!).filter(Boolean).sort();
   }
 
-  async getBooksAdmin(opts?: { type?: string; category?: string; search?: string; sort?: string; published?: boolean; userId?: string; startDate?: string; endDate?: string; limit?: number; offset?: number }): Promise<{ books: Book[]; total: number }> {
+  async getBooksAdmin(opts?: { type?: string; category?: string; search?: string; sort?: string; published?: boolean; userId?: string; includeNullUser?: boolean; startDate?: string; endDate?: string; limit?: number; offset?: number }): Promise<{ books: Book[]; total: number }> {
     const conditions: any[] = [isNull(books.deletedAt)];
     if (opts?.type && opts.type !== "all") conditions.push(eq(books.type, opts.type));
     if (opts?.category && opts.category !== "all") conditions.push(eq(books.category, opts.category));
     if (opts?.search) conditions.push(ilike(books.title, `%${opts.search}%`));
     if (opts?.published !== undefined) conditions.push(eq(books.published, opts.published));
-    if (opts?.userId) conditions.push(eq(books.userId, opts.userId));
+    if (opts?.userId) conditions.push(uidCond(books.userId, opts.userId, opts.includeNullUser));
     if (opts?.startDate) conditions.push(gte(books.createdAt, new Date(opts.startDate)));
     if (opts?.endDate) conditions.push(lte(books.createdAt, new Date(opts.endDate)));
 
@@ -791,10 +796,10 @@ export class DatabaseStorage implements IStorage {
     return { books: allBooks, total: countResult[0]?.count ?? 0 };
   }
 
-  async getBooksAdminStats(userId?: string): Promise<{ total: number; freeTotal: number; paidTotal: number; totalViews: number; freeViews: number; paidViews: number; published: number; publishedFree: number; publishedPaid: number; recentCount: number; recentFree: number; recentPaid: number; fiveStarCount: number; fiveStarFree: number; fiveStarPaid: number; fourStarCount: number; fourStarFree: number; fourStarPaid: number }> {
+  async getBooksAdminStats(userId?: string, includeNullUser?: boolean): Promise<{ total: number; freeTotal: number; paidTotal: number; totalViews: number; freeViews: number; paidViews: number; published: number; publishedFree: number; publishedPaid: number; recentCount: number; recentFree: number; recentPaid: number; fiveStarCount: number; fiveStarFree: number; fiveStarPaid: number; fourStarCount: number; fourStarFree: number; fourStarPaid: number }> {
     const since30 = new Date(Date.now() - 30 * 86400000);
     const baseConditions: any[] = [isNull(books.deletedAt)];
-    if (userId) baseConditions.push(eq(books.userId, userId));
+    if (userId) baseConditions.push(uidCond(books.userId, userId, includeNullUser));
     const base = and(...baseConditions) as any;
     const [
       totalRes, freeRes, paidRes,
@@ -1074,12 +1079,12 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  async getMotivationalStories(opts?: { category?: string; search?: string; sort?: string; published?: boolean; limit?: number; offset?: number; userId?: string; startDate?: string; endDate?: string }): Promise<{ stories: MotivationalStory[]; total: number }> {
+  async getMotivationalStories(opts?: { category?: string; search?: string; sort?: string; published?: boolean; limit?: number; offset?: number; userId?: string; includeNullUser?: boolean; startDate?: string; endDate?: string }): Promise<{ stories: MotivationalStory[]; total: number }> {
     const conditions: any[] = [isNull(motivationalStories.deletedAt)];
     if (opts?.published !== undefined) conditions.push(eq(motivationalStories.published, opts.published));
     if (opts?.category) conditions.push(eq(motivationalStories.category, opts.category));
     if (opts?.search) conditions.push(ilike(motivationalStories.title, `%${opts.search}%`));
-    if (opts?.userId) conditions.push(eq(motivationalStories.userId, opts.userId));
+    if (opts?.userId) conditions.push(uidCond(motivationalStories.userId, opts.userId, opts.includeNullUser));
     if (opts?.startDate) conditions.push(gte(motivationalStories.createdAt, new Date(opts.startDate)));
     if (opts?.endDate) conditions.push(lte(motivationalStories.createdAt, new Date(opts.endDate)));
     const where = and(...conditions);
@@ -1096,24 +1101,24 @@ export class DatabaseStorage implements IStorage {
     return { stories: rows, total: totalResult?.count ?? 0 };
   }
 
-  async getMotivationalTotalViews(userId?: string): Promise<number> {
+  async getMotivationalTotalViews(userId?: string, includeNullUser?: boolean): Promise<number> {
     const conditions: any[] = [isNull(motivationalStories.deletedAt)];
-    if (userId) conditions.push(eq(motivationalStories.userId, userId));
+    if (userId) conditions.push(uidCond(motivationalStories.userId, userId, includeNullUser));
     const [result] = await db.select({ total: sum(motivationalStories.views) }).from(motivationalStories).where(and(...conditions));
     return Number(result?.total) || 0;
   }
 
-  async getRecentMotivationalCount(days: number, userId?: string): Promise<number> {
+  async getRecentMotivationalCount(days: number, userId?: string, includeNullUser?: boolean): Promise<number> {
     const since = new Date(Date.now() - days * 86400000);
     const conditions: any[] = [isNull(motivationalStories.deletedAt), gte(motivationalStories.createdAt, since)];
-    if (userId) conditions.push(eq(motivationalStories.userId, userId));
+    if (userId) conditions.push(uidCond(motivationalStories.userId, userId, includeNullUser));
     const [result] = await db.select({ count: count() }).from(motivationalStories).where(and(...conditions));
     return result?.count ?? 0;
   }
 
-  async getMotivationalRatingDistribution(userId?: string): Promise<{ fiveStarCount: number; fourStarCount: number }> {
+  async getMotivationalRatingDistribution(userId?: string, includeNullUser?: boolean): Promise<{ fiveStarCount: number; fourStarCount: number }> {
     const baseConditions: any[] = [isNull(motivationalStories.deletedAt)];
-    if (userId) baseConditions.push(eq(motivationalStories.userId, userId));
+    if (userId) baseConditions.push(uidCond(motivationalStories.userId, userId, includeNullUser));
     const [fiveStar] = await db.select({ count: count() }).from(motivationalStories)
       .where(and(...baseConditions, gte(motivationalStories.averageRating, 4.1)));
     const [fourStar] = await db.select({ count: count() }).from(motivationalStories)
@@ -1188,10 +1193,10 @@ export class DatabaseStorage implements IStorage {
     return newStory;
   }
 
-  async getMotivationalStoryCount(published?: boolean, userId?: string): Promise<number> {
+  async getMotivationalStoryCount(published?: boolean, userId?: string, includeNullUser?: boolean): Promise<number> {
     const conditions: any[] = [isNull(motivationalStories.deletedAt)];
     if (published !== undefined) conditions.push(eq(motivationalStories.published, published));
-    if (userId) conditions.push(eq(motivationalStories.userId, userId));
+    if (userId) conditions.push(uidCond(motivationalStories.userId, userId, includeNullUser));
     const [result] = await db.select({ count: count() }).from(motivationalStories).where(and(...conditions));
     return result?.count ?? 0;
   }
@@ -1614,12 +1619,12 @@ export class DatabaseStorage implements IStorage {
     return newPage;
   }
 
-  async getDuas(opts: { published?: boolean; search?: string; category?: string; sort?: string; limit?: number; offset?: number; userId?: string; startDate?: string; endDate?: string } = {}): Promise<{ duas: Dua[]; total: number }> {
+  async getDuas(opts: { published?: boolean; search?: string; category?: string; sort?: string; limit?: number; offset?: number; userId?: string; includeNullUser?: boolean; startDate?: string; endDate?: string } = {}): Promise<{ duas: Dua[]; total: number }> {
     const conditions = [isNull(duas.deletedAt)];
     if (opts.published !== undefined) conditions.push(eq(duas.published, opts.published));
     if (opts.search) conditions.push(ilike(duas.title, `%${opts.search}%`));
     if (opts.category) conditions.push(eq(duas.category, opts.category));
-    if (opts.userId) conditions.push(eq(duas.userId, opts.userId));
+    if (opts.userId) conditions.push(uidCond(duas.userId, opts.userId, opts.includeNullUser));
     if (opts.startDate) conditions.push(gte(duas.createdAt, new Date(opts.startDate)));
     if (opts.endDate) conditions.push(lte(duas.createdAt, new Date(opts.endDate)));
     const where = and(...conditions);
@@ -1644,24 +1649,24 @@ export class DatabaseStorage implements IStorage {
     return rows.map(r => r.category).filter((c): c is string => !!c).sort();
   }
 
-  async getDuaTotalViews(userId?: string): Promise<number> {
+  async getDuaTotalViews(userId?: string, includeNullUser?: boolean): Promise<number> {
     const conditions: any[] = [isNull(duas.deletedAt)];
-    if (userId) conditions.push(eq(duas.userId, userId));
+    if (userId) conditions.push(uidCond(duas.userId, userId, includeNullUser));
     const [result] = await db.select({ total: sum(duas.views) }).from(duas).where(and(...conditions));
     return Number(result?.total) || 0;
   }
 
-  async getRecentDuaCount(days: number, userId?: string): Promise<number> {
+  async getRecentDuaCount(days: number, userId?: string, includeNullUser?: boolean): Promise<number> {
     const since = new Date(Date.now() - days * 86400000);
     const conditions: any[] = [isNull(duas.deletedAt), gte(duas.createdAt, since)];
-    if (userId) conditions.push(eq(duas.userId, userId));
+    if (userId) conditions.push(uidCond(duas.userId, userId, includeNullUser));
     const [result] = await db.select({ count: count() }).from(duas).where(and(...conditions));
     return result?.count ?? 0;
   }
 
-  async getDuaRatingDistribution(userId?: string): Promise<{ fiveStarCount: number; fourStarCount: number }> {
+  async getDuaRatingDistribution(userId?: string, includeNullUser?: boolean): Promise<{ fiveStarCount: number; fourStarCount: number }> {
     const baseConditions: any[] = [isNull(duas.deletedAt)];
-    if (userId) baseConditions.push(eq(duas.userId, userId));
+    if (userId) baseConditions.push(uidCond(duas.userId, userId, includeNullUser));
     const [fiveStar] = await db.select({ count: count() }).from(duas)
       .where(and(...baseConditions, gte(duas.averageRating, 4.1)));
     const [fourStar] = await db.select({ count: count() }).from(duas)

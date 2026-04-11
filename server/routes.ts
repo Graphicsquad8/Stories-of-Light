@@ -901,7 +901,7 @@ export async function registerRoutes(
   });
 
   app.get("/api/stories", async (req: any, res) => {
-    const { status, categoryId, featured, search, limit, offset, userId, startDate, endDate, sortBy } = req.query;
+    const { status, categoryId, featured, search, limit, offset, userId, includeNullUser, startDate, endDate, sortBy } = req.query;
     const opts: any = {};
     if (status) opts.status = status;
     if (categoryId) opts.categoryId = categoryId;
@@ -910,6 +910,7 @@ export async function registerRoutes(
     if (limit) opts.limit = parseInt(limit as string);
     if (offset) opts.offset = parseInt(offset as string);
     if (userId) opts.userId = userId as string;
+    if (includeNullUser === "true") opts.includeNullUser = true;
     if (startDate) opts.startDate = startDate as string;
     if (endDate) opts.endDate = endDate as string;
     if (sortBy === "views") opts.sortBy = "views";
@@ -924,12 +925,13 @@ export async function registerRoutes(
 
   app.get("/api/stories/stats", requireStaff, async (req, res) => {
     const uid = resolveContentUserId(req);
+    const incNull = req.query.includeNullUser === "true";
     const [total, published, drafts, totalViews, recentCount] = await Promise.all([
-      storage.getStoryCount(undefined, uid),
-      storage.getStoryCount("published", uid),
-      storage.getStoryCount("draft", uid),
-      storage.getStoryTotalViews(uid),
-      storage.getRecentStoryCount(30, uid),
+      storage.getStoryCount(undefined, uid, incNull),
+      storage.getStoryCount("published", uid, incNull),
+      storage.getStoryCount("draft", uid, incNull),
+      storage.getStoryTotalViews(uid, incNull),
+      storage.getRecentStoryCount(30, uid, incNull),
     ]);
     res.json({ total, published, drafts, totalViews, recentCount });
   });
@@ -1534,7 +1536,8 @@ export async function registerRoutes(
   // Admin Books routes
   app.get("/api/admin/books/stats", requireStaff, async (req, res) => {
     const uid = resolveContentUserId(req);
-    const stats = await storage.getBooksAdminStats(uid);
+    const incNull = req.query.includeNullUser === "true";
+    const stats = await storage.getBooksAdminStats(uid, incNull);
     res.json(stats);
   });
 
@@ -1544,7 +1547,7 @@ export async function registerRoutes(
   });
 
   app.get("/api/admin/books", requireStaff, async (req, res) => {
-    const { type, category, search, sort, published, userId, startDate, endDate, limit, offset } = req.query;
+    const { type, category, search, sort, published, userId, includeNullUser, startDate, endDate, limit, offset } = req.query;
     const result = await storage.getBooksAdmin({
       type: type as string,
       category: category as string,
@@ -1552,6 +1555,7 @@ export async function registerRoutes(
       sort: sort as string,
       published: published === "true" ? true : published === "false" ? false : undefined,
       userId: (resolveContentUserId(req) ?? userId) as string | undefined,
+      includeNullUser: includeNullUser === "true",
       startDate: startDate as string | undefined,
       endDate: endDate as string | undefined,
       limit: limit ? parseInt(limit as string) : 50,
@@ -1782,18 +1786,19 @@ export async function registerRoutes(
 
   app.get("/api/admin/motivational-stories/stats", requireStaff, async (req, res) => {
     const uid = resolveContentUserId(req);
+    const incNull = req.query.includeNullUser === "true";
     const [total, published, totalViews, recentCount, ratingDist] = await Promise.all([
-      storage.getMotivationalStoryCount(undefined, uid),
-      storage.getMotivationalStoryCount(true, uid),
-      storage.getMotivationalTotalViews(uid),
-      storage.getRecentMotivationalCount(30, uid),
-      storage.getMotivationalRatingDistribution(uid),
+      storage.getMotivationalStoryCount(undefined, uid, incNull),
+      storage.getMotivationalStoryCount(true, uid, incNull),
+      storage.getMotivationalTotalViews(uid, incNull),
+      storage.getRecentMotivationalCount(30, uid, incNull),
+      storage.getMotivationalRatingDistribution(uid, incNull),
     ]);
     res.json({ total, published, totalViews, recentCount, ...ratingDist });
   });
 
   app.get("/api/admin/motivational-stories", requireStaff, async (req, res) => {
-    const { category, search, sort, limit, offset, userId, startDate, endDate } = req.query;
+    const { category, search, sort, limit, offset, userId, includeNullUser, startDate, endDate } = req.query;
     const result = await storage.getMotivationalStories({
       category: category as string,
       search: search as string,
@@ -1801,6 +1806,7 @@ export async function registerRoutes(
       limit: limit ? parseInt(limit as string) : 50,
       offset: offset ? parseInt(offset as string) : 0,
       userId: (resolveContentUserId(req) ?? userId) as string | undefined,
+      includeNullUser: includeNullUser === "true",
       startDate: startDate as string | undefined,
       endDate: endDate as string | undefined,
     });
@@ -2180,12 +2186,13 @@ export async function registerRoutes(
   // Admin Duas
   app.get("/api/admin/duas/stats", requireStaff, async (req, res) => {
     const uid = resolveContentUserId(req);
+    const incNull = req.query.includeNullUser === "true";
     const [total, published, totalViews, recentCount, ratingDist] = await Promise.all([
-      storage.getDuas({ limit: 0, userId: uid }).then(r => r.total),
-      storage.getDuas({ published: true, limit: 0, userId: uid }).then(r => r.total),
-      storage.getDuaTotalViews(uid),
-      storage.getRecentDuaCount(30, uid),
-      storage.getDuaRatingDistribution(uid),
+      storage.getDuas({ limit: 0, userId: uid, includeNullUser: incNull }).then(r => r.total),
+      storage.getDuas({ published: true, limit: 0, userId: uid, includeNullUser: incNull }).then(r => r.total),
+      storage.getDuaTotalViews(uid, incNull),
+      storage.getRecentDuaCount(30, uid, incNull),
+      storage.getDuaRatingDistribution(uid, incNull),
     ]);
     res.json({ total, published, totalViews, recentCount, ...ratingDist });
   });
@@ -2196,7 +2203,7 @@ export async function registerRoutes(
   });
 
   app.get("/api/admin/duas", requireStaff, async (req, res) => {
-    const { search, category, sort, limit, offset, userId, startDate, endDate } = req.query;
+    const { search, category, sort, limit, offset, userId, includeNullUser, startDate, endDate } = req.query;
     const result = await storage.getDuas({
       search: search as string,
       category: category as string,
@@ -2204,6 +2211,7 @@ export async function registerRoutes(
       limit: limit ? Number(limit) : 50,
       offset: offset ? Number(offset) : 0,
       userId: (resolveContentUserId(req) ?? userId) as string | undefined,
+      includeNullUser: includeNullUser === "true",
       startDate: startDate as string | undefined,
       endDate: endDate as string | undefined,
     });

@@ -323,12 +323,14 @@ export default function AdminOverviewPage() {
   const showViewModeToggle = isAdmin && !isViewingOther;
   const viewModeLabel = VIEW_MODE_LABELS[user?.role ?? ""] ?? "My View";
 
-  // Overview ALWAYS shows the user's own content (personalOnly=true)
+  // Overview always uses the backend's natural includeNull logic:
+  // super_owner/owner → includes null-user_id (seeded) content automatically
+  // admin/moderator/editor → shows only their own content (user_id = their id)
   // The View Mode button only filters content sections (Articles, Duas, Books, Motivational)
   const { data, isLoading } = useQuery<OverviewData>({
-    queryKey: ["/api/admin/contributors", subjectId, "overview", "personal"],
+    queryKey: ["/api/admin/contributors", subjectId, "overview"],
     queryFn: () =>
-      fetch(`/api/admin/contributors/${subjectId}/overview?personalOnly=true`, { credentials: "include" })
+      fetch(`/api/admin/contributors/${subjectId}/overview`, { credentials: "include" })
         .then((r) => r.json()),
     enabled: !!subjectId,
     staleTime: 0,

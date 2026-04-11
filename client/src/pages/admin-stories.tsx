@@ -56,6 +56,7 @@ export default function AdminStoriesPage() {
   const { viewAs, viewMeMode } = useViewAs();
   const isContributor = !viewMeMode && (!!viewAs || !isAdmin);
   const effectiveFilterUserId = viewMeMode ? (viewAs?.id ?? user?.id) : !isAdmin ? user?.id : undefined;
+  const shouldIncludeNull = viewMeMode && (user?.role === "super_owner" || user?.role === "owner");
 
   const [matchCat, catParams] = useRoute("/image/stories/category/:slug");
   const categorySlug = matchCat ? catParams?.slug : null;
@@ -65,9 +66,10 @@ export default function AdminStoriesPage() {
   });
   const activeCategory = categories?.find((c) => c.slug === categorySlug || c.urlSlug === categorySlug);
 
-  const statsUrl = `/api/stories/stats${effectiveFilterUserId ? `?viewAs=${effectiveFilterUserId}` : ""}`;
+  const statsUrlBase = effectiveFilterUserId ? `?viewAs=${effectiveFilterUserId}${shouldIncludeNull ? "&includeNullUser=true" : ""}` : "";
+  const statsUrl = `/api/stories/stats${statsUrlBase}`;
   const { data: stats } = useQuery<{ total: number; published: number; drafts: number; totalViews: number; recentCount: number }>({
-    queryKey: ["/api/stories/stats", effectiveFilterUserId],
+    queryKey: ["/api/stories/stats", effectiveFilterUserId, shouldIncludeNull],
     queryFn: async () => {
       const res = await fetch(statsUrl, { credentials: "include" });
       return res.json();
@@ -110,6 +112,7 @@ export default function AdminStoriesPage() {
   if (apiStatus) queryParams.set("status", apiStatus);
   if (activeCategory?.id) queryParams.set("categoryId", activeCategory.id);
   if (effectiveFilterUserId) queryParams.set("userId", effectiveFilterUserId);
+  if (shouldIncludeNull) queryParams.set("includeNullUser", "true");
   if (startDate) queryParams.set("startDate", startDate);
   if (endDate) queryParams.set("endDate", endDate);
   if (sortBy) queryParams.set("sortBy", sortBy);

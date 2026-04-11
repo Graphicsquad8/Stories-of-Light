@@ -357,6 +357,7 @@ export default function AdminBooksPage() {
   const { viewAs, viewMeMode } = useViewAs();
   const isContributor = !viewMeMode && (!!viewAs || !isAdmin);
   const effectiveFilterUserId = viewMeMode ? (viewAs?.id ?? user?.id) : !isAdmin ? user?.id : undefined;
+  const shouldIncludeNull = viewMeMode && (user?.role === "super_owner" || user?.role === "owner");
 
   const { startDate, endDate, apiSort } = useMemo(() => {
     const ms = (d: number) => new Date(Date.now() - d * 86400000).toISOString();
@@ -404,6 +405,7 @@ export default function AdminBooksPage() {
 
   const queryParams = new URLSearchParams({ limit: "50" });
   if (effectiveFilterUserId) queryParams.set("userId", effectiveFilterUserId);
+  if (shouldIncludeNull) queryParams.set("includeNullUser", "true");
   if (search) queryParams.set("search", search);
   if (typeFilter !== "all") queryParams.set("type", typeFilter);
   if (categoryFilter !== "all") queryParams.set("category", categoryFilter);
@@ -430,9 +432,12 @@ export default function AdminBooksPage() {
     fiveStarCount: number; fiveStarFree: number; fiveStarPaid: number;
     fourStarCount: number; fourStarFree: number; fourStarPaid: number;
   }>({
-    queryKey: ["/api/admin/books/stats", effectiveFilterUserId],
+    queryKey: ["/api/admin/books/stats", effectiveFilterUserId, shouldIncludeNull],
     queryFn: async () => {
-      const url = `/api/admin/books/stats${effectiveFilterUserId ? `?viewAs=${effectiveFilterUserId}` : ""}`;
+      const p = new URLSearchParams();
+      if (effectiveFilterUserId) p.set("viewAs", effectiveFilterUserId);
+      if (shouldIncludeNull) p.set("includeNullUser", "true");
+      const url = `/api/admin/books/stats${p.toString() ? `?${p.toString()}` : ""}`;
       const res = await fetch(url, { credentials: "include" });
       return res.json();
     },
