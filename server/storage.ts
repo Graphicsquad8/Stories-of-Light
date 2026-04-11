@@ -91,9 +91,9 @@ export interface IStorage {
   restoreStory(id: string): Promise<boolean>;
   permanentDeleteStory(id: string): Promise<boolean>;
   getDeletedStories(): Promise<StoryWithCategory[]>;
-  getStoryCount(status?: string): Promise<number>;
-  getStoryTotalViews(): Promise<number>;
-  getRecentStoryCount(days: number): Promise<number>;
+  getStoryCount(status?: string, userId?: string): Promise<number>;
+  getStoryTotalViews(userId?: string): Promise<number>;
+  getRecentStoryCount(days: number, userId?: string): Promise<number>;
   incrementStoryViews(id: string): Promise<void>;
   getRelatedStories(storyId: string, categoryId: string | null, limit?: number): Promise<StoryWithCategory[]>;
 
@@ -110,7 +110,7 @@ export interface IStorage {
   getFeaturedFreeBooks(limit?: number): Promise<Book[]>;
   getBookCategories(): Promise<string[]>;
   getBooksAdmin(opts?: { type?: string; category?: string; search?: string; sort?: string; published?: boolean; userId?: string; startDate?: string; endDate?: string; limit?: number; offset?: number }): Promise<{ books: Book[]; total: number }>;
-  getBooksAdminStats(): Promise<{ total: number; freeTotal: number; paidTotal: number; totalViews: number; freeViews: number; paidViews: number; published: number; publishedFree: number; publishedPaid: number; recentCount: number; recentFree: number; recentPaid: number; fiveStarCount: number; fiveStarFree: number; fiveStarPaid: number; fourStarCount: number; fourStarFree: number; fourStarPaid: number }>;
+  getBooksAdminStats(userId?: string): Promise<{ total: number; freeTotal: number; paidTotal: number; totalViews: number; freeViews: number; paidViews: number; published: number; publishedFree: number; publishedPaid: number; recentCount: number; recentFree: number; recentPaid: number; fiveStarCount: number; fiveStarFree: number; fiveStarPaid: number; fourStarCount: number; fourStarFree: number; fourStarPaid: number }>;
   getBookCategoriesAdmin(): Promise<string[]>;
 
   getBookChapters(bookId: string): Promise<BookChapter[]>;
@@ -175,17 +175,17 @@ export interface IStorage {
   permanentDeleteMotivationalStory(id: string): Promise<boolean>;
   getDeletedMotivationalStories(): Promise<MotivationalStory[]>;
   duplicateMotivationalStory(id: string): Promise<MotivationalStory>;
-  getMotivationalStoryCount(published?: boolean): Promise<number>;
-  getMotivationalTotalViews(): Promise<number>;
-  getRecentMotivationalCount(days: number): Promise<number>;
-  getMotivationalRatingDistribution(): Promise<{ fiveStarCount: number; fourStarCount: number }>;
+  getMotivationalStoryCount(published?: boolean, userId?: string): Promise<number>;
+  getMotivationalTotalViews(userId?: string): Promise<number>;
+  getRecentMotivationalCount(days: number, userId?: string): Promise<number>;
+  getMotivationalRatingDistribution(userId?: string): Promise<{ fiveStarCount: number; fourStarCount: number }>;
 
   getDuas(opts?: { published?: boolean; search?: string; category?: string; sort?: string; limit?: number; offset?: number; userId?: string; startDate?: string; endDate?: string }): Promise<{ duas: Dua[]; total: number }>;
   getDuaCategories(): Promise<string[]>;
   getDuaCategoriesAdmin(): Promise<string[]>;
-  getDuaTotalViews(): Promise<number>;
-  getRecentDuaCount(days: number): Promise<number>;
-  getDuaRatingDistribution(): Promise<{ fiveStarCount: number; fourStarCount: number }>;
+  getDuaTotalViews(userId?: string): Promise<number>;
+  getRecentDuaCount(days: number, userId?: string): Promise<number>;
+  getDuaRatingDistribution(userId?: string): Promise<{ fiveStarCount: number; fourStarCount: number }>;
   getDuaRatings(duaId: string): Promise<DuaRating[]>;
   getUserDuaRating(userId: string, duaId: string): Promise<DuaRating | undefined>;
   createDuaRating(userId: string, duaId: string, rating: number, comment?: string): Promise<DuaRating>;
@@ -638,22 +638,26 @@ export class DatabaseStorage implements IStorage {
     return rows.map((r) => ({ ...r.story, category: r.category }));
   }
 
-  async getStoryCount(status?: string): Promise<number> {
+  async getStoryCount(status?: string, userId?: string): Promise<number> {
     const conditions: any[] = [isNull(stories.deletedAt)];
     if (status) conditions.push(eq(stories.status, status));
+    if (userId) conditions.push(eq(stories.userId, userId));
     const [result] = await db.select({ count: count() }).from(stories).where(and(...conditions));
     return result?.count ?? 0;
   }
 
-  async getStoryTotalViews(): Promise<number> {
-    const [result] = await db.select({ total: sum(stories.views) }).from(stories).where(isNull(stories.deletedAt));
+  async getStoryTotalViews(userId?: string): Promise<number> {
+    const conditions: any[] = [isNull(stories.deletedAt)];
+    if (userId) conditions.push(eq(stories.userId, userId));
+    const [result] = await db.select({ total: sum(stories.views) }).from(stories).where(and(...conditions));
     return Number(result?.total) || 0;
   }
 
-  async getRecentStoryCount(days: number): Promise<number> {
+  async getRecentStoryCount(days: number, userId?: string): Promise<number> {
     const since = new Date(Date.now() - days * 86400000);
-    const [result] = await db.select({ count: count() }).from(stories)
-      .where(and(isNull(stories.deletedAt), gte(stories.createdAt, since)));
+    const conditions: any[] = [isNull(stories.deletedAt), gte(stories.createdAt, since)];
+    if (userId) conditions.push(eq(stories.userId, userId));
+    const [result] = await db.select({ count: count() }).from(stories).where(and(...conditions));
     return result?.count ?? 0;
   }
 
@@ -787,9 +791,11 @@ export class DatabaseStorage implements IStorage {
     return { books: allBooks, total: countResult[0]?.count ?? 0 };
   }
 
-  async getBooksAdminStats(): Promise<{ total: number; freeTotal: number; paidTotal: number; totalViews: number; freeViews: number; paidViews: number; published: number; publishedFree: number; publishedPaid: number; recentCount: number; recentFree: number; recentPaid: number; fiveStarCount: number; fiveStarFree: number; fiveStarPaid: number; fourStarCount: number; fourStarFree: number; fourStarPaid: number }> {
+  async getBooksAdminStats(userId?: string): Promise<{ total: number; freeTotal: number; paidTotal: number; totalViews: number; freeViews: number; paidViews: number; published: number; publishedFree: number; publishedPaid: number; recentCount: number; recentFree: number; recentPaid: number; fiveStarCount: number; fiveStarFree: number; fiveStarPaid: number; fourStarCount: number; fourStarFree: number; fourStarPaid: number }> {
     const since30 = new Date(Date.now() - 30 * 86400000);
-    const base = isNull(books.deletedAt);
+    const baseConditions: any[] = [isNull(books.deletedAt)];
+    if (userId) baseConditions.push(eq(books.userId, userId));
+    const base = and(...baseConditions) as any;
     const [
       totalRes, freeRes, paidRes,
       viewsRes, freeViewsRes, paidViewsRes,
@@ -1090,23 +1096,28 @@ export class DatabaseStorage implements IStorage {
     return { stories: rows, total: totalResult?.count ?? 0 };
   }
 
-  async getMotivationalTotalViews(): Promise<number> {
-    const [result] = await db.select({ total: sum(motivationalStories.views) }).from(motivationalStories).where(isNull(motivationalStories.deletedAt));
+  async getMotivationalTotalViews(userId?: string): Promise<number> {
+    const conditions: any[] = [isNull(motivationalStories.deletedAt)];
+    if (userId) conditions.push(eq(motivationalStories.userId, userId));
+    const [result] = await db.select({ total: sum(motivationalStories.views) }).from(motivationalStories).where(and(...conditions));
     return Number(result?.total) || 0;
   }
 
-  async getRecentMotivationalCount(days: number): Promise<number> {
+  async getRecentMotivationalCount(days: number, userId?: string): Promise<number> {
     const since = new Date(Date.now() - days * 86400000);
-    const [result] = await db.select({ count: count() }).from(motivationalStories)
-      .where(and(isNull(motivationalStories.deletedAt), gte(motivationalStories.createdAt, since)));
+    const conditions: any[] = [isNull(motivationalStories.deletedAt), gte(motivationalStories.createdAt, since)];
+    if (userId) conditions.push(eq(motivationalStories.userId, userId));
+    const [result] = await db.select({ count: count() }).from(motivationalStories).where(and(...conditions));
     return result?.count ?? 0;
   }
 
-  async getMotivationalRatingDistribution(): Promise<{ fiveStarCount: number; fourStarCount: number }> {
+  async getMotivationalRatingDistribution(userId?: string): Promise<{ fiveStarCount: number; fourStarCount: number }> {
+    const baseConditions: any[] = [isNull(motivationalStories.deletedAt)];
+    if (userId) baseConditions.push(eq(motivationalStories.userId, userId));
     const [fiveStar] = await db.select({ count: count() }).from(motivationalStories)
-      .where(and(isNull(motivationalStories.deletedAt), gte(motivationalStories.averageRating, 4.1)));
+      .where(and(...baseConditions, gte(motivationalStories.averageRating, 4.1)));
     const [fourStar] = await db.select({ count: count() }).from(motivationalStories)
-      .where(and(isNull(motivationalStories.deletedAt), gte(motivationalStories.averageRating, 3.5), lte(motivationalStories.averageRating, 4.0)));
+      .where(and(...baseConditions, gte(motivationalStories.averageRating, 3.5), lte(motivationalStories.averageRating, 4.0)));
     return { fiveStarCount: fiveStar?.count ?? 0, fourStarCount: fourStar?.count ?? 0 };
   }
 
@@ -1177,9 +1188,10 @@ export class DatabaseStorage implements IStorage {
     return newStory;
   }
 
-  async getMotivationalStoryCount(published?: boolean): Promise<number> {
+  async getMotivationalStoryCount(published?: boolean, userId?: string): Promise<number> {
     const conditions: any[] = [isNull(motivationalStories.deletedAt)];
     if (published !== undefined) conditions.push(eq(motivationalStories.published, published));
+    if (userId) conditions.push(eq(motivationalStories.userId, userId));
     const [result] = await db.select({ count: count() }).from(motivationalStories).where(and(...conditions));
     return result?.count ?? 0;
   }
@@ -1632,21 +1644,28 @@ export class DatabaseStorage implements IStorage {
     return rows.map(r => r.category).filter((c): c is string => !!c).sort();
   }
 
-  async getDuaTotalViews(): Promise<number> {
-    const [result] = await db.select({ total: sum(duas.views) }).from(duas).where(isNull(duas.deletedAt));
+  async getDuaTotalViews(userId?: string): Promise<number> {
+    const conditions: any[] = [isNull(duas.deletedAt)];
+    if (userId) conditions.push(eq(duas.userId, userId));
+    const [result] = await db.select({ total: sum(duas.views) }).from(duas).where(and(...conditions));
     return Number(result?.total) || 0;
   }
 
-  async getRecentDuaCount(days: number): Promise<number> {
+  async getRecentDuaCount(days: number, userId?: string): Promise<number> {
     const since = new Date(Date.now() - days * 86400000);
-    const [result] = await db.select({ count: count() }).from(duas)
-      .where(and(isNull(duas.deletedAt), gte(duas.createdAt, since)));
+    const conditions: any[] = [isNull(duas.deletedAt), gte(duas.createdAt, since)];
+    if (userId) conditions.push(eq(duas.userId, userId));
+    const [result] = await db.select({ count: count() }).from(duas).where(and(...conditions));
     return result?.count ?? 0;
   }
 
-  async getDuaRatingDistribution(): Promise<{ fiveStarCount: number; fourStarCount: number }> {
-    const [fiveStar] = await db.select({ count: count() }).from(duaRatings).where(eq(duaRatings.rating, 5));
-    const [fourStar] = await db.select({ count: count() }).from(duaRatings).where(eq(duaRatings.rating, 4));
+  async getDuaRatingDistribution(userId?: string): Promise<{ fiveStarCount: number; fourStarCount: number }> {
+    const baseConditions: any[] = [isNull(duas.deletedAt)];
+    if (userId) baseConditions.push(eq(duas.userId, userId));
+    const [fiveStar] = await db.select({ count: count() }).from(duas)
+      .where(and(...baseConditions, gte(duas.averageRating, 4.1)));
+    const [fourStar] = await db.select({ count: count() }).from(duas)
+      .where(and(...baseConditions, gte(duas.averageRating, 3.5), lte(duas.averageRating, 4.0)));
     return { fiveStarCount: fiveStar?.count ?? 0, fourStarCount: fourStar?.count ?? 0 };
   }
 

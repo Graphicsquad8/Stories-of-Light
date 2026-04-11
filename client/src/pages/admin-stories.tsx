@@ -55,7 +55,7 @@ export default function AdminStoriesPage() {
   const { user, isAdmin } = useAuth();
   const { viewAs, viewMeMode } = useViewAs();
   const isContributor = !viewMeMode && (!!viewAs || !isAdmin);
-  const viewMeUserId = viewMeMode ? (viewAs?.id ?? user?.id) : undefined;
+  const effectiveFilterUserId = viewMeMode ? (viewAs?.id ?? user?.id) : !isAdmin ? user?.id : undefined;
 
   const [matchCat, catParams] = useRoute("/image/stories/category/:slug");
   const categorySlug = matchCat ? catParams?.slug : null;
@@ -65,8 +65,13 @@ export default function AdminStoriesPage() {
   });
   const activeCategory = categories?.find((c) => c.slug === categorySlug || c.urlSlug === categorySlug);
 
+  const statsUrl = `/api/stories/stats${effectiveFilterUserId ? `?viewAs=${effectiveFilterUserId}` : ""}`;
   const { data: stats } = useQuery<{ total: number; published: number; drafts: number; totalViews: number; recentCount: number }>({
-    queryKey: ["/api/stories/stats"],
+    queryKey: ["/api/stories/stats", effectiveFilterUserId],
+    queryFn: async () => {
+      const res = await fetch(statsUrl, { credentials: "include" });
+      return res.json();
+    },
   });
 
   const { startDate, endDate, sortBy } = useMemo(() => {
@@ -104,7 +109,7 @@ export default function AdminStoriesPage() {
   const apiStatus = statusFilter === "published" ? "published" : statusFilter === "draft" ? "draft" : undefined;
   if (apiStatus) queryParams.set("status", apiStatus);
   if (activeCategory?.id) queryParams.set("categoryId", activeCategory.id);
-  if (viewMeUserId) queryParams.set("userId", viewMeUserId);
+  if (effectiveFilterUserId) queryParams.set("userId", effectiveFilterUserId);
   if (startDate) queryParams.set("startDate", startDate);
   if (endDate) queryParams.set("endDate", endDate);
   if (sortBy) queryParams.set("sortBy", sortBy);

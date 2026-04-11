@@ -357,7 +357,7 @@ export default function AdminMotivationalStoriesPage() {
   const { user, isAdmin } = useAuth();
   const { viewAs, viewMeMode } = useViewAs();
   const isContributor = !viewMeMode && (!!viewAs || !isAdmin);
-  const viewMeUserId = viewMeMode ? (viewAs?.id ?? user?.id) : undefined;
+  const effectiveFilterUserId = viewMeMode ? (viewAs?.id ?? user?.id) : !isAdmin ? user?.id : undefined;
 
   const { startDate, endDate, apiSort } = useMemo(() => {
     const ms = (d: number) => new Date(Date.now() - d * 86400000).toISOString();
@@ -404,7 +404,7 @@ export default function AdminMotivationalStoriesPage() {
   }, [statusFilter, dateFilter, customDays, recentDays, filterMonth]);
 
   const queryParams = new URLSearchParams({ limit: "50" });
-  if (viewMeUserId) queryParams.set("userId", viewMeUserId);
+  if (effectiveFilterUserId) queryParams.set("userId", effectiveFilterUserId);
   if (search) queryParams.set("search", search);
   if (categoryFilter !== "all") queryParams.set("category", categoryFilter);
   if (statusFilter === "published") queryParams.set("published", "true");
@@ -423,9 +423,10 @@ export default function AdminMotivationalStoriesPage() {
   });
 
   const { data: stats } = useQuery<{ total: number; published: number; totalViews: number; recentCount: number; fiveStarCount: number; fourStarCount: number }>({
-    queryKey: ["/api/admin/motivational-stories/stats"],
+    queryKey: ["/api/admin/motivational-stories/stats", effectiveFilterUserId],
     queryFn: async () => {
-      const res = await fetch("/api/admin/motivational-stories/stats", { credentials: "include" });
+      const url = `/api/admin/motivational-stories/stats${effectiveFilterUserId ? `?viewAs=${effectiveFilterUserId}` : ""}`;
+      const res = await fetch(url, { credentials: "include" });
       return res.json();
     },
   });

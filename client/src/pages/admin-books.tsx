@@ -356,7 +356,7 @@ export default function AdminBooksPage() {
   const { user, isAdmin } = useAuth();
   const { viewAs, viewMeMode } = useViewAs();
   const isContributor = !viewMeMode && (!!viewAs || !isAdmin);
-  const viewMeUserId = viewMeMode ? (viewAs?.id ?? user?.id) : undefined;
+  const effectiveFilterUserId = viewMeMode ? (viewAs?.id ?? user?.id) : !isAdmin ? user?.id : undefined;
 
   const { startDate, endDate, apiSort } = useMemo(() => {
     const ms = (d: number) => new Date(Date.now() - d * 86400000).toISOString();
@@ -403,7 +403,7 @@ export default function AdminBooksPage() {
   }, [statusFilter, dateFilter, customDays, recentDays, filterMonth]);
 
   const queryParams = new URLSearchParams({ limit: "50" });
-  if (viewMeUserId) queryParams.set("userId", viewMeUserId);
+  if (effectiveFilterUserId) queryParams.set("userId", effectiveFilterUserId);
   if (search) queryParams.set("search", search);
   if (typeFilter !== "all") queryParams.set("type", typeFilter);
   if (categoryFilter !== "all") queryParams.set("category", categoryFilter);
@@ -430,9 +430,10 @@ export default function AdminBooksPage() {
     fiveStarCount: number; fiveStarFree: number; fiveStarPaid: number;
     fourStarCount: number; fourStarFree: number; fourStarPaid: number;
   }>({
-    queryKey: ["/api/admin/books/stats"],
+    queryKey: ["/api/admin/books/stats", effectiveFilterUserId],
     queryFn: async () => {
-      const res = await fetch("/api/admin/books/stats", { credentials: "include" });
+      const url = `/api/admin/books/stats${effectiveFilterUserId ? `?viewAs=${effectiveFilterUserId}` : ""}`;
+      const res = await fetch(url, { credentials: "include" });
       return res.json();
     },
   });

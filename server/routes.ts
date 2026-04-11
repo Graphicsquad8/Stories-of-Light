@@ -366,6 +366,16 @@ export async function registerRoutes(
     return res.status(403).json({ message: "Forbidden" });
   }
 
+  // Returns the userId to filter content by:
+  // - Moderators/editors are always restricted to their own content
+  // - Admins/owners/super_owners can optionally impersonate a contributor via ?viewAs=userId
+  function resolveContentUserId(req: any): string | undefined {
+    const role = (req.user as any)?.role;
+    if (["moderator", "editor"].includes(role)) return (req.user as any).id;
+    if (["super_owner", "owner", "admin"].includes(role)) return req.query.viewAs as string | undefined;
+    return undefined;
+  }
+
   app.post("/api/auth/signup", async (req, res) => {
     try {
       const parsed = signupSchema.safeParse(req.body);
@@ -890,7 +900,7 @@ export async function registerRoutes(
     res.json({ message: "Deleted" });
   });
 
-  app.get("/api/stories", async (req, res) => {
+  app.get("/api/stories", async (req: any, res) => {
     const { status, categoryId, featured, search, limit, offset, userId, startDate, endDate, sortBy } = req.query;
     const opts: any = {};
     if (status) opts.status = status;
@@ -903,17 +913,23 @@ export async function registerRoutes(
     if (startDate) opts.startDate = startDate as string;
     if (endDate) opts.endDate = endDate as string;
     if (sortBy === "views") opts.sortBy = "views";
+    // Enforce own-content filter for logged-in moderators/editors
+    const role = req.user?.role;
+    if (req.isAuthenticated && req.isAuthenticated() && ["moderator", "editor"].includes(role)) {
+      opts.userId = req.user.id;
+    }
     const storiesList = await storage.getStories(opts);
     res.json(storiesList);
   });
 
-  app.get("/api/stories/stats", requireStaff, async (_req, res) => {
+  app.get("/api/stories/stats", requireStaff, async (req, res) => {
+    const uid = resolveContentUserId(req);
     const [total, published, drafts, totalViews, recentCount] = await Promise.all([
-      storage.getStoryCount(),
-      storage.getStoryCount("published"),
-      storage.getStoryCount("draft"),
-      storage.getStoryTotalViews(),
-      storage.getRecentStoryCount(30),
+      storage.getStoryCount(undefined, uid),
+      storage.getStoryCount("published", uid),
+      storage.getStoryCount("draft", uid),
+      storage.getStoryTotalViews(uid),
+      storage.getRecentStoryCount(30, uid),
     ]);
     res.json({ total, published, drafts, totalViews, recentCount });
   });
@@ -1404,8 +1420,9 @@ export async function registerRoutes(
   });
 
   // Admin Books routes
-  app.get("/api/admin/books/stats", requireStaff, async (_req, res) => {
-    const stats = await storage.getBooksAdminStats();
+  app.get("/api/admin/books/stats", requireStaff, async (req, res) => {
+    const uid = resolveContentUserId(req);
+    const stats = await storage.getBooksAdminStats(uid);
     res.json(stats);
   });
 
@@ -1422,7 +1439,7 @@ export async function registerRoutes(
       search: search as string,
       sort: sort as string,
       published: published === "true" ? true : published === "false" ? false : undefined,
-      userId: userId as string | undefined,
+      userId: (resolveContentUserId(req) ?? userId) as string | undefined,
       startDate: startDate as string | undefined,
       endDate: endDate as string | undefined,
       limit: limit ? parseInt(limit as string) : 50,
@@ -1651,13 +1668,14 @@ export async function registerRoutes(
     res.json(related);
   });
 
-  app.get("/api/admin/motivational-stories/stats", requireStaff, async (_req, res) => {
+  app.get("/api/admin/motivational-stories/stats", requireStaff, async (req, res) => {
+    const uid = resolveContentUserId(req);
     const [total, published, totalViews, recentCount, ratingDist] = await Promise.all([
-      storage.getMotivationalStoryCount(),
-      storage.getMotivationalStoryCount(true),
-      storage.getMotivationalTotalViews(),
-      storage.getRecentMotivationalCount(30),
-      storage.getMotivationalRatingDistribution(),
+      storage.getMotivationalStoryCount(undefined, uid),
+      storage.getMotivationalStoryCount(true, uid),
+      storage.getMotivationalTotalViews(uid),
+      storage.getRecentMotivationalCount(30, uid),
+      storage.getMotivationalRatingDistribution(uid),
     ]);
     res.json({ total, published, totalViews, recentCount, ...ratingDist });
   });
@@ -1670,7 +1688,7 @@ export async function registerRoutes(
       sort: sort as string,
       limit: limit ? parseInt(limit as string) : 50,
       offset: offset ? parseInt(offset as string) : 0,
-      userId: userId as string | undefined,
+      userId: (resolveContentUserId(req) ?? userId) as string | undefined,
       startDate: startDate as string | undefined,
       endDate: endDate as string | undefined,
     });
@@ -2047,13 +2065,14 @@ export async function registerRoutes(
   });
 
   // Admin Duas
-  app.get("/api/admin/duas/stats", requireStaff, async (_req, res) => {
+  app.get("/api/admin/duas/stats", requireStaff, async (req, res) => {
+    const uid = resolveContentUserId(req);
     const [total, published, totalViews, recentCount, ratingDist] = await Promise.all([
-      storage.getDuas({ limit: 0 }).then(r => r.total),
-      storage.getDuas({ published: true, limit: 0 }).then(r => r.total),
-      storage.getDuaTotalViews(),
-      storage.getRecentDuaCount(30),
-      storage.getDuaRatingDistribution(),
+      storage.getDuas({ limit: 0, userId: uid }).then(r => r.total),
+      storage.getDuas({ published: true, limit: 0, userId: uid }).then(r => r.total),
+      storage.getDuaTotalViews(uid),
+      storage.getRecentDuaCount(30, uid),
+      storage.getDuaRatingDistribution(uid),
     ]);
     res.json({ total, published, totalViews, recentCount, ...ratingDist });
   });
@@ -2071,7 +2090,7 @@ export async function registerRoutes(
       sort: sort as string,
       limit: limit ? Number(limit) : 50,
       offset: offset ? Number(offset) : 0,
-      userId: userId as string | undefined,
+      userId: (resolveContentUserId(req) ?? userId) as string | undefined,
       startDate: startDate as string | undefined,
       endDate: endDate as string | undefined,
     });
