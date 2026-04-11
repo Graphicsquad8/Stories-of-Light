@@ -1,0 +1,85 @@
+📌 Overview Section – UI & Functional Update (Contributor Panel)
+🔹 Top Search Bar + Profile Header (Box Design)
+The top section of the Overview page will be designed as a single boxed container
+A Search Bar will be placed at the top of the Overview section
+
+📌 On the right side of the search bar:
+
+Contributor Name
+Email Address
+Profile Photo
+🔹 Display Format
+Name and Email will be displayed vertically:
+Name (top)
+Email (bottom)
+
+📌 Layout:
+
+Left side: Name + Email
+Right side: Profile Photo
+🔹 Profile Photo Feature
+
+Each contributor will be able to:
+
+Change their profile photo
+Upload or replace a new profile photo
+📊 Main Overview Layout (Two-Side Structure)
+
+This section will be divided into a left-side and right-side layout
+
+🔹 Left Side Section
+
+Includes:
+
+Trending Content
+Recent Activity
+Most Bookmarked
+My Content Overview
+
+📌 My Content Overview:
+
+Displays total uploaded content count of the contributor
+Displays total views count
+🔹 Right Side Section
+
+Includes:
+
+Access Permissions
+Active Visitors
+
+📌 Active Visitors:
+
+Shows the Top 20 active visitors for the contributor’s content
+Users are sorted by highest visit count
+⚙️ System Behavior (Critical Rules)
+All overview data must be real-time (live updated)
+Each contributor can only access:
+Their own uploaded content
+Their own activity
+Their own analytics
+
+📌 Contributors can:
+
+View, edit, update, and delete content
+Only based on their assigned role permissions
+🔐 Admin / Owner Overview Issue (Important Bug Fix)
+📌 Current Issue:
+When Owner/Admin opens the Overview panel:
+Their uploaded content is not properly reflected
+Overview data is not updating correctly
+📌 Fix Required:
+
+For Owner and Admin Overview:
+
+Their own uploaded content must be displayed correctly
+All analytics and stats must update in real-time
+No data should be missing or outdated
+✅ Summary
+Single boxed header with search bar + profile section
+Name, email, and profile photo layout updated
+Profile photo upload/change enabled
+Left side: content analytics and activity
+Right side: permissions and top 20 active visitors
+Fully real-time data system
+Strict role-based access control
+Owner/Admin overview data sync bug fix required

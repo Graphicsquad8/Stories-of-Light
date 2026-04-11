@@ -1109,7 +1109,7 @@ export async function registerRoutes(
             AND (srp.id IS NOT NULL OR bk.id IS NOT NULL OR db.id IS NOT NULL OR bb.id IS NOT NULL OR mb.id IS NOT NULL)
           GROUP BY u.id, u.username, u.name, u.email, u.avatar_url, u.created_at
           ORDER BY COUNT(DISTINCT srp.id) DESC, COUNT(DISTINCT bk.id) DESC
-          LIMIT 10
+          LIMIT 20
         `, [id]),
       ]);
       if (userRes.rows.length === 0) return res.status(404).json({ message: "Contributor not found" });
