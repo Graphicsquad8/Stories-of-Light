@@ -362,15 +362,37 @@ export default function AdminOverviewPage() {
 
   const rolePerms = c?.role ? ROLE_PERMISSIONS[c.role] ?? [] : [];
 
-  const statCards = [
-    { label: "My Articles",     value: myArticles,     color: "#6366f1", sub: `${myPublished} published`,        icon: FileText },
-    { label: "My Motivational", value: myMotivational,  color: "#10b981", sub: `${myPublishedMotiv} published`,  icon: Star },
-    { label: "My Duas",         value: myDuas,           color: "#8b5cf6", sub: "total duas uploaded",           icon: MessageSquare },
-    { label: "My Books",        value: myBooks,          color: "#f59e0b", sub: "total books uploaded",          icon: BookOpen },
-    { label: "Total Views",     value: totalViews,       color: "#06b6d4", sub: "across all content",            icon: Eye },
-  ];
+  // Determine which content types are accessible to this contributor.
+  // Admin/owner/super_owner always have full access; moderators/editors rely on their permissions array.
+  const fullAccess = c?.role === "super_owner" || c?.role === "owner" || c?.role === "admin";
+  const contribPerms: string[] = c?.permissions ?? [];
+  const canArticles    = fullAccess || contribPerms.includes("articles");
+  const canBooks       = fullAccess || contribPerms.includes("books");
+  const canDuas        = fullAccess || contribPerms.includes("books"); // duas use the "books" permission key
+  const canMotivational = fullAccess || contribPerms.includes("motivational-stories");
 
-  const totalOwn = myArticles + myDuas + myBooks + myMotivational;
+  // Visible count for total = only from accessible types
+  const totalOwn = (canArticles ? myArticles : 0) + (canDuas ? myDuas : 0) + (canBooks ? myBooks : 0) + (canMotivational ? myMotivational : 0);
+  const visibleTotalViews = (canArticles ? myArticleViews : 0) + (canDuas ? myDuaViews : 0) + (canBooks ? myBookViews : 0) + (canMotivational ? myMotivViews : 0);
+
+  // Build stat cards — in fixed order, only include permitted types; Total Views always last
+  const allStatCards = [
+    { key: "articles",     visible: canArticles,     label: "My Articles",     value: myArticles,     color: "#6366f1", sub: `${myPublished} published`,       icon: FileText },
+    { key: "duas",         visible: canDuas,          label: "My Duas",         value: myDuas,          color: "#8b5cf6", sub: "total duas uploaded",            icon: MessageSquare },
+    { key: "books",        visible: canBooks,         label: "My Books",        value: myBooks,         color: "#f59e0b", sub: "total books uploaded",           icon: BookOpen },
+    { key: "motivational", visible: canMotivational,  label: "My Motivational", value: myMotivational,  color: "#10b981", sub: `${myPublishedMotiv} published`,  icon: Star },
+    { key: "views",        visible: true,             label: "Total Views",     value: visibleTotalViews, color: "#06b6d4", sub: "across all content",          icon: Eye },
+  ];
+  const statCards = allStatCards.filter(c => c.visible);
+
+  // Overview rows — fixed order: Articles → Duas → Books → Motivational (position 4)
+  const allOverviewRows = [
+    { key: "articles",     visible: canArticles,     label: "Articles",             count: myArticles,    views: myArticleViews, dot: "bg-indigo-500" },
+    { key: "duas",         visible: canDuas,          label: "Duas",                 count: myDuas,         views: myDuaViews,     dot: "bg-violet-500" },
+    { key: "books",        visible: canBooks,         label: "Books",                count: myBooks,        views: myBookViews,    dot: "bg-amber-500" },
+    { key: "motivational", visible: canMotivational,  label: "Motivational Stories", count: myMotivational, views: myMotivViews,   dot: "bg-emerald-500" },
+  ];
+  const overviewRows = allOverviewRows.filter(r => r.visible);
 
   return (
     <AdminLayout>
@@ -445,9 +467,9 @@ export default function AdminOverviewPage() {
             {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-28 w-full rounded-xl" />)}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-            {statCards.map(({ label, value, color, sub, icon: Icon }) => (
-              <Card key={label} className="p-4 flex items-start justify-between gap-2" data-testid={`card-stat-${label.toLowerCase().replace(/ /g, "-")}`}>
+          <div className={`grid grid-cols-2 sm:grid-cols-3 gap-4 ${statCards.length <= 2 ? "lg:grid-cols-2" : statCards.length === 3 ? "lg:grid-cols-3" : statCards.length === 4 ? "lg:grid-cols-4" : "lg:grid-cols-5"}`}>
+            {statCards.map(({ key, label, value, color, sub, icon: Icon }) => (
+              <Card key={key} className="p-4 flex items-start justify-between gap-2" data-testid={`card-stat-${key}`}>
                 <div className="flex-1 min-w-0">
                   <div className={`w-7 h-7 rounded-lg flex items-center justify-center mb-2`} style={{ backgroundColor: `${color}20` }}>
                     <Icon className="w-3.5 h-3.5" style={{ color }} />
@@ -493,33 +515,34 @@ export default function AdminOverviewPage() {
                       <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide w-12 text-right">Views</span>
                     </div>
                   </div>
-                  <div className="space-y-1.5">
-                    {[
-                      { label: "Articles",             count: myArticles,     views: myArticleViews,  dot: "bg-indigo-500" },
-                      { label: "Duas",                 count: myDuas,          views: myDuaViews,      dot: "bg-violet-500" },
-                      { label: "Books",                count: myBooks,         views: myBookViews,     dot: "bg-amber-500" },
-                      { label: "Motivational Stories", count: myMotivational,  views: myMotivViews,    dot: "bg-emerald-500" },
-                    ].map(({ label, count, views, dot }) => (
-                      <div key={label} className="flex items-center justify-between rounded-lg px-3 py-2.5 bg-muted/40 hover:bg-muted/60 transition-colors">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />
-                          <span className="text-sm font-medium truncate">{label}</span>
-                        </div>
+                  {overviewRows.length === 0 ? (
+                    <p className="text-xs text-muted-foreground text-center py-4">No content sections assigned.</p>
+                  ) : (
+                    <>
+                      <div className="space-y-1.5">
+                        {overviewRows.map(({ key, label, count, views, dot }) => (
+                          <div key={key} className="flex items-center justify-between rounded-lg px-3 py-2.5 bg-muted/40 hover:bg-muted/60 transition-colors">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />
+                              <span className="text-sm font-medium truncate">{label}</span>
+                            </div>
+                            <div className="flex gap-8 shrink-0">
+                              <span className="text-sm font-semibold w-12 text-right" data-testid={`count-${key}`}>{count.toLocaleString()}</span>
+                              <span className="text-sm text-muted-foreground w-12 text-right" data-testid={`views-${key}`}>{views.toLocaleString()}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      {/* Totals footer */}
+                      <div className="flex items-center justify-between mt-3 pt-3 border-t px-1">
+                        <span className="text-xs font-semibold text-muted-foreground">Total</span>
                         <div className="flex gap-8 shrink-0">
-                          <span className="text-sm font-semibold w-12 text-right" data-testid={`count-${label.toLowerCase().replace(/\s+/g, "-")}`}>{count.toLocaleString()}</span>
-                          <span className="text-sm text-muted-foreground w-12 text-right" data-testid={`views-${label.toLowerCase().replace(/\s+/g, "-")}`}>{views.toLocaleString()}</span>
+                          <span className="text-sm font-bold w-12 text-right" data-testid="count-total">{totalOwn.toLocaleString()}</span>
+                          <span className="text-sm font-bold w-12 text-right" data-testid="views-total">{visibleTotalViews.toLocaleString()}</span>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                  {/* Totals footer */}
-                  <div className="flex items-center justify-between mt-3 pt-3 border-t px-1">
-                    <span className="text-xs font-semibold text-muted-foreground">Total</span>
-                    <div className="flex gap-8 shrink-0">
-                      <span className="text-sm font-bold w-12 text-right" data-testid="count-total">{totalOwn.toLocaleString()}</span>
-                      <span className="text-sm font-bold w-12 text-right" data-testid="views-total">{totalViews.toLocaleString()}</span>
-                    </div>
-                  </div>
+                    </>
+                  )}
                 </Card>
               </>
             )}
