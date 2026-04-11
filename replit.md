@@ -1,5 +1,16 @@
 # Stories of Light - Islamic Stories Blog
 
+## Contributor Overview Page (`/image/overview`)
+- **Visible to**: All staff roles (super_owner, owner, admin, editor, moderator) — sidebar permission: `staff-only`
+- **Header**: Search bar (left) + clickable profile photo/name/email (right) → opens Profile Modal (no message/notification icons)
+- **5 Stat Cards**: My Articles, My Motivational, My Duas, My Books, Total Views — each with a donut ring progress indicator
+- **Left column**: Access Permissions (role-specific), My Content Overview (progress bars by type), Active Visitors (users who read/bookmarked contributor's content, sorted by activity)
+- **Right column**: Trending Content (tabbed: Articles/Motivational/Duas/Books, by views), Recent Activity (tabbed, by update date), Most Bookmarked (tabbed, contributor's content only)
+- **All data**: Live, contributor-specific only — no data from other contributors
+- **Admin impersonation**: Admins can view any contributor's overview via `?id=userId` or `viewAs`
+- **Backend**: `/api/admin/contributors/:id/overview` (requireStaff) — returns stats, topContent, recentActivity, bookmarked, activeVisitors all filtered to contributor's own content
+- **Profile Modal**: Shows avatar, name, role badge, email, joined date, role-specific permission list
+
 ## Admin Dashboard (v2 — Analytics)
 - **Route**: `/image` — comprehensive analytics dashboard replacing simple stats+recent stories
 - **Toggle**: Normal View / Graph View switcher in the top header
