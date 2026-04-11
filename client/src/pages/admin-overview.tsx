@@ -307,11 +307,10 @@ export default function AdminOverviewPage() {
   const [, navigate] = useLocation();
   const search = useSearch();
   const { user, isAdmin } = useAuth();
-  const { viewAs } = useViewAs();
+  const { viewAs, viewMeMode, setViewMeMode } = useViewAs();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [personalView, setPersonalView] = useState(false);
 
   const params = new URLSearchParams(search);
   const urlId = params.get("id");
@@ -324,14 +323,12 @@ export default function AdminOverviewPage() {
   const showViewModeToggle = isAdmin && !isViewingOther;
   const viewModeLabel = VIEW_MODE_LABELS[user?.role ?? ""] ?? "My View";
 
-  const overviewUrl = personalView
-    ? `/api/admin/contributors/${subjectId}/overview?personalOnly=true`
-    : `/api/admin/contributors/${subjectId}/overview`;
-
+  // Overview ALWAYS shows the user's own content (personalOnly=true)
+  // The View Mode button only filters content sections (Articles, Duas, Books, Motivational)
   const { data, isLoading } = useQuery<OverviewData>({
-    queryKey: ["/api/admin/contributors", subjectId, "overview", personalView ? "personal" : "full"],
+    queryKey: ["/api/admin/contributors", subjectId, "overview", "personal"],
     queryFn: () =>
-      fetch(overviewUrl, { credentials: "include" })
+      fetch(`/api/admin/contributors/${subjectId}/overview?personalOnly=true`, { credentials: "include" })
         .then((r) => r.json()),
     enabled: !!subjectId,
     staleTime: 0,
@@ -444,12 +441,13 @@ export default function AdminOverviewPage() {
             </div>
 
             {/* View Mode toggle — only for super_owner / owner / admin viewing own overview */}
+            {/* Toggling this filters content sections (Articles, Duas, Books, Motivational) to own uploads only */}
             {showViewModeToggle && (
               <Button
-                variant={personalView ? "default" : "outline"}
+                variant={viewMeMode ? "default" : "outline"}
                 size="sm"
                 className="gap-1.5 shrink-0"
-                onClick={() => setPersonalView(v => !v)}
+                onClick={() => setViewMeMode(!viewMeMode)}
                 data-testid="button-view-mode-toggle"
               >
                 <UserCircle2 className="w-3.5 h-3.5" />

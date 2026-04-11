@@ -1,0 +1,103 @@
+📌 Overview View Mode – Correct Behavior & Fix
+🔹 Current Issue
+When clicking the View Button (Super Owner View / Owner View / Admin View) on the right side of the search bar:
+The Overview section data is changing or disappearing
+This is incorrect behavior
+🔧 Required Behavior (Fix)
+🔹 Overview Section (Important Rule)
+Clicking the View button must NOT affect the Overview section
+
+📌 Overview should always display:
+
+The user’s own uploaded content-based data only
+
+✔ Super Owner → sees own content
+✔ Owner → sees own content
+✔ Admin → sees own content
+
+❌ No user should see another user’s data in Overview
+
+🔹 View Mode Button – Actual Functionality
+🔸 Super Owner View
+
+When “Super Owner View” is clicked:
+
+📌 इन these sections:
+
+All Articles
+Motivational Stories
+Duas
+Books
+
+👉 Only show:
+
+Content uploaded by the Super Owner
+
+❌ Do not show content from other users
+
+🔸 Owner View
+
+When “Owner View” is clicked:
+
+📌 इन these sections:
+
+All Articles
+Motivational Stories
+Duas
+Books
+
+👉 Only show:
+
+Content uploaded by the Owner
+
+❌ Do not show content from other users
+
+🔸 Admin View
+
+When “Admin View” is clicked:
+
+📌 इन these sections:
+
+All Articles
+Motivational Stories
+Duas
+Books
+
+👉 Only show:
+
+Content uploaded by the Admin
+
+❌ Do not show content from other users
+
+🔹 Default Behavior (No Click)
+If the View button is not clicked:
+
+📌 Then:
+
+The Admin Panel remains unchanged
+No filtering is applied
+Full system data is visible as usual
+⚙️ Critical Bug Fix
+🔸 Current Bug
+Clicking the View button:
+Causes data to disappear or become empty
+🔸 Required Fix
+Data must never disappear or become empty
+
+✔ Instead:
+
+Apply proper filtering based on user_id
+Show only the user's own content
+🔐 Final System Rules
+Overview → always based on own content
+View Mode → applies filtering only to content sections
+Default Mode → full admin panel view
+No data loss or empty states
+Strict user-based filtering (user_id / role-based)
+✅ Summary
+View button must not affect Overview
+It only filters content sections (Articles, Duas, Books, etc.)
+Super Owner / Owner / Admin → see only their own content in View Mode
+Default mode remains unchanged
+Fix the data disappearing issue
+Implement proper user-based filtering system
