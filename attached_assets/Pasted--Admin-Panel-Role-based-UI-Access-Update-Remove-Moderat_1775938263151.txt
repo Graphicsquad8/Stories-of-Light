@@ -1,0 +1,98 @@
+📌 Admin Panel – Role-based UI & Access Update
+🔹 Remove “Moderate View” Option
+In the admin panel for Moderator and Editor:
+The “Moderate View” option above the Management section must be completely removed
+🔹 Panel Name Update (Below “Stories of Light”)
+
+The label “Admin Panel” must be updated based on user roles:
+
+Super Owner → Super Owner Panel
+Owner → Owner Panel
+Admin → Admin Panel (unchanged)
+Moderator → Moderator Panel
+Editor → Editor Panel
+
+📌 Each user will see the panel name according to their assigned role
+
+🔹 Overview Section Title Placement
+
+For all roles:
+
+Super Owner / Owner / Admin / Moderator / Editor
+
+📌 In the Overview section:
+
+The “Overview” title must appear above the search bar
+It should be consistent with other section titles
+🔹 Role-based “View Mode” Option (Overview Section)
+For Super Owner / Owner / Admin:
+A new view option must be added on the right side of the search bar
+
+📌 Naming based on role:
+
+Super Owner → Super Owner View
+Owner → Owner View
+Admin → Admin View
+🔹 View Mode Functionality
+Each view option will include an icon
+When the icon is clicked:
+
+📌 Admin panel behavior will change:
+
+It will display only the user’s own uploaded content
+The panel will behave like a filtered contributor view
+
+❌ Current Issue:
+
+The system is showing total website content
+
+✅ Fix:
+
+When View Mode is ON:
+Show only user-specific content
+When View Mode is OFF:
+Show the full admin panel (default behavior)
+🔹 Contributors Section – Owner Role Display Fix
+🔸 Current Issue
+When a Super Owner assigns a user to the Owner role:
+The Owner account is not properly displayed in list format
+The UI has a visibility/height issue (collapsed or hidden list)
+🔸 Required Update
+In the Contributors section:
+Users assigned to the Owner role must be displayed under Super Owner
+
+📌 Display Structure:
+
+Super Owner
+Owner (listed below as a group/list)
+🔸 UI Behavior Fix
+Owner accounts must:
+Be rendered in a proper visible list
+Not remain hidden or collapsed
+Display correctly when expanded
+Have no height/visibility issues
+🔹 Contributors Visibility Rule (Top Contributors)
+In the Dashboard → Top Contributors section:
+
+📌 Contributors can only see:
+
+Users of the same level or lower level
+📌 Rule:
+Higher-level roles → can view lower-level users
+Lower-level roles → cannot view higher-level users
+
+📌 Example:
+
+Admin → can see Moderator, Editor
+Moderator → cannot see Admin or Owner
+✅ Summary
+Removed Moderate View option (Moderator & Editor)
+Panel names updated based on role
+Overview title placed correctly above search bar
+Added role-based View Mode (Super Owner / Owner / Admin)
+View Mode shows only user-specific content
+Fixed Owner role display issue in Contributors section
+Owner accounts now properly listed under Super Owner
+Fixed UI visibility (height/collapse) issues
+Maintained strict role hierarchy visibility rules
+Enforced proper RBAC (Role-Based Access Control) system

@@ -975,7 +975,16 @@ export async function registerRoutes(
         pool.query(`SELECT id, title, slug, description, created_at as updated_at, 'published' as status, category as category_name FROM books WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 8`),
         pool.query(`SELECT id, title, slug, description, updated_at, CASE WHEN published THEN 'published' ELSE 'draft' END as status, category as category_name FROM motivational_stories WHERE deleted_at IS NULL ORDER BY updated_at DESC LIMIT 8`),
         pool.query(`SELECT COALESCE((SELECT SUM(views) FROM duas WHERE deleted_at IS NULL), 0) + COALESCE((SELECT SUM(views) FROM books WHERE deleted_at IS NULL), 0) + COALESCE((SELECT SUM(views) FROM motivational_stories WHERE deleted_at IS NULL), 0) as total_views`),
-        pool.query(`SELECT id, username, name, email, role, permissions, avatar_url, created_at FROM users WHERE role IN ('admin', 'editor', 'moderator') ORDER BY created_at ASC LIMIT 10`),
+        pool.query(`SELECT id, username, name, email, role, permissions, avatar_url, created_at FROM users WHERE role IN (${
+          (() => {
+            const reqRole = (req.user as any)?.role;
+            if (reqRole === "super_owner") return "'owner','admin','moderator','editor'";
+            if (reqRole === "owner") return "'admin','moderator','editor'";
+            if (reqRole === "admin") return "'moderator','editor'";
+            if (reqRole === "moderator") return "'moderator','editor'";
+            return "'editor'";
+          })()
+        }) ORDER BY created_at ASC LIMIT 10`),
         pool.query(`SELECT u.id, u.username, u.name, u.email, u.avatar_url, u.created_at, COUNT(DISTINCT srp.id) as reading_count, COUNT(DISTINCT b.id) as story_bookmarks, COUNT(DISTINCT db.id) as dua_bookmarks, COUNT(DISTINCT bb.id) as book_bookmarks, COUNT(DISTINCT mb.id) as motivational_bookmarks FROM users u LEFT JOIN story_reading_progress srp ON srp.user_id = u.id LEFT JOIN bookmarks b ON b.user_id = u.id LEFT JOIN dua_bookmarks db ON db.user_id = u.id LEFT JOIN book_bookmarks bb ON bb.user_id = u.id LEFT JOIN motivational_bookmarks mb ON mb.user_id = u.id WHERE u.role = 'user' GROUP BY u.id, u.username, u.name, u.email, u.avatar_url, u.created_at ORDER BY COUNT(DISTINCT srp.id) DESC, COUNT(DISTINCT b.id) DESC LIMIT 10`),
       ]);
 
@@ -1062,8 +1071,10 @@ export async function registerRoutes(
       if (userRes.rows.length === 0) return res.status(404).json({ message: "Contributor not found" });
       const contributor = userRes.rows[0];
 
-      // super_owner and owner include unattributed (null user_id) site content — they own the site
-      const includeNull = contributor.role === "super_owner" || contributor.role === "owner";
+      // super_owner and owner include unattributed (null user_id) site content — they own the site.
+      // If ?personalOnly=true, only show content directly attributed to this user (no null).
+      const personalOnly = req.query.personalOnly === "true";
+      const includeNull = !personalOnly && (contributor.role === "super_owner" || contributor.role === "owner");
       const f = includeNull ? `(user_id = $1 OR user_id IS NULL)` : `user_id = $1`;
       const sf = includeNull ? `(s.user_id = $1 OR s.user_id IS NULL)` : `s.user_id = $1`; // for joined story queries
 
@@ -1995,6 +2006,7 @@ export async function registerRoutes(
     const total = Object.values(map).reduce((a, b) => a + b, 0);
     res.json({
       superOwnerCount: map.super_owner ?? 0,
+      ownerCount: map.owner ?? 0,
       adminCount: map.admin ?? 0,
       moderatorCount: map.moderator ?? 0,
       editorCount: map.editor ?? 0,

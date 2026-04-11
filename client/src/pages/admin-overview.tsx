@@ -15,7 +15,7 @@ import {
   FileText, BookOpen, Star, Eye, CalendarDays, MessageSquare,
   ArrowLeft, ShieldCheck, Layers, Activity, Bookmark,
   TrendingUp, ChevronDown, ChevronLeft, ChevronRight,
-  Search, Users, Camera, Loader2,
+  Search, Users, Camera, Loader2, UserCircle2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -297,6 +297,12 @@ function TabbedSection({ title, icon: Icon, data, field, emptyText }: {
   );
 }
 
+const VIEW_MODE_LABELS: Record<string, string> = {
+  super_owner: "Super Owner View",
+  owner: "Owner View",
+  admin: "Admin View",
+};
+
 export default function AdminOverviewPage() {
   const [, navigate] = useLocation();
   const search = useSearch();
@@ -305,6 +311,7 @@ export default function AdminOverviewPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [personalView, setPersonalView] = useState(false);
 
   const params = new URLSearchParams(search);
   const urlId = params.get("id");
@@ -313,10 +320,18 @@ export default function AdminOverviewPage() {
   const isViewingOther = isAdmin && !!viewingId && viewingId !== user?.id;
   const canUploadAvatar = !isViewingOther;
 
+  // View Mode toggle: only for admin-level roles viewing their OWN overview
+  const showViewModeToggle = isAdmin && !isViewingOther;
+  const viewModeLabel = VIEW_MODE_LABELS[user?.role ?? ""] ?? "My View";
+
+  const overviewUrl = personalView
+    ? `/api/admin/contributors/${subjectId}/overview?personalOnly=true`
+    : `/api/admin/contributors/${subjectId}/overview`;
+
   const { data, isLoading } = useQuery<OverviewData>({
-    queryKey: ["/api/admin/contributors", subjectId, "overview"],
+    queryKey: ["/api/admin/contributors", subjectId, "overview", personalView ? "personal" : "full"],
     queryFn: () =>
-      fetch(`/api/admin/contributors/${subjectId}/overview`, { credentials: "include" })
+      fetch(overviewUrl, { credentials: "include" })
         .then((r) => r.json()),
     enabled: !!subjectId,
     staleTime: 0,
@@ -397,6 +412,16 @@ export default function AdminOverviewPage() {
   return (
     <AdminLayout>
       <div className="space-y-5">
+        {/* ── Page Title ── */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold" data-testid="text-overview-title">Overview</h1>
+            <p className="text-sm text-muted-foreground">
+              {isViewingOther ? `Viewing ${data?.contributor?.name || data?.contributor?.username || "contributor"}'s overview` : "Your contributor profile and content analytics"}
+            </p>
+          </div>
+        </div>
+
         {isViewingOther && (
           <div className="flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
             <ShieldCheck className="w-5 h-5 text-amber-600 shrink-0" />
@@ -417,6 +442,20 @@ export default function AdminOverviewPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input placeholder="Search content..." className="pl-9 h-9 text-sm bg-muted/40 border-muted" data-testid="input-overview-search" />
             </div>
+
+            {/* View Mode toggle — only for super_owner / owner / admin viewing own overview */}
+            {showViewModeToggle && (
+              <Button
+                variant={personalView ? "default" : "outline"}
+                size="sm"
+                className="gap-1.5 shrink-0"
+                onClick={() => setPersonalView(v => !v)}
+                data-testid="button-view-mode-toggle"
+              >
+                <UserCircle2 className="w-3.5 h-3.5" />
+                {viewModeLabel}
+              </Button>
+            )}
 
             <div className="ml-auto flex items-center gap-3">
               {isLoading || !c ? (

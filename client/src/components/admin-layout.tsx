@@ -215,7 +215,9 @@ function AdminSidebar() {
           </div>
           <div>
             <span className="font-serif font-semibold text-sm">Stories of Light</span>
-            <p className="text-[10px] text-muted-foreground">Admin Panel</p>
+            <p className="text-[10px] text-muted-foreground">
+              {({ super_owner: "Super Owner Panel", owner: "Owner Panel", admin: "Admin Panel", moderator: "Moderator Panel", editor: "Editor Panel" } as Record<string,string>)[user?.role ?? ""] ?? "Admin Panel"}
+            </p>
           </div>
         </Link>
       </SidebarHeader>
@@ -239,36 +241,6 @@ function AdminSidebar() {
                 className="shrink-0 p-1 rounded-md text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-800 transition-colors"
               >
                 <UserCheck className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-        ) : (isModerator && !isAdmin) ? (
-          <div className="mx-3 mt-2 mb-1 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-2.5">
-            <div className="flex items-center gap-2">
-              <Avatar className="h-7 w-7 shrink-0">
-                <AvatarImage src={user?.avatarUrl ?? ""} alt={user?.name || user?.username || ""} />
-                <AvatarFallback className="text-[9px] bg-amber-100 text-amber-700">
-                  {((user?.name || user?.username) ?? "M").slice(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-semibold text-amber-900 dark:text-amber-100 truncate">{user?.name || user?.username}</p>
-                <p className="text-[10px] text-amber-700 dark:text-amber-300">
-                  {viewMeMode ? "View Me — Edit Mode" : "Moderator View"}
-                </p>
-              </div>
-              <button
-                onClick={() => setViewMeMode(!viewMeMode)}
-                title={viewMeMode ? "Exit Edit Mode" : "View Me — Switch to Edit Mode"}
-                data-testid="button-view-me-moderator"
-                className={cn(
-                  "shrink-0 p-1 rounded-md transition-colors",
-                  viewMeMode
-                    ? "bg-amber-600 text-white hover:bg-amber-700"
-                    : "text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-800"
-                )}
-              >
-                <Eye className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
