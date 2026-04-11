@@ -73,9 +73,11 @@ interface OverviewData {
     role: string; permissions: string[] | null; avatar_url: string | null; created_at: string;
   };
   stats: {
-    my_articles: string; my_published_articles: string;
-    my_motivational: string; my_published_motivational: string;
-    my_duas: string; my_books: string; total_views: string;
+    my_articles: string; my_published_articles: string; my_article_views: string;
+    my_motivational: string; my_published_motivational: string; my_motivational_views: string;
+    my_duas: string; my_dua_views: string;
+    my_books: string; my_book_views: string;
+    total_views: string;
   };
   topContent: {
     stories: Array<{ id: string; title: string; slug: string; excerpt?: string | null; views: number; category_name?: string; category?: string; category_url_slug?: string }>;
@@ -346,13 +348,17 @@ export default function AdminOverviewPage() {
   const c = data?.contributor;
   const stats = data?.stats;
 
-  const myArticles      = parseInt(stats?.my_articles ?? "0");
-  const myPublished     = parseInt(stats?.my_published_articles ?? "0");
-  const myMotivational  = parseInt(stats?.my_motivational ?? "0");
-  const myPublishedMotiv = parseInt(stats?.my_published_motivational ?? "0");
-  const myDuas          = parseInt(stats?.my_duas ?? "0");
-  const myBooks         = parseInt(stats?.my_books ?? "0");
-  const totalViews      = parseInt(stats?.total_views ?? "0");
+  const myArticles        = parseInt(stats?.my_articles ?? "0");
+  const myPublished       = parseInt(stats?.my_published_articles ?? "0");
+  const myArticleViews    = parseInt(stats?.my_article_views ?? "0");
+  const myMotivational    = parseInt(stats?.my_motivational ?? "0");
+  const myPublishedMotiv  = parseInt(stats?.my_published_motivational ?? "0");
+  const myMotivViews      = parseInt(stats?.my_motivational_views ?? "0");
+  const myDuas            = parseInt(stats?.my_duas ?? "0");
+  const myDuaViews        = parseInt(stats?.my_dua_views ?? "0");
+  const myBooks           = parseInt(stats?.my_books ?? "0");
+  const myBookViews       = parseInt(stats?.my_book_views ?? "0");
+  const totalViews        = parseInt(stats?.total_views ?? "0");
 
   const rolePerms = c?.role ? ROLE_PERMISSIONS[c.role] ?? [] : [];
 
@@ -479,36 +485,40 @@ export default function AdminOverviewPage() {
                   <h3 className="font-semibold text-sm mb-4 flex items-center gap-2">
                     <Layers className="w-4 h-4 text-primary" /> My Content Overview
                   </h3>
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div className="bg-muted/40 rounded-xl p-4 text-center">
-                      <p className="text-2xl font-bold">{totalOwn.toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground mt-1">Total Uploads</p>
-                    </div>
-                    <div className="bg-muted/40 rounded-xl p-4 text-center">
-                      <p className="text-2xl font-bold">{totalViews.toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground mt-1">Total Views</p>
+                  {/* Header row */}
+                  <div className="flex items-center justify-between px-1 mb-2">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Type</span>
+                    <div className="flex gap-8">
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide w-12 text-right">Count</span>
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide w-12 text-right">Views</span>
                     </div>
                   </div>
-                  <div className="space-y-3">
+                  <div className="space-y-1.5">
                     {[
-                      { label: "Articles",             value: myArticles,    color: "bg-indigo-500" },
-                      { label: "Duas",                 value: myDuas,         color: "bg-violet-500" },
-                      { label: "Books",                value: myBooks,        color: "bg-amber-500" },
-                      { label: "Motivational Stories", value: myMotivational, color: "bg-emerald-500" },
-                    ].map(({ label, value, color }) => {
-                      const pct = totalOwn > 0 ? Math.min(100, Math.round((value / totalOwn) * 100)) : 0;
-                      return (
-                        <div key={label}>
-                          <div className="flex justify-between mb-1">
-                            <span className="text-xs font-medium">{label}</span>
-                            <span className="text-xs text-muted-foreground">{value}</span>
-                          </div>
-                          <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                            <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${pct}%` }} />
-                          </div>
+                      { label: "Articles",             count: myArticles,     views: myArticleViews,  dot: "bg-indigo-500" },
+                      { label: "Duas",                 count: myDuas,          views: myDuaViews,      dot: "bg-violet-500" },
+                      { label: "Books",                count: myBooks,         views: myBookViews,     dot: "bg-amber-500" },
+                      { label: "Motivational Stories", count: myMotivational,  views: myMotivViews,    dot: "bg-emerald-500" },
+                    ].map(({ label, count, views, dot }) => (
+                      <div key={label} className="flex items-center justify-between rounded-lg px-3 py-2.5 bg-muted/40 hover:bg-muted/60 transition-colors">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />
+                          <span className="text-sm font-medium truncate">{label}</span>
                         </div>
-                      );
-                    })}
+                        <div className="flex gap-8 shrink-0">
+                          <span className="text-sm font-semibold w-12 text-right" data-testid={`count-${label.toLowerCase().replace(/\s+/g, "-")}`}>{count.toLocaleString()}</span>
+                          <span className="text-sm text-muted-foreground w-12 text-right" data-testid={`views-${label.toLowerCase().replace(/\s+/g, "-")}`}>{views.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Totals footer */}
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t px-1">
+                    <span className="text-xs font-semibold text-muted-foreground">Total</span>
+                    <div className="flex gap-8 shrink-0">
+                      <span className="text-sm font-bold w-12 text-right" data-testid="count-total">{totalOwn.toLocaleString()}</span>
+                      <span className="text-sm font-bold w-12 text-right" data-testid="views-total">{totalViews.toLocaleString()}</span>
+                    </div>
                   </div>
                 </Card>
               </>

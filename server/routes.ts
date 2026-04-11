@@ -1053,40 +1053,52 @@ export async function registerRoutes(
   app.get("/api/admin/contributors/:id/overview", requireStaff, async (req, res) => {
     try {
       const { id } = req.params;
+
+      // Get user first to determine content filter strategy
+      const userRes = await pool.query(
+        `SELECT id, username, name, email, role, permissions, avatar_url, created_at FROM users WHERE id = $1`,
+        [id]
+      );
+      if (userRes.rows.length === 0) return res.status(404).json({ message: "Contributor not found" });
+      const contributor = userRes.rows[0];
+
+      // super_owner and owner include unattributed (null user_id) site content — they own the site
+      const includeNull = contributor.role === "super_owner" || contributor.role === "owner";
+      const f = includeNull ? `(user_id = $1 OR user_id IS NULL)` : `user_id = $1`;
+      const sf = includeNull ? `(s.user_id = $1 OR s.user_id IS NULL)` : `s.user_id = $1`; // for joined story queries
+
       const [
-        userRes,
         statsRes,
         topStoriesRes, topDuasRes, topBooksRes, topMotivRes,
         recentStoriesRes, recentDuasRes, recentBooksRes, recentMotivRes,
         bookmarkedStoriesRes, bookmarkedDuasRes, bookmarkedBooksRes, bookmarkedMotivRes,
         activeVisitorsRes,
       ] = await Promise.all([
-        pool.query(`SELECT id, username, name, email, role, permissions, avatar_url, created_at FROM users WHERE id = $1`, [id]),
         pool.query(`
           SELECT
-            (SELECT COUNT(*) FROM stories WHERE deleted_at IS NULL AND user_id = $1) as my_articles,
-            (SELECT COUNT(*) FROM stories WHERE deleted_at IS NULL AND user_id = $1 AND status = 'published') as my_published_articles,
-            (SELECT COUNT(*) FROM motivational_stories WHERE deleted_at IS NULL AND user_id = $1) as my_motivational,
-            (SELECT COUNT(*) FROM motivational_stories WHERE deleted_at IS NULL AND user_id = $1 AND published = true) as my_published_motivational,
-            (SELECT COUNT(*) FROM duas WHERE deleted_at IS NULL AND user_id = $1) as my_duas,
-            (SELECT COUNT(*) FROM books WHERE deleted_at IS NULL AND user_id = $1) as my_books,
-            (SELECT COALESCE(SUM(views), 0) FROM stories WHERE deleted_at IS NULL AND user_id = $1) +
-            (SELECT COALESCE(SUM(views), 0) FROM duas WHERE deleted_at IS NULL AND user_id = $1) +
-            (SELECT COALESCE(SUM(views), 0) FROM books WHERE deleted_at IS NULL AND user_id = $1) +
-            (SELECT COALESCE(SUM(views), 0) FROM motivational_stories WHERE deleted_at IS NULL AND user_id = $1) as total_views
+            (SELECT COUNT(*) FROM stories WHERE deleted_at IS NULL AND ${f}) as my_articles,
+            (SELECT COUNT(*) FROM stories WHERE deleted_at IS NULL AND ${f} AND status = 'published') as my_published_articles,
+            (SELECT COALESCE(SUM(views), 0) FROM stories WHERE deleted_at IS NULL AND ${f}) as my_article_views,
+            (SELECT COUNT(*) FROM motivational_stories WHERE deleted_at IS NULL AND ${f}) as my_motivational,
+            (SELECT COUNT(*) FROM motivational_stories WHERE deleted_at IS NULL AND ${f} AND published = true) as my_published_motivational,
+            (SELECT COALESCE(SUM(views), 0) FROM motivational_stories WHERE deleted_at IS NULL AND ${f}) as my_motivational_views,
+            (SELECT COUNT(*) FROM duas WHERE deleted_at IS NULL AND ${f}) as my_duas,
+            (SELECT COALESCE(SUM(views), 0) FROM duas WHERE deleted_at IS NULL AND ${f}) as my_dua_views,
+            (SELECT COUNT(*) FROM books WHERE deleted_at IS NULL AND ${f}) as my_books,
+            (SELECT COALESCE(SUM(views), 0) FROM books WHERE deleted_at IS NULL AND ${f}) as my_book_views
         `, [id]),
-        pool.query(`SELECT s.id, s.title, s.slug, s.excerpt, s.views, c.name as category_name, c.url_slug as category_url_slug FROM stories s LEFT JOIN categories c ON s.category_id = c.id WHERE s.deleted_at IS NULL AND s.user_id = $1 ORDER BY s.views DESC LIMIT 5`, [id]),
-        pool.query(`SELECT id, title, slug, description, views, category FROM duas WHERE deleted_at IS NULL AND user_id = $1 ORDER BY views DESC LIMIT 5`, [id]),
-        pool.query(`SELECT id, title, slug, description, views, category FROM books WHERE deleted_at IS NULL AND user_id = $1 ORDER BY views DESC LIMIT 5`, [id]),
-        pool.query(`SELECT id, title, slug, description, views, category FROM motivational_stories WHERE deleted_at IS NULL AND user_id = $1 ORDER BY views DESC LIMIT 5`, [id]),
-        pool.query(`SELECT s.id, s.title, s.slug, s.excerpt as description, s.status, s.updated_at, c.name as category_name, c.url_slug as category_url_slug FROM stories s LEFT JOIN categories c ON s.category_id = c.id WHERE s.deleted_at IS NULL AND s.user_id = $1 ORDER BY s.updated_at DESC LIMIT 8`, [id]),
-        pool.query(`SELECT id, title, slug, description, updated_at, CASE WHEN published THEN 'published' ELSE 'draft' END as status, category as category_name FROM duas WHERE deleted_at IS NULL AND user_id = $1 ORDER BY updated_at DESC LIMIT 8`, [id]),
-        pool.query(`SELECT id, title, slug, description, created_at as updated_at, 'published' as status, category as category_name FROM books WHERE deleted_at IS NULL AND user_id = $1 ORDER BY created_at DESC LIMIT 8`, [id]),
-        pool.query(`SELECT id, title, slug, description, updated_at, CASE WHEN published THEN 'published' ELSE 'draft' END as status, category as category_name FROM motivational_stories WHERE deleted_at IS NULL AND user_id = $1 ORDER BY updated_at DESC LIMIT 8`, [id]),
-        pool.query(`SELECT s.id, s.title, s.slug, s.excerpt as description, COUNT(b.id) as bookmark_count FROM stories s JOIN bookmarks b ON b.story_id = s.id WHERE s.deleted_at IS NULL AND s.user_id = $1 GROUP BY s.id, s.title, s.slug, s.excerpt ORDER BY bookmark_count DESC LIMIT 5`, [id]),
-        pool.query(`SELECT d.id, d.title, d.slug, d.description, COUNT(db.id) as bookmark_count FROM duas d JOIN dua_bookmarks db ON db.dua_id = d.id WHERE d.deleted_at IS NULL AND d.user_id = $1 GROUP BY d.id, d.title, d.slug, d.description ORDER BY bookmark_count DESC LIMIT 5`, [id]),
-        pool.query(`SELECT b.id, b.title, b.slug, b.description, COUNT(bb.id) as bookmark_count FROM books b JOIN book_bookmarks bb ON bb.book_id = b.id WHERE b.deleted_at IS NULL AND b.user_id = $1 GROUP BY b.id, b.title, b.slug, b.description ORDER BY bookmark_count DESC LIMIT 5`, [id]),
-        pool.query(`SELECT ms.id, ms.title, ms.slug, ms.description, COUNT(mb.id) as bookmark_count FROM motivational_stories ms JOIN motivational_bookmarks mb ON mb.story_id = ms.id WHERE ms.deleted_at IS NULL AND ms.user_id = $1 GROUP BY ms.id, ms.title, ms.slug, ms.description ORDER BY bookmark_count DESC LIMIT 5`, [id]),
+        pool.query(`SELECT s.id, s.title, s.slug, s.excerpt, s.views, c.name as category_name, c.url_slug as category_url_slug FROM stories s LEFT JOIN categories c ON s.category_id = c.id WHERE s.deleted_at IS NULL AND ${sf} ORDER BY s.views DESC LIMIT 5`, [id]),
+        pool.query(`SELECT id, title, slug, description, views, category FROM duas WHERE deleted_at IS NULL AND ${f} ORDER BY views DESC LIMIT 5`, [id]),
+        pool.query(`SELECT id, title, slug, description, views, category FROM books WHERE deleted_at IS NULL AND ${f} ORDER BY views DESC LIMIT 5`, [id]),
+        pool.query(`SELECT id, title, slug, description, views, category FROM motivational_stories WHERE deleted_at IS NULL AND ${f} ORDER BY views DESC LIMIT 5`, [id]),
+        pool.query(`SELECT s.id, s.title, s.slug, s.excerpt as description, s.status, s.updated_at, c.name as category_name, c.url_slug as category_url_slug FROM stories s LEFT JOIN categories c ON s.category_id = c.id WHERE s.deleted_at IS NULL AND ${sf} ORDER BY s.updated_at DESC LIMIT 8`, [id]),
+        pool.query(`SELECT id, title, slug, description, updated_at, CASE WHEN published THEN 'published' ELSE 'draft' END as status, category as category_name FROM duas WHERE deleted_at IS NULL AND ${f} ORDER BY updated_at DESC LIMIT 8`, [id]),
+        pool.query(`SELECT id, title, slug, description, created_at as updated_at, 'published' as status, category as category_name FROM books WHERE deleted_at IS NULL AND ${f} ORDER BY created_at DESC LIMIT 8`, [id]),
+        pool.query(`SELECT id, title, slug, description, updated_at, CASE WHEN published THEN 'published' ELSE 'draft' END as status, category as category_name FROM motivational_stories WHERE deleted_at IS NULL AND ${f} ORDER BY updated_at DESC LIMIT 8`, [id]),
+        pool.query(`SELECT s.id, s.title, s.slug, s.excerpt as description, COUNT(b.id) as bookmark_count FROM stories s JOIN bookmarks b ON b.story_id = s.id WHERE s.deleted_at IS NULL AND ${sf} GROUP BY s.id, s.title, s.slug, s.excerpt ORDER BY bookmark_count DESC LIMIT 5`, [id]),
+        pool.query(`SELECT d.id, d.title, d.slug, d.description, COUNT(db.id) as bookmark_count FROM duas d JOIN dua_bookmarks db ON db.dua_id = d.id WHERE d.deleted_at IS NULL AND ${f.replace(/user_id/g, 'd.user_id')} GROUP BY d.id, d.title, d.slug, d.description ORDER BY bookmark_count DESC LIMIT 5`, [id]),
+        pool.query(`SELECT b.id, b.title, b.slug, b.description, COUNT(bb.id) as bookmark_count FROM books b JOIN book_bookmarks bb ON bb.book_id = b.id WHERE b.deleted_at IS NULL AND ${f.replace(/user_id/g, 'b.user_id')} GROUP BY b.id, b.title, b.slug, b.description ORDER BY bookmark_count DESC LIMIT 5`, [id]),
+        pool.query(`SELECT ms.id, ms.title, ms.slug, ms.description, COUNT(mb.id) as bookmark_count FROM motivational_stories ms JOIN motivational_bookmarks mb ON mb.story_id = ms.id WHERE ms.deleted_at IS NULL AND ${f.replace(/user_id/g, 'ms.user_id')} GROUP BY ms.id, ms.title, ms.slug, ms.description ORDER BY bookmark_count DESC LIMIT 5`, [id]),
         pool.query(`
           SELECT u.id, u.username, u.name, u.email, u.avatar_url, u.created_at,
             COUNT(DISTINCT srp.id) as reading_count,
@@ -1096,15 +1108,15 @@ export async function registerRoutes(
             COUNT(DISTINCT mb.id) as motivational_bookmarks
           FROM users u
           LEFT JOIN story_reading_progress srp ON srp.user_id = u.id
-            AND srp.story_id IN (SELECT id FROM stories WHERE deleted_at IS NULL AND user_id = $1)
+            AND srp.story_id IN (SELECT id FROM stories WHERE deleted_at IS NULL AND ${f})
           LEFT JOIN bookmarks bk ON bk.user_id = u.id
-            AND bk.story_id IN (SELECT id FROM stories WHERE deleted_at IS NULL AND user_id = $1)
+            AND bk.story_id IN (SELECT id FROM stories WHERE deleted_at IS NULL AND ${f})
           LEFT JOIN dua_bookmarks db ON db.user_id = u.id
-            AND db.dua_id IN (SELECT id FROM duas WHERE deleted_at IS NULL AND user_id = $1)
+            AND db.dua_id IN (SELECT id FROM duas WHERE deleted_at IS NULL AND ${f})
           LEFT JOIN book_bookmarks bb ON bb.user_id = u.id
-            AND bb.book_id IN (SELECT id FROM books WHERE deleted_at IS NULL AND user_id = $1)
+            AND bb.book_id IN (SELECT id FROM books WHERE deleted_at IS NULL AND ${f})
           LEFT JOIN motivational_bookmarks mb ON mb.user_id = u.id
-            AND mb.story_id IN (SELECT id FROM motivational_stories WHERE deleted_at IS NULL AND user_id = $1)
+            AND mb.story_id IN (SELECT id FROM motivational_stories WHERE deleted_at IS NULL AND ${f})
           WHERE u.role = 'user'
             AND (srp.id IS NOT NULL OR bk.id IS NOT NULL OR db.id IS NOT NULL OR bb.id IS NOT NULL OR mb.id IS NOT NULL)
           GROUP BY u.id, u.username, u.name, u.email, u.avatar_url, u.created_at
@@ -1112,10 +1124,19 @@ export async function registerRoutes(
           LIMIT 20
         `, [id]),
       ]);
-      if (userRes.rows.length === 0) return res.status(404).json({ message: "Contributor not found" });
+
+      const s = statsRes.rows[0];
       res.json({
-        contributor: userRes.rows[0],
-        stats: statsRes.rows[0],
+        contributor,
+        stats: {
+          ...s,
+          total_views: (
+            parseInt(s.my_article_views || "0") +
+            parseInt(s.my_dua_views || "0") +
+            parseInt(s.my_book_views || "0") +
+            parseInt(s.my_motivational_views || "0")
+          ).toString(),
+        },
         topContent: { stories: topStoriesRes.rows, duas: topDuasRes.rows, books: topBooksRes.rows, motivational: topMotivRes.rows },
         recentActivity: { stories: recentStoriesRes.rows, duas: recentDuasRes.rows, books: recentBooksRes.rows, motivational: recentMotivRes.rows },
         bookmarked: { stories: bookmarkedStoriesRes.rows, duas: bookmarkedDuasRes.rows, books: bookmarkedBooksRes.rows, motivational: bookmarkedMotivRes.rows },
