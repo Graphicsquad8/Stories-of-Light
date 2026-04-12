@@ -460,7 +460,7 @@ export default function DuaDetailPage() {
 
                 {/* Ad band */}
                 <div className="mt-8" data-testid="ad-dua-bottom">
-                  <AdSlot slot="banner" className="w-full" label="story-bottom" />
+                  <AdSlot slot="banner" className="w-full" label="story-bottom" disabled={(() => { try { return JSON.parse((dua as any)?.adSlots || "{}"); } catch { return {}; } })()["banner"] === false} />
                 </div>
 
                 {/* Rating */}

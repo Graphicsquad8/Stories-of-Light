@@ -446,11 +446,22 @@ function TypographySection({
 }
 
 const AD_PAGES = [
-  { key: "adHomePage", label: "Home Page", description: "Hero, featured stories, books, duas sections" },
-  { key: "adMotivationalPage", label: "Motivational Stories", description: "Islamic motivational stories section" },
-  { key: "adBooksPage", label: "Books Page", description: "Islamic books listing and reader pages" },
-  { key: "adDuasPage", label: "Duas Page", description: "Dua listing and detail pages" },
+  { key: "adStoryPage", shortKey: "story", label: "Story Pages", description: "Islamic stories reading pages", slots: ["banner", "in-article", "sidebar-small", "sidebar-small-2", "sidebar-large"] },
+  { key: "adHomePage", shortKey: "home", label: "Home Page", description: "Hero, featured stories, books, duas sections", slots: ["banner", "display", "in-feed", "sidebar-small", "sidebar-small-2"] },
+  { key: "adMotivationalPage", shortKey: "motivational", label: "Motivational Stories", description: "Islamic motivational stories section", slots: ["banner", "in-feed"] },
+  { key: "adBooksPage", shortKey: "books", label: "Books Page", description: "Islamic books listing and reader pages", slots: ["banner", "in-feed"] },
+  { key: "adDuasPage", shortKey: "duas", label: "Duas Page", description: "Dua listing and detail pages", slots: ["banner", "in-feed"] },
 ];
+
+const AD_SLOT_LABELS: Record<string, string> = {
+  banner: "Top Banner",
+  display: "Display",
+  "in-article": "In-Article",
+  "in-feed": "In-Feed",
+  "sidebar-small": "Sidebar 300×250 (A)",
+  "sidebar-small-2": "Sidebar 300×250 (B)",
+  "sidebar-large": "Sidebar 300×600",
+};
 
 function AdControlsSection({
   settings, onSave, saving,
@@ -461,6 +472,7 @@ function AdControlsSection({
 }) {
   const globalEnabled = settings.adEnabled !== "false";
   const [articlesOpen, setArticlesOpen] = useState(false);
+  const [slotsOpen, setSlotsOpen] = useState<Record<string, boolean>>({});
 
   const { data: categories = [] } = useQuery<{ id: string; name: string; urlSlug: string }[]>({
     queryKey: ["/api/categories", "story"],
@@ -500,27 +512,64 @@ function AdControlsSection({
         <div className="text-sm font-medium text-muted-foreground">Page-level controls</div>
         {AD_PAGES.map((page) => {
           const pageEnabled = settings[page.key] !== "false";
+          const isOpen = slotsOpen[page.key] ?? false;
           return (
-            <div
+            <Collapsible
               key={page.key}
-              className={`flex items-center justify-between p-3 rounded-lg border transition-opacity ${!globalEnabled ? "opacity-50" : ""}`}
+              open={isOpen}
+              onOpenChange={(v) => setSlotsOpen(prev => ({ ...prev, [page.key]: v }))}
             >
-              <div>
-                <div className="text-sm font-medium">{page.label}</div>
-                <div className="text-xs text-muted-foreground">{page.description}</div>
+              <div className={`rounded-lg border transition-opacity ${!globalEnabled ? "opacity-50" : ""}`}>
+                <CollapsibleTrigger asChild>
+                  <button
+                    className="w-full flex items-center justify-between p-3 text-left hover:bg-muted/40 transition-colors"
+                    data-testid={`collapsible-page-${page.key}`}
+                  >
+                    <div>
+                      <div className="text-sm font-medium">{page.label}</div>
+                      <div className="text-xs text-muted-foreground">{page.description}</div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0 ml-4">
+                      <span className={`text-xs ${pageEnabled ? "text-emerald-600" : "text-muted-foreground"}`}>
+                        {pageEnabled ? "On" : "Off"}
+                      </span>
+                      <Switch
+                        checked={pageEnabled}
+                        onCheckedChange={(checked) => onSave(page.key, checked ? "true" : "false")}
+                        disabled={saving === page.key || !globalEnabled}
+                        data-testid={`switch-page-${page.key}`}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                    </div>
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="border-t divide-y">
+                    {page.slots.map(slot => {
+                      const slotKey = `adPageSlot_${page.shortKey}_${slot}`;
+                      const slotEnabled = settings[slotKey] !== "false";
+                      return (
+                        <div key={slot} className="flex items-center justify-between px-4 py-2.5">
+                          <div className="text-sm text-muted-foreground pl-2">{AD_SLOT_LABELS[slot] || slot}</div>
+                          <div className="flex items-center gap-2 shrink-0 ml-4">
+                            <span className={`text-xs ${slotEnabled ? "text-emerald-600" : "text-muted-foreground"}`}>
+                              {slotEnabled ? "On" : "Off"}
+                            </span>
+                            <Switch
+                              checked={slotEnabled}
+                              onCheckedChange={(checked) => onSave(slotKey, checked ? "true" : "false")}
+                              disabled={saving === slotKey || !globalEnabled || !pageEnabled}
+                              data-testid={`switch-slot-${slotKey}`}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CollapsibleContent>
               </div>
-              <div className="flex items-center gap-2 shrink-0 ml-4">
-                <span className={`text-xs ${pageEnabled ? "text-emerald-600" : "text-muted-foreground"}`}>
-                  {pageEnabled ? "On" : "Off"}
-                </span>
-                <Switch
-                  checked={pageEnabled}
-                  onCheckedChange={(checked) => onSave(page.key, checked ? "true" : "false")}
-                  disabled={saving === page.key || !globalEnabled}
-                  data-testid={`switch-page-${page.key}`}
-                />
-              </div>
-            </div>
+            </Collapsible>
           );
         })}
 

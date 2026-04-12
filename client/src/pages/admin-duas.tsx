@@ -25,8 +25,9 @@ import {
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, BookOpen, Save, Search, ExternalLink, Eye, Copy, GripVertical, X, ImageIcon, Settings2, Clock, BarChart2, CalendarDays, FileText, Star } from "lucide-react";
+import { Plus, Pencil, Trash2, BookOpen, Save, Search, ExternalLink, Eye, Copy, GripVertical, X, ImageIcon, Settings2, Clock, BarChart2, CalendarDays, FileText, Star, LayoutGrid } from "lucide-react";
 import type { Dua } from "@shared/schema";
+import { AdControlDialog } from "@/components/ad-control-dialog";
 
 type DuaListResult = { duas: Dua[]; total: number };
 
@@ -73,6 +74,7 @@ export default function AdminDuasPage() {
   const isContributor = !viewMeMode && (!!viewAs || !isAdmin);
   const effectiveFilterUserId = viewMeMode ? (viewAs?.id ?? user?.id) : !isAdmin ? user?.id : undefined;
   const shouldIncludeNull = viewMeMode && (user?.role === "super_owner" || user?.role === "owner");
+  const [adControlItem, setAdControlItem] = useState<{ id: string; adSlotsRaw: string | null } | null>(null);
 
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
@@ -548,6 +550,17 @@ export default function AdminDuasPage() {
                       <div className="flex items-center justify-end gap-1">
                         {!isContributor && (
                           <>
+                            {isAdmin && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                title="Ad Slot Control"
+                                onClick={() => setAdControlItem({ id: dua.id, adSlotsRaw: (dua as any).adSlots ?? null })}
+                                data-testid={`button-adcontrol-${dua.id}`}
+                              >
+                                <LayoutGrid className="w-4 h-4" />
+                              </Button>
+                            )}
                             <Link href={`/image/duas/${dua.id}/edit`}>
                               <Button size="sm" variant="outline" data-testid={`button-edit-parts-${dua.id}`}>
                                 <BookOpen className="w-3.5 h-3.5 mr-1" />Manage Duas
@@ -830,6 +843,18 @@ export default function AdminDuasPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {adControlItem && (
+        <AdControlDialog
+          key={adControlItem.id}
+          open={!!adControlItem}
+          onOpenChange={(v) => { if (!v) setAdControlItem(null); }}
+          contentType="duas"
+          contentId={adControlItem.id}
+          adSlotsRaw={adControlItem.adSlotsRaw}
+          invalidateKey={["/api/admin/duas"]}
+        />
+      )}
     </AdminLayout>
   );
 }

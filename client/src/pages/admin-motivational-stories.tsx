@@ -23,11 +23,12 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, BookOpen, Loader2, Star, Eye, Search, GripVertical, Copy, Clock, BarChart2, CalendarDays, FileText } from "lucide-react";
+import { Plus, Pencil, Trash2, BookOpen, Loader2, Star, Eye, Search, GripVertical, Copy, Clock, BarChart2, CalendarDays, FileText, LayoutGrid } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useMemo } from "react";
 import type { MotivationalStory, MotivationalStoryWithLessons, MotivationalLesson } from "@shared/schema";
+import { AdControlDialog } from "@/components/ad-control-dialog";
 
 
 function slugify(text: string): string {
@@ -359,6 +360,7 @@ export default function AdminMotivationalStoriesPage() {
   const isContributor = !viewMeMode && (!!viewAs || !isAdmin);
   const effectiveFilterUserId = viewMeMode ? (viewAs?.id ?? user?.id) : !isAdmin ? user?.id : undefined;
   const shouldIncludeNull = viewMeMode && (user?.role === "super_owner" || user?.role === "owner");
+  const [adControlItem, setAdControlItem] = useState<{ id: string; adSlotsRaw: string | null } | null>(null);
 
   const { startDate, endDate, apiSort } = useMemo(() => {
     const ms = (d: number) => new Date(Date.now() - d * 86400000).toISOString();
@@ -744,6 +746,17 @@ export default function AdminMotivationalStoriesPage() {
                       <div className="flex items-center justify-end gap-1">
                         {!isContributor && (
                           <>
+                            {isAdmin && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                title="Ad Slot Control"
+                                onClick={() => setAdControlItem({ id: story.id, adSlotsRaw: (story as any).adSlots ?? null })}
+                                data-testid={`button-adcontrol-story-${story.id}`}
+                              >
+                                <LayoutGrid className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
                             <Button size="icon" variant="ghost" onClick={() => openEdit(story)} data-testid={`button-edit-story-${story.id}`}>
                               <Pencil className="w-3.5 h-3.5" />
                             </Button>
@@ -799,6 +812,18 @@ export default function AdminMotivationalStoriesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {adControlItem && (
+        <AdControlDialog
+          key={adControlItem.id}
+          open={!!adControlItem}
+          onOpenChange={(v) => { if (!v) setAdControlItem(null); }}
+          contentType="motivational-stories"
+          contentId={adControlItem.id}
+          adSlotsRaw={adControlItem.adSlotsRaw}
+          invalidateKey={["/api/admin/motivational-stories"]}
+        />
+      )}
     </AdminLayout>
   );
 }

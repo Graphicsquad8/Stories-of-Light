@@ -2,12 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 
-export type AdSlotType = "banner" | "display" | "in-article" | "in-feed" | "sidebar-small" | "sidebar-large";
+export type AdSlotType = "banner" | "display" | "in-article" | "in-feed" | "sidebar-small" | "sidebar-small-2" | "sidebar-large";
 
 interface AdSlotProps {
   slot: AdSlotType;
   className?: string;
   label?: string;
+  disabled?: boolean;
 }
 
 function injectHtml(container: HTMLElement, html: string) {
@@ -42,11 +43,21 @@ function getPageAdKey(path: string): string {
   if (path.startsWith("/motivational-stories")) return "adMotivationalPage";
   if (path.startsWith("/books")) return "adBooksPage";
   if (path.startsWith("/duas")) return "adDuasPage";
-  if (path.startsWith("/category/")) return "adCategoryPage";
+  if (path.startsWith("/category/") || path.match(/^\/[^/]+$/) && path !== "/") return "adCategoryPage";
   return "";
 }
 
-export function AdSlot({ slot, className = "", label }: AdSlotProps) {
+function getPageShortKey(path: string): string {
+  if (path === "/") return "home";
+  if (path.startsWith("/stories/")) return "story";
+  if (path.startsWith("/motivational-stories")) return "motivational";
+  if (path.startsWith("/books")) return "books";
+  if (path.startsWith("/duas")) return "duas";
+  if (path.startsWith("/category/")) return "category";
+  return "category";
+}
+
+export function AdSlot({ slot, className = "", label, disabled }: AdSlotProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [location] = useLocation();
 
@@ -57,6 +68,9 @@ export function AdSlot({ slot, className = "", label }: AdSlotProps) {
   const globalEnabled = settings?.adEnabled !== "false";
   const pageKey = getPageAdKey(location);
   const pageEnabled = !pageKey || settings?.[pageKey] !== "false";
+  const pageShortKey = getPageShortKey(location);
+  const slotSettingKey = `adPageSlot_${pageShortKey}_${slot}`;
+  const slotEnabled = settings ? settings[slotSettingKey] !== "false" : true;
 
   const platform = settings?.adPlatform || "";
 
@@ -67,6 +81,7 @@ export function AdSlot({ slot, className = "", label }: AdSlotProps) {
       "in-article": settings?.adSenseInArticleCode || "",
       "in-feed": settings?.adSenseInFeedCode || "",
       "sidebar-small": settings?.adSenseSidebarSmallCode || "",
+      "sidebar-small-2": settings?.adSenseSidebarSmall2Code || "",
       "sidebar-large": settings?.adSenseSidebarLargeCode || "",
     },
     adsterra: {
@@ -75,6 +90,7 @@ export function AdSlot({ slot, className = "", label }: AdSlotProps) {
       "in-article": settings?.adsterraNativeBannerCode || "",
       "in-feed": settings?.adsterraBannerCode || "",
       "sidebar-small": settings?.adsterraSidebarSmallCode || "",
+      "sidebar-small-2": settings?.adsterraSidebarSmall2Code || "",
       "sidebar-large": settings?.adsterraSidebarLargeCode || "",
     },
   };
@@ -96,7 +112,7 @@ export function AdSlot({ slot, className = "", label }: AdSlotProps) {
     }
   }, [code]);
 
-  if (!globalEnabled || !pageEnabled) return null;
+  if (!globalEnabled || !pageEnabled || !slotEnabled || disabled) return null;
 
   if (!platform || !code) {
     if (label !== undefined) {

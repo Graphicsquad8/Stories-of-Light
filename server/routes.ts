@@ -1252,6 +1252,13 @@ export async function registerRoutes(
     res.json(updated);
   });
 
+  app.patch("/api/admin/stories/:id/ad-slots", requireAdmin, async (req, res) => {
+    const { adSlots } = req.body;
+    const updated = await storage.updateStory(req.params.id, { adSlots: JSON.stringify(adSlots) });
+    if (!updated) return res.status(404).json({ message: "Story not found" });
+    res.json(updated);
+  });
+
   app.delete("/api/stories/:id", requireStaff, async (req, res) => {
     await storage.deleteStory(req.params.id);
     res.json({ message: "Deleted" });
@@ -1602,6 +1609,13 @@ export async function registerRoutes(
     res.json(updated);
   });
 
+  app.patch("/api/admin/books/:id/ad-slots", requireAdmin, async (req, res) => {
+    const { adSlots } = req.body;
+    const updated = await storage.updateBook(req.params.id, { adSlots: JSON.stringify(adSlots) });
+    if (!updated) return res.status(404).json({ message: "Book not found" });
+    res.json(updated);
+  });
+
   // Story Parts & Pages - Public routes
   app.get("/api/stories/:id/parts", async (req, res) => {
     const parts = await storage.getStoryParts(req.params.id);
@@ -1877,6 +1891,13 @@ export async function registerRoutes(
   app.patch("/api/admin/motivational-stories/:id/active", requireAdmin, async (req, res) => {
     const { isActive } = req.body;
     const updated = await storage.updateMotivationalStory(req.params.id, { isActive });
+    if (!updated) return res.status(404).json({ message: "Story not found" });
+    res.json(updated);
+  });
+
+  app.patch("/api/admin/motivational-stories/:id/ad-slots", requireAdmin, async (req, res) => {
+    const { adSlots } = req.body;
+    const updated = await storage.updateMotivationalStory(req.params.id, { adSlots: JSON.stringify(adSlots) });
     if (!updated) return res.status(404).json({ message: "Story not found" });
     res.json(updated);
   });
@@ -2277,6 +2298,13 @@ export async function registerRoutes(
   app.patch("/api/admin/duas/:id/active", requireAdmin, async (req, res) => {
     const { isActive } = req.body;
     const updated = await storage.updateDua(req.params.id, { isActive });
+    if (!updated) return res.status(404).json({ message: "Dua not found" });
+    res.json(updated);
+  });
+
+  app.patch("/api/admin/duas/:id/ad-slots", requireAdmin, async (req, res) => {
+    const { adSlots } = req.body;
+    const updated = await storage.updateDua(req.params.id, { adSlots: JSON.stringify(adSlots) });
     if (!updated) return res.status(404).json({ message: "Dua not found" });
     res.json(updated);
   });

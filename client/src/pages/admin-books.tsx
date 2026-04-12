@@ -22,9 +22,10 @@ import {
 } from "@/components/ui/select";
 import {
   Plus, Pencil, Trash2, BookOpen, Loader2, Star, Eye, Copy, Upload,
-  FileText, Info, Search, Clock, BarChart2, CalendarDays, BookMarked,
+  FileText, Info, Search, Clock, BarChart2, CalendarDays, BookMarked, LayoutGrid,
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { AdControlDialog } from "@/components/ad-control-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useMemo, useRef } from "react";
 import { Link, useLocation } from "wouter";
@@ -358,6 +359,7 @@ export default function AdminBooksPage() {
   const isContributor = !viewMeMode && (!!viewAs || !isAdmin);
   const effectiveFilterUserId = viewMeMode ? (viewAs?.id ?? user?.id) : !isAdmin ? user?.id : undefined;
   const shouldIncludeNull = viewMeMode && (user?.role === "super_owner" || user?.role === "owner");
+  const [adControlItem, setAdControlItem] = useState<{ id: string; adSlotsRaw: string | null } | null>(null);
 
   const { startDate, endDate, apiSort } = useMemo(() => {
     const ms = (d: number) => new Date(Date.now() - d * 86400000).toISOString();
@@ -822,6 +824,18 @@ export default function AdminBooksPage() {
                       <div className="flex items-center justify-end gap-1">
                         {!isContributor && (
                           <>
+                            {isAdmin && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8"
+                                title="Ad Slot Control"
+                                onClick={() => setAdControlItem({ id: book.id, adSlotsRaw: (book as any).adSlots ?? null })}
+                                data-testid={`button-adcontrol-${book.id}`}
+                              >
+                                <LayoutGrid className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
                             <Link href={`/image/books/${book.id}/edit`}>
                               <Button size="icon" variant="ghost" className="h-8 w-8" data-testid={`button-edit-parts-${book.id}`} title="Edit Parts">
                                 <FileText className="w-3.5 h-3.5" />
@@ -857,6 +871,17 @@ export default function AdminBooksPage() {
       <BookFormDialog key={editingBook?.id || "new"} book={editingBook} open={formOpen} onOpenChange={setFormOpen} />
       {chaptersBook && (
         <ChaptersDialog book={chaptersBook} open={!!chaptersBook} onOpenChange={(v) => { if (!v) setChaptersBook(undefined); }} />
+      )}
+      {adControlItem && (
+        <AdControlDialog
+          key={adControlItem.id}
+          open={!!adControlItem}
+          onOpenChange={(v) => { if (!v) setAdControlItem(null); }}
+          contentType="books"
+          contentId={adControlItem.id}
+          adSlotsRaw={adControlItem.adSlotsRaw}
+          invalidateKey={["/api/admin/books"]}
+        />
       )}
     </AdminLayout>
   );

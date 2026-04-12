@@ -127,15 +127,18 @@ function RelatedStories({ storyId }: { storyId: string }) {
   );
 }
 
-function SidebarAds() {
+function SidebarAds({ adSlotsMap }: { adSlotsMap: Record<string, boolean> }) {
   return (
     <aside className="hidden lg:block lg:col-span-1" data-testid="sidebar-ads">
       <div className="sticky top-20 space-y-4">
         <div className="w-[300px] h-[250px] flex">
-          <AdSlot slot="sidebar-small" label="AdSense Placeholder — 300×250" className="w-full h-full" />
+          <AdSlot slot="sidebar-small" label="AdSense Placeholder — 300×250" className="w-full h-full" disabled={adSlotsMap["sidebar-small"] === false} />
+        </div>
+        <div className="w-[300px] h-[250px] flex">
+          <AdSlot slot="sidebar-small-2" label="AdSense Placeholder — 300×250 (B)" className="w-full h-full" disabled={adSlotsMap["sidebar-small-2"] === false} />
         </div>
         <div className="w-[300px] h-[600px] flex">
-          <AdSlot slot="sidebar-large" label="AdSense Placeholder — 300×600" className="w-full h-full" />
+          <AdSlot slot="sidebar-large" label="AdSense Placeholder — 300×600" className="w-full h-full" disabled={adSlotsMap["sidebar-large"] === false} />
         </div>
       </div>
     </aside>
@@ -229,6 +232,7 @@ function StoryRatingSection({ story }: { story: StoryWithCategory }) {
 }
 
 function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: StoryPartWithPages[] }) {
+  const adSlotsMap: Record<string, boolean> = (() => { try { return JSON.parse((story as any).adSlots || "{}"); } catch { return {}; } })();
   const { user } = useAuth();
   const [activePartIndex, setActivePartIndex] = useState(0);
   const [activePageIndex, setActivePageIndex] = useState(0);
@@ -483,7 +487,7 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
                         <VideoPlayer url={activePart.videoUrl} wrapperClassName="aspect-video w-full" />
                       </div>
                       <div className="my-5">
-                        <AdSlot slot="in-article" className="w-full" />
+                        <AdSlot slot="in-article" className="w-full" disabled={adSlotsMap["in-article"] === false} />
                       </div>
                     </>
                   ) : (
@@ -560,7 +564,7 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
               </div>
 
               <div className="mt-8">
-                <StoryAdBand />
+                <StoryAdBand adSlotsMap={adSlotsMap} />
               </div>
 
               <StoryRatingSection story={story} />
@@ -572,10 +576,13 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
           <aside className={`hidden xl:block w-[300px] shrink-0 border-l ${!sidebarOpen ? "mr-4" : ""}`} data-testid="sidebar-ads-right">
             <div className="sticky top-[4.5rem] p-3 space-y-4">
               <div className="w-[300px] h-[250px] flex">
-                <AdSlot slot="sidebar-small" label="AdSense Placeholder — 300×250" className="w-full h-full" />
+                <AdSlot slot="sidebar-small" label="AdSense Placeholder — 300×250" className="w-full h-full" disabled={adSlotsMap["sidebar-small"] === false} />
+              </div>
+              <div className="w-[300px] h-[250px] flex">
+                <AdSlot slot="sidebar-small-2" label="AdSense Placeholder — 300×250 (B)" className="w-full h-full" disabled={adSlotsMap["sidebar-small-2"] === false} />
               </div>
               <div className="w-[300px] h-[600px] flex">
-                <AdSlot slot="sidebar-large" label="AdSense Placeholder — 300×600" className="w-full h-full" />
+                <AdSlot slot="sidebar-large" label="AdSense Placeholder — 300×600" className="w-full h-full" disabled={adSlotsMap["sidebar-large"] === false} />
               </div>
             </div>
           </aside>
@@ -585,15 +592,16 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
   );
 }
 
-function StoryAdBand() {
+function StoryAdBand({ adSlotsMap }: { adSlotsMap: Record<string, boolean> }) {
   return (
     <div className="border-y py-4">
-      <AdSlot slot="banner" className="w-full" />
+      <AdSlot slot="banner" className="w-full" disabled={adSlotsMap["banner"] === false} />
     </div>
   );
 }
 
 function LegacyView({ story }: { story: StoryWithCategory }) {
+  const adSlotsMap: Record<string, boolean> = (() => { try { return JSON.parse((story as any).adSlots || "{}"); } catch { return {}; } })();
   const categoryHref = story.category
     ? `/${(story.category as any).urlSlug || story.category.slug}`
     : "/";
@@ -685,7 +693,7 @@ function LegacyView({ story }: { story: StoryWithCategory }) {
 
       {/* ── Top Banner Ad Band ── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <StoryAdBand />
+        <StoryAdBand adSlotsMap={adSlotsMap} />
       </div>
 
       {/* ── Article + Sidebar ── */}
@@ -731,7 +739,7 @@ function LegacyView({ story }: { story: StoryWithCategory }) {
 
             {/* ── Bottom Banner Ad Band ── */}
             <div className="mt-8">
-              <StoryAdBand />
+              <StoryAdBand adSlotsMap={adSlotsMap} />
             </div>
 
             <StoryRatingSection story={story} />
@@ -739,7 +747,7 @@ function LegacyView({ story }: { story: StoryWithCategory }) {
             <RelatedStories storyId={story.id} />
           </article>
 
-          <SidebarAds />
+          <SidebarAds adSlotsMap={adSlotsMap} />
         </div>
       </div>
     </div>

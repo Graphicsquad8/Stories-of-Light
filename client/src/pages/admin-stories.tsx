@@ -27,11 +27,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Search, Trash2, Eye, Edit, Copy, Clock, FileText, BarChart2, TrendingUp, BookOpen, CalendarDays } from "lucide-react";
+import { Plus, Search, Trash2, Eye, Edit, Copy, Clock, FileText, BarChart2, TrendingUp, BookOpen, CalendarDays, LayoutGrid } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useMemo } from "react";
 import type { StoryWithCategory, Category } from "@shared/schema";
+import { AdControlDialog } from "@/components/ad-control-dialog";
 import { format } from "date-fns";
 
 type StatusFilter = "all" | "published" | "draft" | "recent" | "most-viewed";
@@ -52,6 +53,7 @@ export default function AdminStoriesPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [adControlItem, setAdControlItem] = useState<{ id: string; adSlotsRaw: string | null } | null>(null);
 
   const { user, isAdmin } = useAuth();
   const { viewAs, viewMeMode } = useViewAs();
@@ -473,6 +475,17 @@ export default function AdminStoriesPage() {
                         </Link>
                         {!isContributor && (
                           <>
+                            {isAdmin && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                title="Ad Slot Control"
+                                onClick={() => setAdControlItem({ id: story.id, adSlotsRaw: (story as any).adSlots ?? null })}
+                                data-testid={`button-adcontrol-${story.id}`}
+                              >
+                                <LayoutGrid className="w-4 h-4" />
+                              </Button>
+                            )}
                             <Link href={`/image/stories/${story.id}/edit`}>
                               <Button size="icon" variant="ghost" data-testid={`button-edit-${story.id}`}>
                                 <Edit className="w-4 h-4" />
@@ -532,6 +545,18 @@ export default function AdminStoriesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {adControlItem && (
+        <AdControlDialog
+          key={adControlItem.id}
+          open={!!adControlItem}
+          onOpenChange={(v) => { if (!v) setAdControlItem(null); }}
+          contentType="stories"
+          contentId={adControlItem.id}
+          adSlotsRaw={adControlItem.adSlotsRaw}
+          invalidateKey={["/api/stories"]}
+        />
+      )}
     </AdminLayout>
   );
 }
