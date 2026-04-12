@@ -474,6 +474,19 @@ export default function AdminMotivationalStoriesPage() {
     },
   });
 
+  const toggleActiveMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
+      await apiRequest("PATCH", `/api/admin/motivational-stories/${id}/active`, { isActive });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/motivational-stories"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/motivational-stories"] });
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
   const duplicateMutation = useMutation({
     mutationFn: async (id: string) => {
       await apiRequest("POST", `/api/admin/motivational-stories/${id}/duplicate`);
@@ -679,6 +692,7 @@ export default function AdminMotivationalStoriesPage() {
                   <TableHead>Views</TableHead>
                   <TableHead>Rating</TableHead>
                   <TableHead>Published</TableHead>
+                  {isAdmin && <TableHead>Active</TableHead>}
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -716,6 +730,16 @@ export default function AdminMotivationalStoriesPage() {
                         data-testid={`switch-publish-${story.id}`}
                       />
                     </TableCell>
+                    {isAdmin && (
+                      <TableCell>
+                        <Switch
+                          checked={story.isActive !== false}
+                          onCheckedChange={(checked) => toggleActiveMutation.mutate({ id: story.id, isActive: checked })}
+                          data-testid={`switch-active-${story.id}`}
+                          title={story.isActive !== false ? "Active (visible on site)" : "Inactive (hidden from site)"}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
                         {!isContributor && (

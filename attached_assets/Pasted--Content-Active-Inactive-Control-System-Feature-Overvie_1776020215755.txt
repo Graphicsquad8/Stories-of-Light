@@ -1,0 +1,97 @@
+📌 Content Active/Inactive Control System
+🔹 Feature Overview
+
+Within the website, there are multiple content sections such as:
+
+All Articles
+Motivational Stories
+Duas
+Books
+(and any new sections created by Contributors in the future)
+
+👉 Each content item in every section must have an Active / Inactive control system.
+
+🔹 Required Functionality
+
+Super Owner / Owner / Admin:
+
+Can set any content in any section as Active (visible)
+Or set it as Inactive (hidden)
+
+📌 Meaning:
+Whether a content item is displayed on the website or not —
+👉 will be fully controlled from the Admin Panel.
+
+🔹 Behavior Rules
+
+✔ If Active:
+
+The content will be visible on the website
+
+❌ If Inactive:
+
+The content will not be displayed on the website (hidden)
+However, it will not be deleted from the database
+🔹 Scope
+
+This system will apply to:
+
+All existing sections
+Any new sections created in the future
+📌 AdSense Placeholder Update
+
+Within all content areas of the website:
+
+🔹 Current Ad Options
+AdSense Placeholder – 300×250
+AdSense Placeholder – 300×600
+🔹 Required Update
+
+A new ad option needs to be added under the existing ones:
+👉 AdSense Placeholder – 300×250 (additional instance)
+
+📌 Final list will be:
+
+AdSense Placeholder – 300×250
+AdSense Placeholder – 300×250
+AdSense Placeholder – 300×600
+🔹 Important Note
+The new 300×250 placeholder must be usable in a separate placement/position
+Each ad slot should be independently configurable
+📌 Ad Controls – Page-Level & Content-Level Ad Management
+🔹 Page-Level Controls (Settings → Ad Controls)
+
+Inside the Ad Controls option in the Settings section, the following rules apply:
+
+📌 If any Page-level control is turned OFF:
+
+No ads will be shown on that specific page
+
+📌 If turned ON:
+
+Ads will display normally on that page
+
+⚠️ Important:
+
+This control applies only to page-level ads
+Ads inside content (content-level ads) will remain unchanged
+🔹 Rename & Structure Update
+Rename “Story Reander” to “All Articles”
+
+📌 When clicking on “All Articles”:
+
+It will display all article category pages, such as:
+Sahaba
+Awliya
+Karamat
+History
+
+📌 For each page:
+
+Ads can be turned ON/OFF individually
+
+📌 If a new article page is created by Admin:
+
+It will be automatically added to the All Articles Page-level controls
+🔹 Remove Unnecessary Option
+The Page-level control named “Category Page” must be completely removed

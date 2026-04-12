@@ -919,6 +919,8 @@ export async function registerRoutes(
     if (req.isAuthenticated && req.isAuthenticated() && ["moderator", "editor"].includes(role)) {
       opts.userId = req.user.id;
     }
+    const isStaff = req.isAuthenticated?.() && req.user && ["super_owner", "owner", "admin", "moderator", "editor"].includes((req.user as any).role);
+    if (!isStaff) opts.activeOnly = true;
     const storiesList = await storage.getStories(opts);
     res.json(storiesList);
   });
@@ -1190,15 +1192,17 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/stories/by-slug/:slug", async (req, res) => {
+  app.get("/api/stories/by-slug/:slug", async (req: any, res) => {
     const story = await storage.getStoryBySlug(req.params.slug);
-    if (!story) return res.status(404).json({ message: "Story not found" });
+    const isStaff = req.isAuthenticated?.() && req.user && ["super_owner", "owner", "admin", "moderator", "editor"].includes((req.user as any).role);
+    if (!story || (!isStaff && !story.isActive)) return res.status(404).json({ message: "Story not found" });
     res.json(story);
   });
 
-  app.get("/api/stories/:id", async (req, res) => {
+  app.get("/api/stories/:id", async (req: any, res) => {
     const story = await storage.getStoryById(req.params.id);
-    if (!story) return res.status(404).json({ message: "Story not found" });
+    const isStaff = req.isAuthenticated?.() && req.user && ["super_owner", "owner", "admin", "moderator", "editor"].includes((req.user as any).role);
+    if (!story || (!isStaff && !story.isActive)) return res.status(404).json({ message: "Story not found" });
     res.json(story);
   });
 
@@ -1227,6 +1231,13 @@ export async function registerRoutes(
       body.publishedAt = new Date(body.publishedAt);
     }
     const updated = await storage.updateStory(req.params.id, body);
+    if (!updated) return res.status(404).json({ message: "Story not found" });
+    res.json(updated);
+  });
+
+  app.patch("/api/admin/stories/:id/active", requireAdmin, async (req, res) => {
+    const { isActive } = req.body;
+    const updated = await storage.updateStory(req.params.id, { isActive });
     if (!updated) return res.status(404).json({ message: "Story not found" });
     res.json(updated);
   });
@@ -1295,6 +1306,7 @@ export async function registerRoutes(
       minRating: minRating ? parseFloat(minRating as string) : undefined,
       userId: userId as string | undefined,
       published: true,
+      activeOnly: true,
     });
     res.json(booksList.map(sanitizeBook));
   });
@@ -1309,15 +1321,17 @@ export async function registerRoutes(
     res.json(booksList.map(sanitizeBook));
   });
 
-  app.get("/api/books/slug/:slug", async (req, res) => {
+  app.get("/api/books/slug/:slug", async (req: any, res) => {
     const book = await storage.getBookBySlug(req.params.slug);
-    if (!book) return res.status(404).json({ message: "Book not found" });
+    const isStaff = req.isAuthenticated?.() && req.user && ["super_owner", "owner", "admin", "moderator", "editor"].includes((req.user as any).role);
+    if (!book || (!isStaff && !book.isActive)) return res.status(404).json({ message: "Book not found" });
     res.json(sanitizeBook(book));
   });
 
-  app.get("/api/books/:id", async (req, res) => {
+  app.get("/api/books/:id", async (req: any, res) => {
     const book = await storage.getBookById(req.params.id);
-    if (!book) return res.status(404).json({ message: "Book not found" });
+    const isStaff = req.isAuthenticated?.() && req.user && ["super_owner", "owner", "admin", "moderator", "editor"].includes((req.user as any).role);
+    if (!book || (!isStaff && !book.isActive)) return res.status(404).json({ message: "Book not found" });
     res.json(sanitizeBook(book));
   });
 
@@ -1571,6 +1585,13 @@ export async function registerRoutes(
     res.json(updated);
   });
 
+  app.patch("/api/admin/books/:id/active", requireAdmin, async (req, res) => {
+    const { isActive } = req.body;
+    const updated = await storage.updateBook(req.params.id, { isActive });
+    if (!updated) return res.status(404).json({ message: "Book not found" });
+    res.json(updated);
+  });
+
   // Story Parts & Pages - Public routes
   app.get("/api/stories/:id/parts", async (req, res) => {
     const parts = await storage.getStoryParts(req.params.id);
@@ -1666,6 +1687,7 @@ export async function registerRoutes(
       search: search as string,
       sort: sort as string,
       published: true,
+      activeOnly: true,
       limit: limit ? parseInt(limit as string) : 12,
       offset: offset ? parseInt(offset as string) : 0,
     });
@@ -1683,9 +1705,10 @@ export async function registerRoutes(
     res.json(stories);
   });
 
-  app.get("/api/motivational-stories/slug/:slug", async (req, res) => {
+  app.get("/api/motivational-stories/slug/:slug", async (req: any, res) => {
     const story = await storage.getMotivationalStoryBySlug(req.params.slug);
-    if (!story || !story.published) return res.status(404).json({ message: "Story not found" });
+    const isStaff = req.isAuthenticated?.() && req.user && ["super_owner", "owner", "admin", "moderator", "editor"].includes((req.user as any).role);
+    if (!story || !story.published || (!isStaff && !story.isActive)) return res.status(404).json({ message: "Story not found" });
     res.json(story);
   });
 
@@ -1839,6 +1862,13 @@ export async function registerRoutes(
     const story = await storage.updateMotivationalStory(req.params.id, parsed.data);
     if (!story) return res.status(404).json({ message: "Story not found" });
     res.json(story);
+  });
+
+  app.patch("/api/admin/motivational-stories/:id/active", requireAdmin, async (req, res) => {
+    const { isActive } = req.body;
+    const updated = await storage.updateMotivationalStory(req.params.id, { isActive });
+    if (!updated) return res.status(404).json({ message: "Story not found" });
+    res.json(updated);
   });
 
   app.delete("/api/admin/motivational-stories/:id", requireStaff, async (req, res) => {
@@ -2138,7 +2168,7 @@ export async function registerRoutes(
   // Public Duas
   app.get("/api/duas", async (req, res) => {
     const { search, category, sort, limit, offset } = req.query;
-    const result = await storage.getDuas({ published: true, search: search as string, category: category as string, sort: sort as string, limit: limit ? Number(limit) : 12, offset: offset ? Number(offset) : 0 });
+    const result = await storage.getDuas({ published: true, activeOnly: true, search: search as string, category: category as string, sort: sort as string, limit: limit ? Number(limit) : 12, offset: offset ? Number(offset) : 0 });
     res.json(result);
   });
 
@@ -2153,9 +2183,10 @@ export async function registerRoutes(
     res.json(result.duas);
   });
 
-  app.get("/api/duas/:slug", async (req, res) => {
+  app.get("/api/duas/:slug", async (req: any, res) => {
     const dua = await storage.getDuaBySlug(req.params.slug);
-    if (!dua || !dua.published) return res.status(404).json({ message: "Dua not found" });
+    const isStaff = req.isAuthenticated?.() && req.user && ["super_owner", "owner", "admin", "moderator", "editor"].includes((req.user as any).role);
+    if (!dua || !dua.published || (!isStaff && !dua.isActive)) return res.status(404).json({ message: "Dua not found" });
     await storage.incrementDuaViews(dua.id);
     res.json(dua);
   });
@@ -2231,6 +2262,13 @@ export async function registerRoutes(
     const dua = await storage.updateDua(req.params.id, { title, slug, description, thumbnail, category, orderIndex, published });
     if (!dua) return res.status(404).json({ message: "Dua not found" });
     res.json(dua);
+  });
+
+  app.patch("/api/admin/duas/:id/active", requireAdmin, async (req, res) => {
+    const { isActive } = req.body;
+    const updated = await storage.updateDua(req.params.id, { isActive });
+    if (!updated) return res.status(404).json({ message: "Dua not found" });
+    res.json(updated);
   });
 
   app.delete("/api/admin/duas/:id", requireStaff, async (req, res) => {

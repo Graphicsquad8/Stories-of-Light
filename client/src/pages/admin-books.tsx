@@ -491,6 +491,19 @@ export default function AdminBooksPage() {
     },
   });
 
+  const toggleActiveMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
+      await apiRequest("PATCH", `/api/admin/books/${id}/active`, { isActive });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/books"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/books"] });
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
   const openCreate = () => { setEditingBook(undefined); setFormOpen(true); };
   const openEdit = (book: Book) => { setEditingBook(book); setFormOpen(true); };
 
@@ -746,6 +759,7 @@ export default function AdminBooksPage() {
                   <TableHead>Rating</TableHead>
                   <TableHead>Views</TableHead>
                   <TableHead>Published</TableHead>
+                  {isAdmin && <TableHead>Active</TableHead>}
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -794,6 +808,16 @@ export default function AdminBooksPage() {
                         data-testid={`switch-publish-${book.id}`}
                       />
                     </TableCell>
+                    {isAdmin && (
+                      <TableCell>
+                        <Switch
+                          checked={book.isActive !== false}
+                          onCheckedChange={(checked) => toggleActiveMutation.mutate({ id: book.id, isActive: checked })}
+                          data-testid={`switch-active-${book.id}`}
+                          title={book.isActive !== false ? "Active (visible on site)" : "Inactive (hidden from site)"}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
                         {!isContributor && (

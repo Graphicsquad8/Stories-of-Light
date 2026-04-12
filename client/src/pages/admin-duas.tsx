@@ -183,6 +183,16 @@ export default function AdminDuasPage() {
     },
   });
 
+  const toggleActiveDua = useMutation({
+    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
+      apiRequest("PATCH", `/api/admin/duas/${id}/active`, { isActive }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/duas"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/duas"] });
+    },
+    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+  });
+
   const openCreate = () => {
     setEditing(null);
     setTitle(""); setSlug(""); setDescription(""); setCategory(""); setThumbnail(""); setPublished(false); setRatingEnabled(true); setSlugManual(false);
@@ -484,6 +494,7 @@ export default function AdminDuasPage() {
                   <TableHead className="text-center">Views</TableHead>
                   <TableHead className="text-center">Rating</TableHead>
                   <TableHead className="text-center">Status</TableHead>
+                  {isAdmin && <TableHead className="text-center">Active</TableHead>}
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -523,6 +534,16 @@ export default function AdminDuasPage() {
                         data-testid={`switch-published-${dua.id}`}
                       />
                     </TableCell>
+                    {isAdmin && (
+                      <TableCell className="text-center">
+                        <Switch
+                          checked={dua.isActive !== false}
+                          onCheckedChange={(checked) => toggleActiveDua.mutate({ id: dua.id, isActive: checked })}
+                          data-testid={`switch-active-${dua.id}`}
+                          title={dua.isActive !== false ? "Active (visible on site)" : "Inactive (hidden from site)"}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
                         {!isContributor && (

@@ -64,7 +64,13 @@ const ADSENSE_FIELDS: AdField[] = [
   {
     key: "adSenseSidebarSmallCode",
     label: "Sidebar Ad Code (300×250)",
-    hint: "Top sidebar ad on article pages. Paste the full AdSense display ad unit code sized 300×250.",
+    hint: "First 300×250 sidebar ad on article pages. Paste the full AdSense display ad unit code sized 300×250.",
+    rows: 6,
+  },
+  {
+    key: "adSenseSidebarSmall2Code",
+    label: "Sidebar Ad Code (300×250) — 2nd",
+    hint: "Second 300×250 sidebar ad, usable in a separate placement. Paste the full AdSense display ad unit code sized 300×250.",
     rows: 6,
   },
   {
@@ -91,7 +97,13 @@ const ADSTERRA_FIELDS: AdField[] = [
   {
     key: "adsterraSidebarSmallCode",
     label: "Sidebar Ad Code (300×250)",
-    hint: "Top sidebar ad on article pages. Paste the Adsterra ad code sized 300×250.",
+    hint: "First 300×250 sidebar ad on article pages. Paste the Adsterra ad code sized 300×250.",
+    rows: 4,
+  },
+  {
+    key: "adsterraSidebarSmall2Code",
+    label: "Sidebar Ad Code (300×250) — 2nd",
+    hint: "Second 300×250 sidebar ad, usable in a separate placement. Paste the Adsterra ad code sized 300×250.",
     rows: 4,
   },
   {
@@ -435,11 +447,9 @@ function TypographySection({
 
 const AD_PAGES = [
   { key: "adHomePage", label: "Home Page", description: "Hero, featured stories, books, duas sections" },
-  { key: "adStoryPage", label: "Story Reader", description: "Article pages where stories are read" },
   { key: "adMotivationalPage", label: "Motivational Stories", description: "Islamic motivational stories section" },
   { key: "adBooksPage", label: "Books Page", description: "Islamic books listing and reader pages" },
   { key: "adDuasPage", label: "Duas Page", description: "Dua listing and detail pages" },
-  { key: "adCategoryPage", label: "Category Pages", description: "Story category listing pages" },
 ];
 
 function AdControlsSection({
@@ -450,6 +460,12 @@ function AdControlsSection({
   saving: string | null;
 }) {
   const globalEnabled = settings.adEnabled !== "false";
+  const [articlesOpen, setArticlesOpen] = useState(false);
+
+  const { data: categories = [] } = useQuery<{ id: string; name: string; urlSlug: string }[]>({
+    queryKey: ["/api/categories", "story"],
+    queryFn: () => fetch("/api/categories?type=story").then(r => r.json()),
+  });
 
   return (
     <div className="space-y-5">
@@ -507,6 +523,53 @@ function AdControlsSection({
             </div>
           );
         })}
+
+        <Collapsible open={articlesOpen} onOpenChange={setArticlesOpen}>
+          <div className={`rounded-lg border transition-opacity ${!globalEnabled ? "opacity-50" : ""}`}>
+            <CollapsibleTrigger asChild>
+              <button
+                className="w-full flex items-center justify-between p-3 text-left hover:bg-muted/40 transition-colors"
+                data-testid="collapsible-all-articles"
+              >
+                <div>
+                  <div className="text-sm font-medium">All Articles</div>
+                  <div className="text-xs text-muted-foreground">Ad control per article category listing page</div>
+                </div>
+                <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ml-4 shrink-0 ${articlesOpen ? "rotate-180" : ""}`} />
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="border-t divide-y">
+                {categories.length === 0 && (
+                  <div className="px-4 py-3 text-xs text-muted-foreground">No categories found.</div>
+                )}
+                {categories.map((cat) => {
+                  const catKey = `adCategoryPage_${cat.urlSlug}`;
+                  const catEnabled = settings[catKey] !== "false";
+                  return (
+                    <div
+                      key={cat.id}
+                      className="flex items-center justify-between px-4 py-2.5"
+                    >
+                      <div className="text-sm">{cat.name}</div>
+                      <div className="flex items-center gap-2 shrink-0 ml-4">
+                        <span className={`text-xs ${catEnabled ? "text-emerald-600" : "text-muted-foreground"}`}>
+                          {catEnabled ? "On" : "Off"}
+                        </span>
+                        <Switch
+                          checked={catEnabled}
+                          onCheckedChange={(checked) => onSave(catKey, checked ? "true" : "false")}
+                          disabled={saving === catKey || !globalEnabled}
+                          data-testid={`switch-page-${catKey}`}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CollapsibleContent>
+          </div>
+        </Collapsible>
       </div>
     </div>
   );

@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Plus, Search, Trash2, Eye, Edit, Copy, Clock, FileText, BarChart2, TrendingUp, BookOpen, CalendarDays } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -153,6 +154,16 @@ export default function AdminStoriesPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/stories"] });
       toast({ title: "Story duplicated", description: `"${data.title}" created as draft` });
       navigate(`/image/stories/${data.id}/edit`);
+    },
+    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+  });
+
+  const toggleActiveMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
+      await apiRequest("PATCH", `/api/admin/stories/${id}/active`, { isActive });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/stories"] });
     },
     onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
@@ -384,6 +395,7 @@ export default function AdminStoriesPage() {
                   <span className="flex items-center gap-1"><Eye className="w-3.5 h-3.5" />Views</span>
                 </th>
                 <th className="text-left p-3 font-medium hidden lg:table-cell">Date</th>
+                {isAdmin && <th className="text-left p-3 font-medium hidden xl:table-cell">Active</th>}
                 <th className="text-right p-3 font-medium">Actions</th>
               </tr>
             </thead>
@@ -442,6 +454,16 @@ export default function AdminStoriesPage() {
                         {story.createdAt ? format(new Date(story.createdAt), "MMM d, yyyy") : "-"}
                       </span>
                     </td>
+                    {isAdmin && (
+                      <td className="p-3 hidden xl:table-cell">
+                        <Switch
+                          checked={story.isActive !== false}
+                          onCheckedChange={(checked) => toggleActiveMutation.mutate({ id: story.id, isActive: checked })}
+                          data-testid={`switch-active-${story.id}`}
+                          title={story.isActive !== false ? "Active (visible on site)" : "Inactive (hidden from site)"}
+                        />
+                      </td>
+                    )}
                     <td className="p-3 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <Link href={`/stories/${story.slug}`}>
