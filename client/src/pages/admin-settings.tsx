@@ -447,8 +447,9 @@ function TypographySection({
 
 const AD_PAGES = [
   { key: "adStoryPage", shortKey: "story", label: "Story Pages", description: "Islamic stories reading pages", slots: ["banner", "in-article", "sidebar-small", "sidebar-small-2", "sidebar-large"] },
-  { key: "adHomePage", shortKey: "home", label: "Home Page", description: "Hero, featured stories, books, duas sections", slots: ["banner", "display", "in-feed", "sidebar-small", "sidebar-small-2"] },
+  { key: "adHomePage", shortKey: "home", label: "Home Page", description: "Hero, featured stories, books, duas sections", slots: ["banner", "display", "in-feed"] },
   { key: "adMotivationalPage", shortKey: "motivational", label: "Motivational Stories", description: "Islamic motivational stories section", slots: ["banner", "in-feed"] },
+  { key: "adCategoryPage", shortKey: "category", label: "All Articles", description: "Ad control for article category listing pages", slots: ["banner", "in-feed"] },
   { key: "adBooksPage", shortKey: "books", label: "Books Page", description: "Islamic books listing and reader pages", slots: ["banner", "in-feed"] },
   { key: "adDuasPage", shortKey: "duas", label: "Duas Page", description: "Dua listing and detail pages", slots: ["banner", "in-feed"] },
 ];
@@ -471,13 +472,7 @@ function AdControlsSection({
   saving: string | null;
 }) {
   const globalEnabled = settings.adEnabled !== "false";
-  const [articlesOpen, setArticlesOpen] = useState(false);
   const [slotsOpen, setSlotsOpen] = useState<Record<string, boolean>>({});
-
-  const { data: categories = [] } = useQuery<{ id: string; name: string; urlSlug: string }[]>({
-    queryKey: ["/api/categories", "story"],
-    queryFn: () => fetch("/api/categories?type=story").then(r => r.json()),
-  });
 
   return (
     <div className="space-y-5">
@@ -573,52 +568,6 @@ function AdControlsSection({
           );
         })}
 
-        <Collapsible open={articlesOpen} onOpenChange={setArticlesOpen}>
-          <div className={`rounded-lg border transition-opacity ${!globalEnabled ? "opacity-50" : ""}`}>
-            <CollapsibleTrigger asChild>
-              <button
-                className="w-full flex items-center justify-between p-3 text-left hover:bg-muted/40 transition-colors"
-                data-testid="collapsible-all-articles"
-              >
-                <div>
-                  <div className="text-sm font-medium">All Articles</div>
-                  <div className="text-xs text-muted-foreground">Ad control per article category listing page</div>
-                </div>
-                <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ml-4 shrink-0 ${articlesOpen ? "rotate-180" : ""}`} />
-              </button>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="border-t divide-y">
-                {categories.length === 0 && (
-                  <div className="px-4 py-3 text-xs text-muted-foreground">No categories found.</div>
-                )}
-                {categories.map((cat) => {
-                  const catKey = `adCategoryPage_${cat.urlSlug}`;
-                  const catEnabled = settings[catKey] !== "false";
-                  return (
-                    <div
-                      key={cat.id}
-                      className="flex items-center justify-between px-4 py-2.5"
-                    >
-                      <div className="text-sm">{cat.name}</div>
-                      <div className="flex items-center gap-2 shrink-0 ml-4">
-                        <span className={`text-xs ${catEnabled ? "text-emerald-600" : "text-muted-foreground"}`}>
-                          {catEnabled ? "On" : "Off"}
-                        </span>
-                        <Switch
-                          checked={catEnabled}
-                          onCheckedChange={(checked) => onSave(catKey, checked ? "true" : "false")}
-                          disabled={saving === catKey || !globalEnabled}
-                          data-testid={`switch-page-${catKey}`}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CollapsibleContent>
-          </div>
-        </Collapsible>
       </div>
     </div>
   );

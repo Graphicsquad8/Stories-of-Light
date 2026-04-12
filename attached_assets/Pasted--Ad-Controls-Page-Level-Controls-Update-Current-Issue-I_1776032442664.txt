@@ -1,0 +1,77 @@
+📌 Ad Controls – Page-Level Controls Update
+🔹 Current Issue
+In Settings → Ad Controls → Page-Level Controls:
+There is a “Category Page” option present
+
+❌ This option must be removed completely
+
+🔧 Required Fix
+🔹 Remove Unnecessary Control
+Remove:
+❌ Category Page (Page-Level Control)
+🔹 Home Page Ad Slot Issue
+Currently:
+Home Page has 3 ad items in the actual website
+But in Page-Level Controls, Home Page is showing 5 ad items
+
+❌ This is incorrect and must be fixed
+
+🔹 Remove Invalid Ad Items (Home Page)
+The following ad items must be removed:
+
+❌ Sidebar 300×250 (A)
+❌ Sidebar 300×250 (B)
+
+🔹 Standard Ad Structure Alignment
+Home Page ad structure must match the same system used in:
+Motivational Stories
+Books Page
+Duas Page
+
+📌 Meaning:
+
+Consistent ad slot structure across all pages
+No extra or duplicate ad slots
+🔹 Page Renaming / Structure Update
+In Page-Level Controls:
+
+📌 Replace:
+
+Home Page section handling logic → align under All Articles system
+
+📌 Also ensure:
+
+Motivational Stories section remains above All Articles (as per UI order requirement)
+🔹 All Articles – Page-Level Controls Standard
+The All Articles section should:
+
+📌 Follow these rules:
+
+Same ad layout style as Home Page, Motivational Stories, Books, and Duas pages
+Consistent UI/UX for all ad slots
+🔹 Ad Slot Structure (All Articles Pages)
+Each page inside All Articles contains:
+
+📌 Exactly:
+
+2 ad items per page
+
+✔ These must be:
+
+Properly aligned
+Consistent with existing ad design system
+🔐 Final System Rules
+Category Page option removed completely
+Home Page must only show valid ad slots
+No duplicate or extra ad items allowed
+Sidebar A/B ads removed
+All pages must follow consistent ad structure
+Each All Articles page must contain only 2 ad slots
+UI must remain uniform across all sections
+✅ Summary
+Remove Category Page from Page-Level Controls
+Fix Home Page showing extra ad slots
+Remove Sidebar 300×250 (A & B)
+Align ad system with existing page design (Motivational Stories, Books, Duas)
+Ensure All Articles pages have only 2 ads each
+Maintain consistent and clean ad architecture
