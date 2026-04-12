@@ -31,6 +31,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Switch } from "@/components/ui/switch";
 import {
   Plus,
   Edit,
@@ -175,6 +176,18 @@ export default function AdminCategoriesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
       toast({ title: "Category duplicated" });
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const toggleActiveMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
+      await apiRequest("PATCH", `/api/admin/categories/${id}/active`, { isActive });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
     },
     onError: (err: any) => {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -342,6 +355,11 @@ export default function AdminCategoriesPage() {
                         {meta.icon}
                         {meta.label}
                       </span>
+                      {cat.isActive === false && (
+                        <Badge variant="destructive" className="text-xs" data-testid={`badge-inactive-${cat.slug}`}>
+                          Hidden
+                        </Badge>
+                      )}
                       <Badge variant="secondary" className="text-xs">
                         {getContentLabel(cat)}
                       </Badge>
@@ -356,7 +374,15 @@ export default function AdminCategoriesPage() {
                   </div>
 
                   {isAdmin && (
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex items-center gap-3 shrink-0">
+                      <div className="flex flex-col items-center gap-0.5" title={cat.isActive !== false ? "Active — visible on site" : "Inactive — hidden from site"}>
+                        <Switch
+                          checked={cat.isActive !== false}
+                          onCheckedChange={(checked) => toggleActiveMutation.mutate({ id: cat.id, isActive: checked })}
+                          data-testid={`switch-active-cat-${cat.slug}`}
+                        />
+                        <span className="text-[10px] text-muted-foreground">{cat.isActive !== false ? "Active" : "Inactive"}</span>
+                      </div>
                       <Button size="sm" variant="ghost" onClick={() => openEdit(cat)} data-testid={`button-edit-cat-${cat.slug}`}>
                         <Edit className="w-4 h-4 mr-1" />
                         Edit

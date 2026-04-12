@@ -822,11 +822,12 @@ export async function registerRoutes(
     return res.json({ success: true });
   });
 
-  app.get("/api/categories", async (req, res) => {
+  app.get("/api/categories", async (req: any, res) => {
     const type = req.query.type as string | undefined;
+    const isStaff = req.isAuthenticated?.() && req.user && ["super_owner", "owner", "admin", "moderator", "editor"].includes((req.user as any).role);
 
     if (type === "all") {
-      const cats = await storage.getCategories();
+      const cats = await storage.getCategories(undefined, !isStaff);
       const [storyCounts, bookCounts, motivationalCounts, duaCounts, storyViews, bookViews, motivationalViews, duaViews] = await Promise.all([
         storage.getCategoryStoryCounts(),
         storage.getCategoryBookCounts(),
@@ -850,7 +851,7 @@ export async function registerRoutes(
     }
 
     const effectiveType = type || "story";
-    const cats = await storage.getCategories(effectiveType);
+    const cats = await storage.getCategories(effectiveType, !isStaff);
 
     if (effectiveType === "story") {
       const [storyCounts, storyViews] = await Promise.all([
@@ -876,10 +877,19 @@ export async function registerRoutes(
     res.json({ success: true });
   });
 
-  app.get("/api/categories/:slug", async (req, res) => {
+  app.get("/api/categories/:slug", async (req: any, res) => {
     const cat = await storage.getCategoryBySlug(req.params.slug);
     if (!cat) return res.status(404).json({ message: "Category not found" });
+    const isStaff = req.isAuthenticated?.() && req.user && ["super_owner", "owner", "admin", "moderator", "editor"].includes((req.user as any).role);
+    if (!isStaff && cat.isActive === false) return res.status(404).json({ message: "Category not found" });
     res.json(cat);
+  });
+
+  app.patch("/api/admin/categories/:id/active", requireAdmin, async (req, res) => {
+    const { isActive } = req.body;
+    const updated = await storage.updateCategory(req.params.id, { isActive });
+    if (!updated) return res.status(404).json({ message: "Category not found" });
+    res.json(updated);
   });
 
   app.post("/api/categories", requireStaff, async (req, res) => {

@@ -29,6 +29,7 @@ export const categories = pgTable("categories", {
   description: text("description"),
   image: text("image"),
   orderIndex: integer("order_index").default(0).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
   deletedAt: timestamp("deleted_at"),
 });
 

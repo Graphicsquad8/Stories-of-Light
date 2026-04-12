@@ -68,7 +68,7 @@ export interface IStorage {
   setUserOtp(userId: string, code: string, expiry: Date): Promise<void>;
   clearUserOtp(userId: string): Promise<void>;
 
-  getCategories(type?: string): Promise<Category[]>;
+  getCategories(type?: string, activeOnly?: boolean): Promise<Category[]>;
   getCategoryById(id: string): Promise<Category | undefined>;
   getCategoryBySlug(slug: string): Promise<Category | undefined>;
   createCategory(cat: InsertCategory): Promise<Category>;
@@ -403,9 +403,10 @@ export class DatabaseStorage implements IStorage {
     return (result.rowCount ?? 0) > 0;
   }
 
-  async getCategories(type?: string): Promise<Category[]> {
+  async getCategories(type?: string, activeOnly?: boolean): Promise<Category[]> {
     const conds: any[] = [isNull(categories.deletedAt)];
     if (type) conds.push(eq(categories.type, type));
+    if (activeOnly) conds.push(eq(categories.isActive, true));
     return db.select().from(categories).where(and(...conds)).orderBy(categories.orderIndex, categories.name);
   }
 
