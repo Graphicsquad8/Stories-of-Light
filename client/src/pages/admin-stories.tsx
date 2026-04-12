@@ -551,7 +551,7 @@ export default function AdminStoriesPage() {
           key={adControlItem.id}
           open={!!adControlItem}
           onOpenChange={(v) => { if (!v) setAdControlItem(null); }}
-          contentType="stories"
+          contentType="articles"
           contentId={adControlItem.id}
           adSlotsRaw={adControlItem.adSlotsRaw}
           invalidateKey={["/api/stories"]}

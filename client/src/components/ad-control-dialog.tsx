@@ -9,7 +9,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
-export type AdContentType = "stories" | "books" | "duas" | "motivational-stories";
+export type AdContentType = "stories" | "articles" | "books" | "duas" | "motivational-stories";
 
 const SLOT_LABELS: Record<string, string> = {
   banner: "Top Banner",
@@ -23,6 +23,7 @@ const SLOT_LABELS: Record<string, string> = {
 
 const CONTENT_SLOTS: Record<AdContentType, string[]> = {
   stories: ["banner", "in-article", "sidebar-small", "sidebar-small-2", "sidebar-large"],
+  articles: ["sidebar-small", "sidebar-small-2", "sidebar-large"],
   books: ["banner", "in-feed"],
   duas: ["banner"],
   "motivational-stories": ["banner", "in-feed"],
@@ -36,6 +37,9 @@ function parseAdSlots(raw: string | null | undefined): Record<string, boolean> {
 function getApiPath(contentType: AdContentType, contentId: string): string {
   if (contentType === "motivational-stories") {
     return `/api/admin/motivational-stories/${contentId}/ad-slots`;
+  }
+  if (contentType === "articles") {
+    return `/api/admin/stories/${contentId}/ad-slots`;
   }
   return `/api/admin/${contentType}/${contentId}/ad-slots`;
 }
