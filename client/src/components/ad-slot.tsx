@@ -57,6 +57,51 @@ function getPageShortKey(path: string): string {
   return "category";
 }
 
+interface ManualAdRecord {
+  id: string;
+  name: string;
+  slot: string;
+  type: string;
+  fileUrl: string | null;
+  htmlCode: string | null;
+  linkUrl: string | null;
+  altText: string | null;
+  isActive: boolean;
+}
+
+function ManualAdRenderer({ ad, className }: { ad: ManualAdRecord; className: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if ((ad.type === "html") && containerRef.current && ad.htmlCode) {
+      injectHtml(containerRef.current, ad.htmlCode);
+    }
+  }, [ad.type, ad.htmlCode]);
+
+  if (ad.type === "image" || ad.type === "gif") {
+    const img = <img src={ad.fileUrl || ""} alt={ad.altText || ""} className="w-full h-auto block" />;
+    return (
+      <div className={className} data-ad-slot={ad.slot}>
+        {ad.linkUrl ? <a href={ad.linkUrl} target="_blank" rel="noopener noreferrer">{img}</a> : img}
+      </div>
+    );
+  }
+  if (ad.type === "video") {
+    return (
+      <div className={className} data-ad-slot={ad.slot}>
+        {ad.linkUrl ? (
+          <a href={ad.linkUrl} target="_blank" rel="noopener noreferrer">
+            <video src={ad.fileUrl || ""} autoPlay loop muted playsInline className="w-full h-auto block" />
+          </a>
+        ) : (
+          <video src={ad.fileUrl || ""} autoPlay loop muted playsInline className="w-full h-auto block" />
+        )}
+      </div>
+    );
+  }
+  return <div ref={containerRef} className={className} data-ad-slot={ad.slot} />;
+}
+
 export function AdSlot({ slot, className = "", label, disabled }: AdSlotProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [location] = useLocation();
@@ -71,6 +116,15 @@ export function AdSlot({ slot, className = "", label, disabled }: AdSlotProps) {
   const pageShortKey = getPageShortKey(location);
   const slotSettingKey = `adPageSlot_${pageShortKey}_${slot}`;
   const slotEnabled = settings ? settings[slotSettingKey] !== "false" : true;
+
+  const slotMode = settings ? (settings[`adSlotMode_${slot}`] || "auto") : "auto";
+  const isManualMode = slotMode === "manual";
+
+  const { data: manualAd } = useQuery<ManualAdRecord | null>({
+    queryKey: ["/api/manual-ads/slot", slot],
+    queryFn: () => fetch(`/api/manual-ads/slot/${slot}`).then(r => r.json()),
+    enabled: isManualMode,
+  });
 
   const platform = settings?.adPlatform || "";
 
@@ -125,6 +179,11 @@ export function AdSlot({ slot, className = "", label, disabled }: AdSlotProps) {
   }, [code]);
 
   if (!globalEnabled || !pageEnabled || !slotEnabled || disabled) return null;
+
+  if (isManualMode) {
+    if (!manualAd) return null;
+    return <ManualAdRenderer ad={manualAd} className={className} />;
+  }
 
   if (!platform || !code) {
     if (label !== undefined) {

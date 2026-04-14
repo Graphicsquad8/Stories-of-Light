@@ -1,5 +1,20 @@
 # Stories of Light - Islamic Stories Blog
 
+## Hybrid Ad Management System (`/image/ads`)
+- **Route**: `/image/ads` — dedicated admin page for managing the hybrid ad system
+- **Permission**: `settings` (same as admin settings)
+- **Dual Mode per Slot**: Each of the 7 ad slots can independently run in **Auto mode** (uses configured platform: AdSense/Adsterra/Custom) or **Manual mode** (uses uploaded ads)
+- **7 Ad Slots**: banner, display, in-article, in-feed, sidebar-small (300×250 A), sidebar-small-2 (300×250 B), sidebar-large (300×600)
+- **Manual Ad Types**: Image (JPG/PNG/WebP), GIF/Motion, Video (MP4/WebM), HTML/Script code
+- **Ad Features**: Name, click-through URL, alt text, active/inactive toggle, sort order (first active ad by sort order is displayed)
+- **File Upload**: `POST /api/admin/upload/ad-file` → stores in `uploads/ads/`, served at `/uploads/ads/`
+- **Public API**: `GET /api/manual-ads/slot/:slot` → returns active manual ad for a slot
+- **Admin APIs**: CRUD at `/api/admin/manual-ads` + `/api/admin/manual-ads/:id`
+- **DB Table**: `manual_ads` — id, name, slot, type, file_url, html_code, link_url, alt_text, is_active, sort_order, created_at
+- **Settings keys**: `adSlotMode_{slot}` = 'auto' | 'manual' (stored in site_settings)
+- **Frontend rendering** (`ad-slot.tsx`): checks `adSlotMode_{slot}` from public settings; if manual, fetches and renders the active ad for that slot; supports image/gif (img tag), video (autoplay loop muted), html (injected via injectHtml)
+- **Summary counter**: Dashboard stats card showing total slots, manual mode count, auto mode count
+
 ## Contributor Overview Page (`/image/overview`)
 - **Visible to**: All staff roles (super_owner, owner, admin, editor, moderator) — sidebar permission: `staff-only`
 - **Header**: Search bar (left) + clickable profile photo/name/email (right) → opens Profile Modal (no message/notification icons)

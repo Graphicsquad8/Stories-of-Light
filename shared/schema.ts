@@ -407,6 +407,24 @@ export type DuaWithParts = Dua & { parts: DuaPart[] };
 export type DuaRating = typeof duaRatings.$inferSelect;
 export type StoryRating = typeof storyRatings.$inferSelect;
 
+export const manualAds = pgTable("manual_ads", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  slot: text("slot").notNull(),
+  type: text("type").notNull().default("image"),
+  fileUrl: text("file_url"),
+  htmlCode: text("html_code"),
+  linkUrl: text("link_url"),
+  altText: text("alt_text"),
+  isActive: boolean("is_active").default(true).notNull(),
+  sortOrder: integer("sort_order").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertManualAdSchema = createInsertSchema(manualAds).omit({ id: true, createdAt: true });
+export type InsertManualAd = z.infer<typeof insertManualAdSchema>;
+export type ManualAd = typeof manualAds.$inferSelect;
+
 export const footerPages = pgTable("footer_pages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: text("title").notNull(),

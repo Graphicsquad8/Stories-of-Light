@@ -23,12 +23,14 @@ const pdfsDir = path.join(process.cwd(), "uploads", "pdfs");
 const previewsDir = path.join(process.cwd(), "uploads", "previews");
 const videosDir = path.join(process.cwd(), "uploads", "videos");
 const avatarsDir = path.join(process.cwd(), "uploads", "avatars");
+const adsDir = path.join(process.cwd(), "uploads", "ads");
 fs.mkdirSync(audioDir, { recursive: true });
 fs.mkdirSync(coversDir, { recursive: true });
 fs.mkdirSync(pdfsDir, { recursive: true });
 fs.mkdirSync(previewsDir, { recursive: true });
 fs.mkdirSync(videosDir, { recursive: true });
 fs.mkdirSync(avatarsDir, { recursive: true });
+fs.mkdirSync(adsDir, { recursive: true });
 
 function makeFilename(file: Express.Multer.File) {
   const ext = path.extname(file.originalname);
@@ -104,6 +106,18 @@ const avatarUpload = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    cb(null, allowed.includes(file.mimetype));
+  },
+});
+const adFileStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, adsDir),
+  filename: (_req, file, cb) => cb(null, makeFilename(file)),
+});
+const adFileUpload = multer({
+  storage: adFileStorage,
+  limits: { fileSize: 50 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif", "video/mp4", "video/webm"];
     cb(null, allowed.includes(file.mimetype));
   },
 });
@@ -2401,6 +2415,45 @@ export async function registerRoutes(
   app.delete("/api/admin/footer-pages/:id", requireAdmin, async (req, res) => {
     const ok = await storage.deleteFooterPage(req.params.id);
     if (!ok) return res.status(404).json({ message: "Page not found" });
+    res.json({ success: true });
+  });
+
+  app.use("/uploads/ads", express.static(adsDir));
+
+  app.get("/api/manual-ads/slot/:slot", async (req, res) => {
+    const ad = await storage.getActiveManualAdBySlot(req.params.slot);
+    res.json(ad || null);
+  });
+
+  app.get("/api/admin/manual-ads", requireAuth, async (req, res) => {
+    const { slot } = req.query;
+    const ads = await storage.getManualAds(slot as string | undefined);
+    res.json(ads);
+  });
+
+  app.post("/api/admin/upload/ad-file", requireAuth, adFileUpload.single("file"), async (req, res) => {
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+    const url = `/uploads/ads/${req.file.filename}`;
+    res.json({ url });
+  });
+
+  app.post("/api/admin/manual-ads", requireAuth, async (req, res) => {
+    const { name, slot, type, fileUrl, htmlCode, linkUrl, altText, isActive, sortOrder } = req.body;
+    if (!name || !slot || !type) return res.status(400).json({ message: "name, slot, and type are required" });
+    const ad = await storage.createManualAd({ name, slot, type, fileUrl, htmlCode, linkUrl, altText, isActive: isActive !== false, sortOrder: sortOrder ?? 0 });
+    res.json(ad);
+  });
+
+  app.patch("/api/admin/manual-ads/:id", requireAuth, async (req, res) => {
+    const { name, slot, type, fileUrl, htmlCode, linkUrl, altText, isActive, sortOrder } = req.body;
+    const ad = await storage.updateManualAd(req.params.id, { name, slot, type, fileUrl, htmlCode, linkUrl, altText, isActive, sortOrder });
+    if (!ad) return res.status(404).json({ message: "Ad not found" });
+    res.json(ad);
+  });
+
+  app.delete("/api/admin/manual-ads/:id", requireAuth, async (req, res) => {
+    const ok = await storage.deleteManualAd(req.params.id);
+    if (!ok) return res.status(404).json({ message: "Ad not found" });
     res.json({ success: true });
   });
 

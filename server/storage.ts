@@ -26,13 +26,15 @@ import {
   type DuaWithParts,
   type DuaBookmark,
   type DuaRating, type StoryRating,
+  type ManualAd, type InsertManualAd,
   users, categories, stories, books, bookChapters, bookBookmarks, bookProgress,
   bookmarks, bookRatings, passwordResetTokens, siteSettings,
   motivationalStories, motivationalLessons, motivationalBookmarks,
   motivationalRatings, motivationalProgress,
   storyParts, storyPages, storyReadingProgress,
   bookParts, bookPages, footerPages,
-  duas, duaParts, duaBookmarks, duaRatings, storyRatings
+  duas, duaParts, duaBookmarks, duaRatings, storyRatings,
+  manualAds,
 } from "@shared/schema";
 import { eq, desc, and, or, ilike, sql, count, sum, inArray, asc, gte, lte, ne, isNull, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
@@ -266,6 +268,12 @@ export interface IStorage {
 
   getStoryReadingProgress(userId: string, storyId: string): Promise<StoryReadingProgress | undefined>;
   upsertStoryReadingProgress(userId: string, storyId: string, lastPartId: string, lastPageIndex: number): Promise<StoryReadingProgress>;
+
+  getManualAds(slot?: string): Promise<ManualAd[]>;
+  getActiveManualAdBySlot(slot: string): Promise<ManualAd | undefined>;
+  createManualAd(data: InsertManualAd): Promise<ManualAd>;
+  updateManualAd(id: string, data: Partial<InsertManualAd>): Promise<ManualAd | undefined>;
+  deleteManualAd(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1854,6 +1862,36 @@ export class DatabaseStorage implements IStorage {
 
   async deleteFooterPage(id: string): Promise<boolean> {
     const result = await db.delete(footerPages).where(eq(footerPages.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async getManualAds(slot?: string): Promise<ManualAd[]> {
+    if (slot) {
+      return db.select().from(manualAds).where(eq(manualAds.slot, slot)).orderBy(asc(manualAds.sortOrder), desc(manualAds.createdAt));
+    }
+    return db.select().from(manualAds).orderBy(asc(manualAds.slot), asc(manualAds.sortOrder), desc(manualAds.createdAt));
+  }
+
+  async getActiveManualAdBySlot(slot: string): Promise<ManualAd | undefined> {
+    const [ad] = await db.select().from(manualAds)
+      .where(and(eq(manualAds.slot, slot), eq(manualAds.isActive, true)))
+      .orderBy(asc(manualAds.sortOrder), desc(manualAds.createdAt))
+      .limit(1);
+    return ad;
+  }
+
+  async createManualAd(data: InsertManualAd): Promise<ManualAd> {
+    const [ad] = await db.insert(manualAds).values(data).returning();
+    return ad;
+  }
+
+  async updateManualAd(id: string, data: Partial<InsertManualAd>): Promise<ManualAd | undefined> {
+    const [ad] = await db.update(manualAds).set(data).where(eq(manualAds.id, id)).returning();
+    return ad;
+  }
+
+  async deleteManualAd(id: string): Promise<boolean> {
+    const result = await db.delete(manualAds).where(eq(manualAds.id, id));
     return (result.rowCount ?? 0) > 0;
   }
 }
