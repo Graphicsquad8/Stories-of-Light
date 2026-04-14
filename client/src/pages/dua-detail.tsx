@@ -460,7 +460,20 @@ export default function DuaDetailPage() {
 
                 {/* Ad band */}
                 <div className="mt-8" data-testid="ad-dua-bottom">
-                  <AdSlot slot="banner" className="w-full" label="story-bottom" disabled={(() => { try { return JSON.parse((dua as any)?.adSlots || "{}"); } catch { return {}; } })()["banner"] === false} />
+                  {(() => {
+                    const adSlotsMap: Record<string, any> = (() => { try { return JSON.parse((dua as any)?.adSlots || "{}"); } catch { return {}; } })();
+                    return (
+                      <AdSlot
+                        slot="story-bottom"
+                        className="w-full"
+                        label="Ad Space – Story Bottom"
+                        disabled={adSlotsMap["story-bottom"] === false}
+                        contentId={(dua as any)?.id}
+                        contentType="dua"
+                        contentManualMode={adSlotsMap["story-bottom_mode"] === "manual"}
+                      />
+                    );
+                  })()}
                 </div>
 
                 {/* Rating */}

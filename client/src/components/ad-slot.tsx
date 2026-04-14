@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 
-export type AdSlotType = "banner" | "display" | "in-article" | "in-feed" | "sidebar-small" | "sidebar-small-2" | "sidebar-large";
+export type AdSlotType = "banner" | "display" | "in-article" | "in-feed" | "story-bottom" | "sidebar-small" | "sidebar-small-2" | "sidebar-large";
 
 interface AdSlotProps {
   slot: AdSlotType;
@@ -146,6 +146,7 @@ export function AdSlot({ slot, className = "", label, disabled, contentId, conte
       display: settings?.adSenseDisplayCode || "",
       "in-article": settings?.adSenseInArticleCode || "",
       "in-feed": settings?.adSenseInFeedCode || "",
+      "story-bottom": settings?.adSenseInArticleCode || "",
       "sidebar-small": settings?.adSenseSidebarSmallCode || "",
       "sidebar-small-2": settings?.adSenseSidebarSmall2Code || "",
       "sidebar-large": settings?.adSenseSidebarLargeCode || "",
@@ -155,6 +156,7 @@ export function AdSlot({ slot, className = "", label, disabled, contentId, conte
       display: settings?.adsterraNativeBannerCode || "",
       "in-article": settings?.adsterraNativeBannerCode || "",
       "in-feed": settings?.adsterraBannerCode || "",
+      "story-bottom": settings?.adsterraNativeBannerCode || "",
       "sidebar-small": settings?.adsterraSidebarSmallCode || "",
       "sidebar-small-2": settings?.adsterraSidebarSmall2Code || "",
       "sidebar-large": settings?.adsterraSidebarLargeCode || "",
@@ -164,6 +166,7 @@ export function AdSlot({ slot, className = "", label, disabled, contentId, conte
       display: settings?.adCustomDisplayCode || "",
       "in-article": settings?.adCustomInArticleCode || "",
       "in-feed": settings?.adCustomInFeedCode || "",
+      "story-bottom": settings?.adCustomInArticleCode || "",
       "sidebar-small": settings?.adCustomSidebarSmallCode || "",
       "sidebar-small-2": settings?.adCustomSidebarSmall2Code || "",
       "sidebar-large": settings?.adCustomSidebarLargeCode || "",

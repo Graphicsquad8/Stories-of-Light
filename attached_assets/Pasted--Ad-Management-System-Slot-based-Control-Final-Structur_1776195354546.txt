@@ -1,0 +1,86 @@
+📌 Ad Management System – Slot-based Control (Final Structure)
+🔹 Core System Overview
+
+The Ad Management system should be designed so that:
+
+Each Ad Slot can be controlled independently
+Admin can:
+Enable Auto Ads (third-party)
+Or switch to Manual Ads
+The system will operate in a Hybrid mode (Auto + Manual Ads)
+🔹 Direct Ad Slot Control (Updated Flow)
+When the Ad Management icon is clicked:
+👉 All Ad Slots for that content/page will open directly
+Clicking on a specific Ad Slot will show:
+Auto Ad
+Manual Ad
+🔹 Slot-wise Ad Behavior
+✅ Auto Ad
+Only the selected Ad Slot will display third-party ads
+Other slots will remain unaffected
+✅ Manual Ad
+Auto Ad will be disabled for that specific slot
+Custom ad upload options will appear
+
+📌 Supported Manual Ad Types:
+
+📢 Banner Ads (image-based)
+🎞️ Motion Ads (GIF / animated / HTML5)
+🎥 Video Ads (MP4 / embedded video)
+🔹 Page-wise Ad Slot Implementation
+📊 Main Pages
+Motivational Stories → Top Banner + In-Feed
+Books Page → Top Banner + In-Feed
+Duas Page → Top Banner + In-Feed
+
+👉 Each slot can have separate custom ads assigned
+
+🔹 Content-level Ad Slots (Important)
+📌 Inside Individual Content
+
+For content inside these pages:
+
+Motivational Stories → story-bottom
+Duas → story-bottom
+
+👉 These Ad Slots will also support:
+
+Slot-wise Auto / Manual switching
+Custom Manual Ad uploads
+🔹 Category Page Integration
+
+For Category Pages (e.g., Sahaba, Awliya, Karamat, History, Books, Stories, Duas):
+
+Each page will include:
+Top Banner
+Mid-content / In-Feed
+
+👉 These slots will support the same Ad Management system
+
+📌 Dynamic Behavior:
+
+When a new Category Page is created:
+Ad Slots and Ad Management system will be automatically applied
+🔹 System Goal (Business Use Case)
+
+The system should allow:
+
+Precise control over each Ad Slot
+Displaying specific company ads in specific positions
+
+✔ Example:
+
+Top Banner → Company A
+In-Feed → Company B
+Story-bottom → Company C
+
+👉 This enables a fully targeted, slot-based advertising system
+
+✅ Final Summary
+Direct Ad Slot access (no extra popup step)
+Slot-wise Auto / Manual control
+Manual Ads support Banner / Motion / Video
+Page-level + Content-level control
+Category pages fully supported
+New pages auto-integrated
+Enables company-specific targeted ad placement

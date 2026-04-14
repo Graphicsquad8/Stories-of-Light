@@ -16,6 +16,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
+import { AdSlot } from "@/components/ad-slot";
 import type { MotivationalStoryWithLessons, MotivationalStory, MotivationalLesson } from "@shared/schema";
 
 function StarRatingInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
@@ -336,6 +337,24 @@ export default function MotivationalStoryDetailPage() {
                     </Button>
                   </div>
                 )}
+
+                {/* Story Bottom Ad */}
+                {(() => {
+                  const adSlotsMap: Record<string, any> = (() => { try { return JSON.parse((story as any)?.adSlots || "{}"); } catch { return {}; } })();
+                  return (
+                    <div className="mt-8" data-testid="ad-motivational-bottom">
+                      <AdSlot
+                        slot="story-bottom"
+                        className="w-full"
+                        label="Ad Space – Story Bottom"
+                        disabled={adSlotsMap["story-bottom"] === false}
+                        contentId={story.id}
+                        contentType="motivational"
+                        contentManualMode={adSlotsMap["story-bottom_mode"] === "manual"}
+                      />
+                    </div>
+                  );
+                })()}
 
                 {story.ratingEnabled && user && (
                   <Card className="p-6 mt-8" data-testid="card-rating-form">
