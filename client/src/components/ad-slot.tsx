@@ -93,6 +93,15 @@ export function AdSlot({ slot, className = "", label, disabled }: AdSlotProps) {
       "sidebar-small-2": settings?.adsterraSidebarSmall2Code || "",
       "sidebar-large": settings?.adsterraSidebarLargeCode || "",
     },
+    custom: {
+      banner: settings?.adCustomBannerCode || "",
+      display: settings?.adCustomDisplayCode || "",
+      "in-article": settings?.adCustomInArticleCode || "",
+      "in-feed": settings?.adCustomInFeedCode || "",
+      "sidebar-small": settings?.adCustomSidebarSmallCode || "",
+      "sidebar-small-2": settings?.adCustomSidebarSmall2Code || "",
+      "sidebar-large": settings?.adCustomSidebarLargeCode || "",
+    },
   };
 
   const code = platform ? (slotMap[platform]?.[slot] ?? "") : "";
@@ -104,7 +113,10 @@ export function AdSlot({ slot, className = "", label, disabled }: AdSlotProps) {
     if (platform === "adsterra" && settings?.adsterraPopunderCode) {
       injectOnce(settings.adsterraPopunderCode, "adsterra-popunder");
     }
-  }, [platform, settings?.adSenseGlobalCode, settings?.adsterraPopunderCode]);
+    if (platform === "custom" && settings?.adCustomGlobalCode) {
+      injectOnce(settings.adCustomGlobalCode, "custom-global", document.head);
+    }
+  }, [platform, settings?.adSenseGlobalCode, settings?.adsterraPopunderCode, settings?.adCustomGlobalCode]);
 
   useEffect(() => {
     if (containerRef.current && code) {

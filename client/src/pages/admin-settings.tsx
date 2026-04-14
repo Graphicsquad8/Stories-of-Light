@@ -126,6 +126,57 @@ const ADSTERRA_FIELDS: AdField[] = [
   },
 ];
 
+const CUSTOM_FIELDS: AdField[] = [
+  {
+    key: "adCustomGlobalCode",
+    label: "Global / Header Script",
+    hint: "Paste your platform's global script tag (e.g., Raptive, Mediavine, Ezoic setup script). Injected once into <head> on every page.",
+    rows: 4,
+  },
+  {
+    key: "adCustomBannerCode",
+    label: "Banner / Display Ad",
+    hint: "Horizontal banner shown at the top of pages and between sections. Paste the full ad unit code from your platform.",
+    rows: 6,
+  },
+  {
+    key: "adCustomDisplayCode",
+    label: "Display Ad",
+    hint: "General display ad unit. Shown in listing sections. Paste the full ad code.",
+    rows: 6,
+  },
+  {
+    key: "adCustomInArticleCode",
+    label: "In-Article Ad",
+    hint: "Shown inside story/article content. Paste the full in-article ad code from your platform.",
+    rows: 6,
+  },
+  {
+    key: "adCustomInFeedCode",
+    label: "In-Feed / Mid-Content Ad",
+    hint: "Shown between story listings and category page mid-sections. Paste the full in-feed ad code.",
+    rows: 6,
+  },
+  {
+    key: "adCustomSidebarSmallCode",
+    label: "Sidebar Ad (300×250) — A",
+    hint: "First 300×250 sidebar ad on article pages. Paste the full ad code sized 300×250.",
+    rows: 6,
+  },
+  {
+    key: "adCustomSidebarSmall2Code",
+    label: "Sidebar Ad (300×250) — B",
+    hint: "Second 300×250 sidebar ad. Paste the full ad code sized 300×250.",
+    rows: 6,
+  },
+  {
+    key: "adCustomSidebarLargeCode",
+    label: "Sidebar Ad (300×600)",
+    hint: "Bottom sidebar ad on article pages. Paste the full ad code sized 300×600.",
+    rows: 6,
+  },
+];
+
 function AccordionSection({
   id, title, description, icon: Icon, defaultOpen = false, children,
 }: {
@@ -832,59 +883,105 @@ function AdvertisementsContent({
   onSave: (key: string, value: string) => void;
   saving: string | null;
 }) {
-  const [platform, setPlatform] = useState<"" | "adsense" | "adsterra">(
-    (settings.adPlatform as "" | "adsense" | "adsterra") || ""
+  const [platform, setPlatform] = useState<"" | "adsense" | "adsterra" | "custom">(
+    (settings.adPlatform as "" | "adsense" | "adsterra" | "custom") || ""
   );
   const [codes, setCodes] = useState<Record<string, string>>({});
+  const [customName, setCustomName] = useState(settings.adCustomPlatformName || "");
 
   useEffect(() => {
-    const allFields = [...ADSENSE_FIELDS, ...ADSTERRA_FIELDS];
+    const allFields = [...ADSENSE_FIELDS, ...ADSTERRA_FIELDS, ...CUSTOM_FIELDS];
     const initial: Record<string, string> = {};
     allFields.forEach(f => { initial[f.key] = settings[f.key] || ""; });
     setCodes(initial);
-    setPlatform((settings.adPlatform as "" | "adsense" | "adsterra") || "");
+    setPlatform((settings.adPlatform as "" | "adsense" | "adsterra" | "custom") || "");
+    setCustomName(settings.adCustomPlatformName || "");
   }, [settings]);
 
-  const handlePlatformChange = (newPlatform: "" | "adsense" | "adsterra") => {
+  const handlePlatformChange = (newPlatform: "" | "adsense" | "adsterra" | "custom") => {
     setPlatform(newPlatform);
     onSave("adPlatform", newPlatform);
   };
 
-  const activeFields = platform === "adsense" ? ADSENSE_FIELDS : platform === "adsterra" ? ADSTERRA_FIELDS : [];
+  const activeFields = platform === "adsense" ? ADSENSE_FIELDS
+    : platform === "adsterra" ? ADSTERRA_FIELDS
+    : platform === "custom" ? CUSTOM_FIELDS
+    : [];
 
-  const platformLabels = { "": "Disabled", adsense: "Google AdSense", adsterra: "Adsterra" };
+  const activePlatformLabel = platform === "adsense" ? "Google AdSense"
+    : platform === "adsterra" ? "Adsterra"
+    : platform === "custom" ? (customName || "Custom Platform")
+    : "";
+
+  const platformCodeHint = platform === "adsense" ? "AdSense"
+    : platform === "adsterra" ? "Adsterra"
+    : (customName || "custom platform");
 
   return (
     <div className="space-y-5">
       <p className="text-xs text-muted-foreground">
-        Choose one advertising platform and paste your ad codes. Only one platform can be active at a time.
+        Choose an advertising platform and paste your ad codes. Only one platform can be active at a time. Use <strong>Custom</strong> for platforms like Raptive, Mediavine, or Ezoic.
       </p>
 
       <div className="space-y-2">
         <Label>Active Platform</Label>
         <div className="flex flex-wrap gap-2">
-          {(["", "adsense", "adsterra"] as const).map(p => (
+          {([
+            { id: "" as const, label: "Disabled", icon: <X className="w-3.5 h-3.5 mr-1.5 opacity-60" /> },
+            { id: "adsense" as const, label: "Google AdSense", icon: null },
+            { id: "adsterra" as const, label: "Adsterra", icon: null },
+            { id: "custom" as const, label: "Custom", icon: null },
+          ]).map(p => (
             <Button
-              key={p}
+              key={p.id}
               type="button"
               size="sm"
-              variant={platform === p ? "default" : "outline"}
-              onClick={() => handlePlatformChange(p)}
+              variant={platform === p.id ? "default" : "outline"}
+              onClick={() => handlePlatformChange(p.id)}
               disabled={saving === "adPlatform"}
-              data-testid={`button-ad-platform-${p || "disabled"}`}
+              data-testid={`button-ad-platform-${p.id || "disabled"}`}
             >
-              {platform === p && <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />}
-              {p === "" && <X className="w-3.5 h-3.5 mr-1.5 opacity-60" />}
-              {platformLabels[p]}
+              {platform === p.id && p.id !== "" && <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />}
+              {p.icon}
+              {p.label}
             </Button>
           ))}
           {platform && (
             <Badge variant="secondary" className="self-center ml-auto">
-              {platformLabels[platform]} active
+              {activePlatformLabel} active
             </Badge>
           )}
         </div>
       </div>
+
+      {platform === "custom" && (
+        <div className="space-y-2 p-4 rounded-lg border bg-muted/30">
+          <Label htmlFor="adCustomPlatformName">Platform Name</Label>
+          <p className="text-xs text-muted-foreground">Enter the name of your ad platform (e.g., Raptive, Mediavine, Ezoic). This is for display purposes only.</p>
+          <div className="flex gap-2 items-center">
+            <Input
+              id="adCustomPlatformName"
+              value={customName}
+              onChange={e => setCustomName(e.target.value)}
+              placeholder="e.g. Raptive, Mediavine, Ezoic..."
+              className="flex-1"
+              data-testid="input-ad-custom-platform-name"
+            />
+            <Button
+              size="icon"
+              className="shrink-0"
+              onClick={() => onSave("adCustomPlatformName", customName)}
+              disabled={saving === "adCustomPlatformName"}
+              title="Save platform name"
+              data-testid="button-save-ad-custom-name"
+            >
+              {saving === "adCustomPlatformName"
+                ? <Loader2 className="w-4 h-4 animate-spin" />
+                : <Save className="w-4 h-4" />}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {platform && (
         <div className="space-y-5 border-t pt-5">
@@ -899,7 +996,7 @@ function AdvertisementsContent({
                     id={field.key}
                     value={codes[field.key] ?? ""}
                     onChange={e => setCodes(c => ({ ...c, [field.key]: e.target.value }))}
-                    placeholder={`Paste your ${platform === "adsense" ? "AdSense" : "Adsterra"} code here...`}
+                    placeholder={`Paste your ${platformCodeHint} code here...`}
                     rows={field.rows ?? 4}
                     className="flex-1 resize-none font-mono text-xs"
                     data-testid={`textarea-ad-${field.key}`}
