@@ -906,6 +906,13 @@ export async function registerRoutes(
     res.json(updated);
   });
 
+  app.patch("/api/admin/categories/:id/ad-slots", requireAdmin, async (req, res) => {
+    const { adSlots } = req.body;
+    const updated = await storage.updateCategory(req.params.id, { adSlots: JSON.stringify(adSlots) } as any);
+    if (!updated) return res.status(404).json({ message: "Category not found" });
+    res.json(updated);
+  });
+
   app.post("/api/categories", requireStaff, async (req, res) => {
     const parsed = insertCategorySchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.flatten() });
@@ -2425,9 +2432,21 @@ export async function registerRoutes(
     res.json(ad || null);
   });
 
+  app.get("/api/manual-ads/content/:contentType/:contentId/slot/:slot", async (req, res) => {
+    const { contentType, contentId, slot } = req.params;
+    const ad = await storage.getActiveManualAdForContent(contentType, contentId, slot);
+    res.json(ad || null);
+  });
+
   app.get("/api/admin/manual-ads", requireAuth, async (req, res) => {
     const { slot } = req.query;
     const ads = await storage.getManualAds(slot as string | undefined);
+    res.json(ads);
+  });
+
+  app.get("/api/admin/manual-ads/content/:contentType/:contentId", requireAuth, async (req, res) => {
+    const { contentType, contentId } = req.params;
+    const ads = await storage.getManualAdsForContent(contentType, contentId);
     res.json(ads);
   });
 

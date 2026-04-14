@@ -1,0 +1,78 @@
+📌 Ad Management Icon & Hybrid Ad Control System
+🔹 New Icon Addition (Ad Management)
+
+In all content sections of the website, where the Ad Slot Control icon currently exists:
+
+👉 Add a new icon on the left side called:
+Ad Management
+
+🔹 Ad Management Popup (Main Feature)
+
+When the Ad Management icon is clicked:
+
+A large popup modal will open
+It will contain two options:
+1️⃣ Auto Ad
+When selected:
+Ads will behave exactly as they currently do (third-party auto ads)
+No changes will be applied
+2️⃣ Manual Ad
+When selected:
+
+📌 All ad slots within that specific content will become editable
+👉 Admin can upload and manage custom manual ads for each slot
+
+🔹 Supported Manual Ad Types
+
+Manual ad upload should support:
+
+📢 Banner Ads (image-based)
+🎞️ Motion Ads (GIF / animated / HTML5)
+🎥 Video Ads (MP4 or embedded video)
+🔹 Ad Slot Behavior (Hybrid System)
+
+For each Ad Section (Ad Slot):
+
+Admin can:
+Keep third-party auto ads active
+Or switch to manual ads
+Or switch between both anytime
+
+📌 This creates a hybrid system where Auto Ads + Manual Ads work together
+
+🔹 Custom Company Ads Integration
+
+📌 If you have direct deals with companies:
+
+Their custom ads (image / video / script/code)
+👉 Can be placed directly into specific ad slots
+
+✔ No limitations
+✔ Full control for the admin
+
+🔹 Category Page Ad Management
+Category pages currently contain multiple ad sections
+
+📌 Required behavior:
+
+Add the same Ad Management icon to category pages (like content pages)
+Clicking the icon will open the same popup system
+
+📌 Dynamic Support:
+
+If a new category page is created:
+The Ad Management system should be automatically applied
+🔹 Remove Old Ad Management Section
+
+❌ The existing Ad Management section in the admin panel
+(located below Footer and above Settings)
+👉 Must be completely removed
+
+✅ Summary
+Add Ad Management icon beside Ad Slot Control
+Popup with Auto Ad + Manual Ad options
+Manual ads support Banner / Motion / Video
+Hybrid system (Auto + Manual switching)
+Apply same system to Category pages
+Auto-apply to new category pages
+Remove old Ad Management section

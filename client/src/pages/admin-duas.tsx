@@ -25,9 +25,10 @@ import {
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, BookOpen, Save, Search, ExternalLink, Eye, Copy, GripVertical, X, ImageIcon, Settings2, Clock, BarChart2, CalendarDays, FileText, Star, LayoutGrid } from "lucide-react";
+import { Plus, Pencil, Trash2, BookOpen, Save, Search, ExternalLink, Eye, Copy, GripVertical, X, ImageIcon, Settings2, Clock, BarChart2, CalendarDays, FileText, Star, LayoutGrid, Megaphone } from "lucide-react";
 import type { Dua } from "@shared/schema";
 import { AdControlDialog } from "@/components/ad-control-dialog";
+import { AdManagementDialog } from "@/components/ad-management-dialog";
 
 type DuaListResult = { duas: Dua[]; total: number };
 
@@ -75,6 +76,7 @@ export default function AdminDuasPage() {
   const effectiveFilterUserId = viewMeMode ? (viewAs?.id ?? user?.id) : !isAdmin ? user?.id : undefined;
   const shouldIncludeNull = viewMeMode && (user?.role === "super_owner" || user?.role === "owner");
   const [adControlItem, setAdControlItem] = useState<{ id: string; adSlotsRaw: string | null } | null>(null);
+  const [adManagementItem, setAdManagementItem] = useState<{ id: string; name: string; adSlotsRaw: string | null } | null>(null);
 
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
@@ -551,15 +553,26 @@ export default function AdminDuasPage() {
                         {!isContributor && (
                           <>
                             {isAdmin && (
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                title="Ad Slot Control"
-                                onClick={() => setAdControlItem({ id: dua.id, adSlotsRaw: (dua as any).adSlots ?? null })}
-                                data-testid={`button-adcontrol-${dua.id}`}
-                              >
-                                <LayoutGrid className="w-4 h-4" />
-                              </Button>
+                              <>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  title="Ad Management"
+                                  onClick={() => setAdManagementItem({ id: dua.id, name: dua.title, adSlotsRaw: (dua as any).adSlots ?? null })}
+                                  data-testid={`button-admanage-${dua.id}`}
+                                >
+                                  <Megaphone className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  title="Ad Slot Control"
+                                  onClick={() => setAdControlItem({ id: dua.id, adSlotsRaw: (dua as any).adSlots ?? null })}
+                                  data-testid={`button-adcontrol-${dua.id}`}
+                                >
+                                  <LayoutGrid className="w-4 h-4" />
+                                </Button>
+                              </>
                             )}
                             <Link href={`/image/duas/${dua.id}/edit`}>
                               <Button size="sm" variant="outline" data-testid={`button-edit-parts-${dua.id}`}>
@@ -852,6 +865,19 @@ export default function AdminDuasPage() {
           contentType="duas"
           contentId={adControlItem.id}
           adSlotsRaw={adControlItem.adSlotsRaw}
+          invalidateKey={["/api/admin/duas"]}
+        />
+      )}
+
+      {adManagementItem && (
+        <AdManagementDialog
+          key={adManagementItem.id}
+          open={!!adManagementItem}
+          onOpenChange={(v) => { if (!v) setAdManagementItem(null); }}
+          contentType="dua"
+          contentId={adManagementItem.id}
+          contentName={adManagementItem.name}
+          adSlotsRaw={adManagementItem.adSlotsRaw}
           invalidateKey={["/api/admin/duas"]}
         />
       )}

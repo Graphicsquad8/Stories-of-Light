@@ -27,12 +27,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Search, Trash2, Eye, Edit, Copy, Clock, FileText, BarChart2, TrendingUp, BookOpen, CalendarDays, LayoutGrid } from "lucide-react";
+import { Plus, Search, Trash2, Eye, Edit, Copy, Clock, FileText, BarChart2, TrendingUp, BookOpen, CalendarDays, LayoutGrid, Megaphone } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useMemo } from "react";
 import type { StoryWithCategory, Category } from "@shared/schema";
 import { AdControlDialog } from "@/components/ad-control-dialog";
+import { AdManagementDialog } from "@/components/ad-management-dialog";
 import { format } from "date-fns";
 
 type StatusFilter = "all" | "published" | "draft" | "recent" | "most-viewed";
@@ -54,6 +55,7 @@ export default function AdminStoriesPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [adControlItem, setAdControlItem] = useState<{ id: string; adSlotsRaw: string | null } | null>(null);
+  const [adManagementItem, setAdManagementItem] = useState<{ id: string; name: string; adSlotsRaw: string | null } | null>(null);
 
   const { user, isAdmin } = useAuth();
   const { viewAs, viewMeMode } = useViewAs();
@@ -477,15 +479,26 @@ export default function AdminStoriesPage() {
                         {!isContributor && (
                           <>
                             {isAdmin && (
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                title="Ad Slot Control"
-                                onClick={() => setAdControlItem({ id: story.id, adSlotsRaw: (story as any).adSlots ?? null })}
-                                data-testid={`button-adcontrol-${story.id}`}
-                              >
-                                <LayoutGrid className="w-4 h-4" />
-                              </Button>
+                              <>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  title="Ad Management"
+                                  onClick={() => setAdManagementItem({ id: story.id, name: story.title, adSlotsRaw: (story as any).adSlots ?? null })}
+                                  data-testid={`button-admanage-${story.id}`}
+                                >
+                                  <Megaphone className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  title="Ad Slot Control"
+                                  onClick={() => setAdControlItem({ id: story.id, adSlotsRaw: (story as any).adSlots ?? null })}
+                                  data-testid={`button-adcontrol-${story.id}`}
+                                >
+                                  <LayoutGrid className="w-4 h-4" />
+                                </Button>
+                              </>
                             )}
                             <Link href={`/image/stories/${story.id}/edit`}>
                               <Button size="icon" variant="ghost" data-testid={`button-edit-${story.id}`}>
@@ -555,6 +568,19 @@ export default function AdminStoriesPage() {
           contentType="articles"
           contentId={adControlItem.id}
           adSlotsRaw={adControlItem.adSlotsRaw}
+          invalidateKey={["/api/stories"]}
+        />
+      )}
+
+      {adManagementItem && (
+        <AdManagementDialog
+          key={adManagementItem.id}
+          open={!!adManagementItem}
+          onOpenChange={(v) => { if (!v) setAdManagementItem(null); }}
+          contentType="story"
+          contentId={adManagementItem.id}
+          contentName={adManagementItem.name}
+          adSlotsRaw={adManagementItem.adSlotsRaw}
           invalidateKey={["/api/stories"]}
         />
       )}

@@ -270,7 +270,9 @@ export interface IStorage {
   upsertStoryReadingProgress(userId: string, storyId: string, lastPartId: string, lastPageIndex: number): Promise<StoryReadingProgress>;
 
   getManualAds(slot?: string): Promise<ManualAd[]>;
+  getManualAdsForContent(contentType: string, contentId: string): Promise<ManualAd[]>;
   getActiveManualAdBySlot(slot: string): Promise<ManualAd | undefined>;
+  getActiveManualAdForContent(contentType: string, contentId: string, slot: string): Promise<ManualAd | undefined>;
   createManualAd(data: InsertManualAd): Promise<ManualAd>;
   updateManualAd(id: string, data: Partial<InsertManualAd>): Promise<ManualAd | undefined>;
   deleteManualAd(id: string): Promise<boolean>;
@@ -1872,9 +1874,28 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(manualAds).orderBy(asc(manualAds.slot), asc(manualAds.sortOrder), desc(manualAds.createdAt));
   }
 
+  async getManualAdsForContent(contentType: string, contentId: string): Promise<ManualAd[]> {
+    return db.select().from(manualAds)
+      .where(and(eq(manualAds.contentType, contentType), eq(manualAds.contentId, contentId)))
+      .orderBy(asc(manualAds.slot), asc(manualAds.sortOrder), desc(manualAds.createdAt));
+  }
+
   async getActiveManualAdBySlot(slot: string): Promise<ManualAd | undefined> {
     const [ad] = await db.select().from(manualAds)
-      .where(and(eq(manualAds.slot, slot), eq(manualAds.isActive, true)))
+      .where(and(eq(manualAds.slot, slot), eq(manualAds.isActive, true), sql`content_id IS NULL`))
+      .orderBy(asc(manualAds.sortOrder), desc(manualAds.createdAt))
+      .limit(1);
+    return ad;
+  }
+
+  async getActiveManualAdForContent(contentType: string, contentId: string, slot: string): Promise<ManualAd | undefined> {
+    const [ad] = await db.select().from(manualAds)
+      .where(and(
+        eq(manualAds.slot, slot),
+        eq(manualAds.isActive, true),
+        eq(manualAds.contentType, contentType),
+        eq(manualAds.contentId, contentId),
+      ))
       .orderBy(asc(manualAds.sortOrder), desc(manualAds.createdAt))
       .limit(1);
     return ad;

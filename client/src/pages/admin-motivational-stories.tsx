@@ -23,12 +23,13 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, BookOpen, Loader2, Star, Eye, Search, GripVertical, Copy, Clock, BarChart2, CalendarDays, FileText, LayoutGrid } from "lucide-react";
+import { Plus, Pencil, Trash2, BookOpen, Loader2, Star, Eye, Search, GripVertical, Copy, Clock, BarChart2, CalendarDays, FileText, LayoutGrid, Megaphone } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useMemo } from "react";
 import type { MotivationalStory, MotivationalStoryWithLessons, MotivationalLesson } from "@shared/schema";
 import { AdControlDialog } from "@/components/ad-control-dialog";
+import { AdManagementDialog } from "@/components/ad-management-dialog";
 
 
 function slugify(text: string): string {
@@ -361,6 +362,7 @@ export default function AdminMotivationalStoriesPage() {
   const effectiveFilterUserId = viewMeMode ? (viewAs?.id ?? user?.id) : !isAdmin ? user?.id : undefined;
   const shouldIncludeNull = viewMeMode && (user?.role === "super_owner" || user?.role === "owner");
   const [adControlItem, setAdControlItem] = useState<{ id: string; adSlotsRaw: string | null } | null>(null);
+  const [adManagementItem, setAdManagementItem] = useState<{ id: string; name: string; adSlotsRaw: string | null } | null>(null);
 
   const { startDate, endDate, apiSort } = useMemo(() => {
     const ms = (d: number) => new Date(Date.now() - d * 86400000).toISOString();
@@ -747,15 +749,26 @@ export default function AdminMotivationalStoriesPage() {
                         {!isContributor && (
                           <>
                             {isAdmin && (
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                title="Ad Slot Control"
-                                onClick={() => setAdControlItem({ id: story.id, adSlotsRaw: (story as any).adSlots ?? null })}
-                                data-testid={`button-adcontrol-story-${story.id}`}
-                              >
-                                <LayoutGrid className="w-3.5 h-3.5" />
-                              </Button>
+                              <>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  title="Ad Management"
+                                  onClick={() => setAdManagementItem({ id: story.id, name: story.title, adSlotsRaw: (story as any).adSlots ?? null })}
+                                  data-testid={`button-admanage-story-${story.id}`}
+                                >
+                                  <Megaphone className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  title="Ad Slot Control"
+                                  onClick={() => setAdControlItem({ id: story.id, adSlotsRaw: (story as any).adSlots ?? null })}
+                                  data-testid={`button-adcontrol-story-${story.id}`}
+                                >
+                                  <LayoutGrid className="w-3.5 h-3.5" />
+                                </Button>
+                              </>
                             )}
                             <Button size="icon" variant="ghost" onClick={() => openEdit(story)} data-testid={`button-edit-story-${story.id}`}>
                               <Pencil className="w-3.5 h-3.5" />
@@ -821,6 +834,19 @@ export default function AdminMotivationalStoriesPage() {
           contentType="motivational-stories"
           contentId={adControlItem.id}
           adSlotsRaw={adControlItem.adSlotsRaw}
+          invalidateKey={["/api/admin/motivational-stories"]}
+        />
+      )}
+
+      {adManagementItem && (
+        <AdManagementDialog
+          key={adManagementItem.id}
+          open={!!adManagementItem}
+          onOpenChange={(v) => { if (!v) setAdManagementItem(null); }}
+          contentType="motivational"
+          contentId={adManagementItem.id}
+          contentName={adManagementItem.name}
+          adSlotsRaw={adManagementItem.adSlotsRaw}
           invalidateKey={["/api/admin/motivational-stories"]}
         />
       )}

@@ -418,6 +418,8 @@ export const manualAds = pgTable("manual_ads", {
   altText: text("alt_text"),
   isActive: boolean("is_active").default(true).notNull(),
   sortOrder: integer("sort_order").default(0).notNull(),
+  contentId: varchar("content_id"),
+  contentType: varchar("content_type"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

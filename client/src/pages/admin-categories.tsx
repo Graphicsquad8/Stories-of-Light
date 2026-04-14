@@ -48,6 +48,7 @@ import {
   Layers,
   Copy,
   Eye,
+  Megaphone,
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -55,6 +56,7 @@ import { useAuth } from "@/lib/auth";
 import { useViewAs } from "@/lib/view-as";
 import { useState, useRef } from "react";
 import type { Category } from "@shared/schema";
+import { AdManagementDialog } from "@/components/ad-management-dialog";
 
 function slugify(text: string): string {
   return text
@@ -113,6 +115,7 @@ export default function AdminCategoriesPage() {
   const [editingCat, setEditingCat] = useState<CategoryWithCount | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [adManagementItem, setAdManagementItem] = useState<{ id: string; name: string; adSlotsRaw: string | null } | null>(null);
 
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -383,6 +386,15 @@ export default function AdminCategoriesPage() {
                         />
                         <span className="text-[10px] text-muted-foreground">{cat.isActive !== false ? "Active" : "Inactive"}</span>
                       </div>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        title="Ad Management"
+                        onClick={() => setAdManagementItem({ id: cat.id, name: cat.name, adSlotsRaw: (cat as any).adSlots ?? null })}
+                        data-testid={`button-admanage-cat-${cat.slug}`}
+                      >
+                        <Megaphone className="w-4 h-4" />
+                      </Button>
                       <Button size="sm" variant="ghost" onClick={() => openEdit(cat)} data-testid={`button-edit-cat-${cat.slug}`}>
                         <Edit className="w-4 h-4 mr-1" />
                         Edit
@@ -568,6 +580,19 @@ export default function AdminCategoriesPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {adManagementItem && (
+          <AdManagementDialog
+            key={adManagementItem.id}
+            open={!!adManagementItem}
+            onOpenChange={(v) => { if (!v) setAdManagementItem(null); }}
+            contentType="category"
+            contentId={adManagementItem.id}
+            contentName={adManagementItem.name}
+            adSlotsRaw={adManagementItem.adSlotsRaw}
+            invalidateKey={["/api/categories"]}
+          />
+        )}
       </>}
     </AdminLayout>
   );

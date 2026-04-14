@@ -25,7 +25,7 @@ import {
   LayoutDashboard, FileText, FolderOpen, LogOut, BookOpen,
   Sun, Moon, ExternalLink, Book, Settings, Lightbulb, Library,
   Trash2, Users, ShieldCheck, ChevronRight, LayoutTemplate, UserCircle,
-  Eye, UserCheck, Clock, Megaphone,
+  Eye, UserCheck, Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
@@ -183,14 +183,6 @@ function AdminSidebar() {
       icon: LayoutTemplate,
       isActive: (loc) => loc.startsWith("/image/footer"),
       permission: "admin-only",
-    },
-    {
-      key: "ads",
-      title: "Ad Management",
-      href: "/image/ads",
-      icon: Megaphone,
-      isActive: (loc) => loc.startsWith("/image/ads"),
-      permission: "settings",
     },
     {
       key: "settings",

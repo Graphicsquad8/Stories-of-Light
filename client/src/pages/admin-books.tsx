@@ -22,10 +22,11 @@ import {
 } from "@/components/ui/select";
 import {
   Plus, Pencil, Trash2, BookOpen, Loader2, Star, Eye, Copy, Upload,
-  FileText, Info, Search, Clock, BarChart2, CalendarDays, BookMarked, LayoutGrid,
+  FileText, Info, Search, Clock, BarChart2, CalendarDays, BookMarked, LayoutGrid, Megaphone,
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { AdControlDialog } from "@/components/ad-control-dialog";
+import { AdManagementDialog } from "@/components/ad-management-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useMemo, useRef } from "react";
 import { Link, useLocation } from "wouter";
@@ -360,6 +361,7 @@ export default function AdminBooksPage() {
   const effectiveFilterUserId = viewMeMode ? (viewAs?.id ?? user?.id) : !isAdmin ? user?.id : undefined;
   const shouldIncludeNull = viewMeMode && (user?.role === "super_owner" || user?.role === "owner");
   const [adControlItem, setAdControlItem] = useState<{ id: string; adSlotsRaw: string | null } | null>(null);
+  const [adManagementItem, setAdManagementItem] = useState<{ id: string; name: string; adSlotsRaw: string | null } | null>(null);
 
   const { startDate, endDate, apiSort } = useMemo(() => {
     const ms = (d: number) => new Date(Date.now() - d * 86400000).toISOString();
@@ -825,16 +827,28 @@ export default function AdminBooksPage() {
                         {!isContributor && (
                           <>
                             {isAdmin && (
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-8 w-8"
-                                title="Ad Slot Control"
-                                onClick={() => setAdControlItem({ id: book.id, adSlotsRaw: (book as any).adSlots ?? null })}
-                                data-testid={`button-adcontrol-${book.id}`}
-                              >
-                                <LayoutGrid className="w-3.5 h-3.5" />
-                              </Button>
+                              <>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-8 w-8"
+                                  title="Ad Management"
+                                  onClick={() => setAdManagementItem({ id: book.id, name: book.title, adSlotsRaw: (book as any).adSlots ?? null })}
+                                  data-testid={`button-admanage-${book.id}`}
+                                >
+                                  <Megaphone className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-8 w-8"
+                                  title="Ad Slot Control"
+                                  onClick={() => setAdControlItem({ id: book.id, adSlotsRaw: (book as any).adSlots ?? null })}
+                                  data-testid={`button-adcontrol-${book.id}`}
+                                >
+                                  <LayoutGrid className="w-3.5 h-3.5" />
+                                </Button>
+                              </>
                             )}
                             <Link href={`/image/books/${book.id}/edit`}>
                               <Button size="icon" variant="ghost" className="h-8 w-8" data-testid={`button-edit-parts-${book.id}`} title="Edit Parts">
@@ -880,6 +894,19 @@ export default function AdminBooksPage() {
           contentType="books"
           contentId={adControlItem.id}
           adSlotsRaw={adControlItem.adSlotsRaw}
+          invalidateKey={["/api/admin/books"]}
+        />
+      )}
+
+      {adManagementItem && (
+        <AdManagementDialog
+          key={adManagementItem.id}
+          open={!!adManagementItem}
+          onOpenChange={(v) => { if (!v) setAdManagementItem(null); }}
+          contentType="book"
+          contentId={adManagementItem.id}
+          contentName={adManagementItem.name}
+          adSlotsRaw={adManagementItem.adSlotsRaw}
           invalidateKey={["/api/admin/books"]}
         />
       )}

@@ -9,6 +9,9 @@ interface AdSlotProps {
   className?: string;
   label?: string;
   disabled?: boolean;
+  contentId?: string;
+  contentType?: string;
+  contentManualMode?: boolean;
 }
 
 function injectHtml(container: HTMLElement, html: string) {
@@ -102,7 +105,7 @@ function ManualAdRenderer({ ad, className }: { ad: ManualAdRecord; className: st
   return <div ref={containerRef} className={className} data-ad-slot={ad.slot} />;
 }
 
-export function AdSlot({ slot, className = "", label, disabled }: AdSlotProps) {
+export function AdSlot({ slot, className = "", label, disabled, contentId, contentType, contentManualMode }: AdSlotProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [location] = useLocation();
 
@@ -118,13 +121,22 @@ export function AdSlot({ slot, className = "", label, disabled }: AdSlotProps) {
   const slotEnabled = settings ? settings[slotSettingKey] !== "false" : true;
 
   const slotMode = settings ? (settings[`adSlotMode_${slot}`] || "auto") : "auto";
-  const isManualMode = slotMode === "manual";
+  const isGlobalManualMode = slotMode === "manual";
 
-  const { data: manualAd } = useQuery<ManualAdRecord | null>({
+  const { data: globalManualAd } = useQuery<ManualAdRecord | null>({
     queryKey: ["/api/manual-ads/slot", slot],
     queryFn: () => fetch(`/api/manual-ads/slot/${slot}`).then(r => r.json()),
-    enabled: isManualMode,
+    enabled: isGlobalManualMode && !contentManualMode,
   });
+
+  const { data: contentManualAd } = useQuery<ManualAdRecord | null>({
+    queryKey: ["/api/manual-ads/content", contentType, contentId, slot],
+    queryFn: () => fetch(`/api/manual-ads/content/${contentType}/${contentId}/slot/${slot}`).then(r => r.json()),
+    enabled: !!(contentManualMode && contentId && contentType),
+  });
+
+  const isManualMode = contentManualMode || isGlobalManualMode;
+  const manualAd = contentManualMode ? contentManualAd : globalManualAd;
 
   const platform = settings?.adPlatform || "";
 
