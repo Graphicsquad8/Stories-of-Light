@@ -1,0 +1,82 @@
+📌 Ad Controls – Page-Level Controls (Critical Fix & Update)
+🔹 Remove Unnecessary Page
+In Settings → Ad Controls → Page-Level Controls:
+
+❌ The “Story Pages” option must be completely removed
+
+📌 This has been requested multiple times and must be implemented without fail
+
+🔹 All Articles – Page-Level Controls System
+🔸 Structure
+When clicking on All Articles, it should display:
+Sahaba
+Awliya
+Karamat
+History
+
+📌 If the Admin creates a new article page:
+
+It must be automatically added under All Articles as a Page-Level Control
+🔸 Ad Control (Per Page)
+
+Each page must contain exactly 2 ad items:
+
+Top Banner
+Mid-Content
+🔸 Behavior
+
+✔ If ads are ON:
+
+Ads will be displayed normally on the page
+
+❌ If ads are OFF:
+
+Ads will not be shown on that page
+
+⚠️ Important:
+
+This control applies only to page-level ads
+Ads inside content (content-level ads) must remain unchanged
+📌 Content-Level Ad Slot Control (Bug Fix)
+🔹 Current Issue
+Inside All Articles content:
+When an ad is turned OFF using the Ad Slot Control icon
+The icon still shows ON state until the page is reloaded
+
+❌ This means:
+
+UI state is not updating in real time
+🔧 Required Fix
+🔸 Real-Time UI Update
+When an Ad Item is turned OFF:
+
+📌 Immediately:
+
+The icon state must update to OFF
+No reload/refresh should be required
+🔸 Functional Behavior
+
+✔ When Ad Item is OFF:
+
+The ad is removed from the content (this is already working correctly)
+
+✔ When Ad Item is ON:
+
+The ad appears again
+
+📌 This functionality should remain unchanged
+
+🔐 Final System Rules
+“Story Pages” must be completely removed
+All Articles must support dynamic page-level controls
+Each page must have exactly 2 ad items
+Page-level OFF → hides page ads only
+Content-level OFF → hides specific ad only
+UI state must update in real time (no reload needed)
+✅ Summary
+Remove Story Pages (mandatory)
+Implement dynamic All Articles page-level control
+Maintain 2 ad items per page (Top Banner, Mid-Content)
+Page-level control must not affect content-level ads
+Fix Ad Slot icon state update issue
+Ensure real-time ON/OFF behavior without reload

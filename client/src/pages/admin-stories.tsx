@@ -122,7 +122,8 @@ export default function AdminStoriesPage() {
   const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
 
   const { data: stories, isLoading } = useQuery<StoryWithCategory[]>({
-    queryKey: [`/api/stories${queryString}`],
+    queryKey: ["/api/stories", queryString],
+    queryFn: () => fetch(`/api/stories${queryString}`, { credentials: "include" }).then(r => r.json()),
     enabled: !categorySlug || !!activeCategory,
   });
 

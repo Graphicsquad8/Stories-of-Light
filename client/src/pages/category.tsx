@@ -10,8 +10,9 @@ import type { StoryWithCategory, Category } from "@shared/schema";
 import { format } from "date-fns";
 import { AdSlot } from "@/components/ad-slot";
 
-function AdBand({ position, label }: { position: string; label: string }) {
+function AdBand({ position, label, disabled }: { position: string; label: string; disabled?: boolean }) {
   const slotType = position.includes("banner") ? "banner" : "in-feed";
+  if (disabled) return null;
   return (
     <div className="py-4">
       <AdSlot slot={slotType} label={`Ad Space - ${label}`} className="w-full" />
@@ -56,6 +57,14 @@ function StoryCard({ story }: { story: StoryWithCategory }) {
 
 export default function CategoryPage() {
   const { slug } = useParams<{ slug: string }>();
+
+  const { data: settings } = useQuery<Record<string, string>>({
+    queryKey: ["/api/settings/public"],
+  });
+
+  const pageEnabled = !slug || settings?.[`adCategoryPage_${slug}`] !== "false";
+  const bannerEnabled = pageEnabled && settings?.[`adCategorySlot_${slug}_banner`] !== "false";
+  const midEnabled = pageEnabled && settings?.[`adCategorySlot_${slug}_in-feed`] !== "false";
 
   const { data: category, isLoading: catLoading } = useQuery<Category>({
     queryKey: ["/api/categories", slug],
@@ -124,7 +133,7 @@ export default function CategoryPage() {
       </section>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <AdBand position="category-top-banner" label="top-banner" />
+        <AdBand position="category-top-banner" label="top-banner" disabled={!bannerEnabled} />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -157,7 +166,7 @@ export default function CategoryPage() {
           </Card>
         )}
 
-        <AdBand position="category-mid-content" label="mid-content" />
+        <AdBand position="category-mid-content" label="mid-content" disabled={!midEnabled} />
       </div>
     </PublicLayout>
   );

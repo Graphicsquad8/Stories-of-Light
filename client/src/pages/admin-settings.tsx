@@ -446,12 +446,15 @@ function TypographySection({
 }
 
 const AD_PAGES = [
-  { key: "adStoryPage", shortKey: "story", label: "Story Pages", description: "Islamic stories reading pages", slots: ["banner", "in-article", "sidebar-small", "sidebar-small-2", "sidebar-large"] },
   { key: "adHomePage", shortKey: "home", label: "Home Page", description: "Hero, featured stories, books, duas sections", slots: ["banner", "display", "in-feed"] },
   { key: "adMotivationalPage", shortKey: "motivational", label: "Motivational Stories", description: "Islamic motivational stories section", slots: ["banner", "in-feed"] },
-  { key: "adCategoryPage", shortKey: "category", label: "All Articles", description: "Ad control for article category listing pages", slots: ["banner", "in-feed"] },
   { key: "adBooksPage", shortKey: "books", label: "Books Page", description: "Islamic books listing and reader pages", slots: ["banner", "in-feed"] },
   { key: "adDuasPage", shortKey: "duas", label: "Duas Page", description: "Dua listing and detail pages", slots: ["banner", "in-feed"] },
+];
+
+const CATEGORY_SLOTS = [
+  { slot: "banner", label: "Top Banner" },
+  { slot: "in-feed", label: "Mid-Content" },
 ];
 
 const AD_SLOT_LABELS: Record<string, string> = {
@@ -473,6 +476,13 @@ function AdControlsSection({
 }) {
   const globalEnabled = settings.adEnabled !== "false";
   const [slotsOpen, setSlotsOpen] = useState<Record<string, boolean>>({});
+  const [articlesOpen, setArticlesOpen] = useState(false);
+  const [catSlotsOpen, setCatSlotsOpen] = useState<Record<string, boolean>>({});
+
+  const { data: categories = [] } = useQuery<{ id: string; name: string; urlSlug: string }[]>({
+    queryKey: ["/api/categories", "story"],
+    queryFn: () => fetch("/api/categories?type=story").then(r => r.json()),
+  });
 
   return (
     <div className="space-y-5">
@@ -567,6 +577,85 @@ function AdControlsSection({
             </Collapsible>
           );
         })}
+
+        <Collapsible open={articlesOpen} onOpenChange={setArticlesOpen}>
+          <div className={`rounded-lg border transition-opacity ${!globalEnabled ? "opacity-50" : ""}`}>
+            <CollapsibleTrigger asChild>
+              <button
+                className="w-full flex items-center justify-between p-3 text-left hover:bg-muted/40 transition-colors"
+                data-testid="collapsible-all-articles"
+              >
+                <div>
+                  <div className="text-sm font-medium">All Articles</div>
+                  <div className="text-xs text-muted-foreground">Ad control per article category listing page</div>
+                </div>
+                <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ml-4 shrink-0 ${articlesOpen ? "rotate-180" : ""}`} />
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="border-t divide-y">
+                {categories.length === 0 && (
+                  <div className="px-4 py-3 text-xs text-muted-foreground">No categories found.</div>
+                )}
+                {categories.map((cat) => {
+                  const pageKey = `adCategoryPage_${cat.urlSlug}`;
+                  const pageEnabled = settings[pageKey] !== "false";
+                  const catOpen = catSlotsOpen[cat.urlSlug] ?? false;
+                  return (
+                    <Collapsible
+                      key={cat.id}
+                      open={catOpen}
+                      onOpenChange={(v) => setCatSlotsOpen(prev => ({ ...prev, [cat.urlSlug]: v }))}
+                    >
+                      <CollapsibleTrigger asChild>
+                        <button className="w-full flex items-center justify-between px-4 py-2.5 text-left hover:bg-muted/30 transition-colors">
+                          <div className="text-sm">{cat.name}</div>
+                          <div className="flex items-center gap-2 shrink-0 ml-4">
+                            <span className={`text-xs ${pageEnabled ? "text-emerald-600" : "text-muted-foreground"}`}>
+                              {pageEnabled ? "On" : "Off"}
+                            </span>
+                            <Switch
+                              checked={pageEnabled}
+                              onCheckedChange={(checked) => onSave(pageKey, checked ? "true" : "false")}
+                              disabled={saving === pageKey || !globalEnabled}
+                              data-testid={`switch-page-${pageKey}`}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${catOpen ? "rotate-180" : ""}`} />
+                          </div>
+                        </button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <div className="border-t divide-y bg-muted/10">
+                          {CATEGORY_SLOTS.map(({ slot, label }) => {
+                            const slotKey = `adCategorySlot_${cat.urlSlug}_${slot}`;
+                            const slotEnabled = settings[slotKey] !== "false";
+                            return (
+                              <div key={slot} className="flex items-center justify-between px-8 py-2">
+                                <div className="text-sm text-muted-foreground">{label}</div>
+                                <div className="flex items-center gap-2 shrink-0 ml-4">
+                                  <span className={`text-xs ${slotEnabled ? "text-emerald-600" : "text-muted-foreground"}`}>
+                                    {slotEnabled ? "On" : "Off"}
+                                  </span>
+                                  <Switch
+                                    checked={slotEnabled}
+                                    onCheckedChange={(checked) => onSave(slotKey, checked ? "true" : "false")}
+                                    disabled={saving === slotKey || !globalEnabled || !pageEnabled}
+                                    data-testid={`switch-slot-${slotKey}`}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  );
+                })}
+              </div>
+            </CollapsibleContent>
+          </div>
+        </Collapsible>
 
       </div>
     </div>
