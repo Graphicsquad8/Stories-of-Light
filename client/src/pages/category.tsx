@@ -10,12 +10,25 @@ import type { StoryWithCategory, Category } from "@shared/schema";
 import { format } from "date-fns";
 import { AdSlot } from "@/components/ad-slot";
 
-function AdBand({ position, label, disabled }: { position: string; label: string; disabled?: boolean }) {
-  const slotType = position.includes("banner") ? "banner" : "in-feed";
+function AdBand({ slot, label, disabled, contentId, contentType, contentManualMode }: {
+  slot: "banner" | "in-feed";
+  label: string;
+  disabled?: boolean;
+  contentId?: string;
+  contentType?: string;
+  contentManualMode?: boolean;
+}) {
   if (disabled) return null;
   return (
     <div className="py-4">
-      <AdSlot slot={slotType} label={`Ad Space - ${label}`} className="w-full" />
+      <AdSlot
+        slot={slot}
+        label={`Ad Space - ${label}`}
+        className="w-full"
+        contentId={contentId}
+        contentType={contentType}
+        contentManualMode={contentManualMode}
+      />
     </div>
   );
 }
@@ -76,6 +89,10 @@ export default function CategoryPage() {
     enabled: !!slug,
   });
 
+  const adSlotsMap: Record<string, any> = (() => {
+    try { return JSON.parse((category as any)?.adSlots || "{}"); } catch { return {}; }
+  })();
+
   const { data: stories, isLoading: storiesLoading } = useQuery<StoryWithCategory[]>({
     queryKey: [`/api/stories?status=published&categoryId=${category?.id}`],
     enabled: !!category?.id,
@@ -133,7 +150,14 @@ export default function CategoryPage() {
       </section>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <AdBand position="category-top-banner" label="top-banner" disabled={!bannerEnabled} />
+        <AdBand
+          slot="banner"
+          label="top-banner"
+          disabled={!bannerEnabled}
+          contentId={category?.id}
+          contentType="category"
+          contentManualMode={adSlotsMap["banner_mode"] === "manual"}
+        />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -166,7 +190,14 @@ export default function CategoryPage() {
           </Card>
         )}
 
-        <AdBand position="category-mid-content" label="mid-content" disabled={!midEnabled} />
+        <AdBand
+          slot="in-feed"
+          label="mid-content"
+          disabled={!midEnabled}
+          contentId={category?.id}
+          contentType="category"
+          contentManualMode={adSlotsMap["in-feed_mode"] === "manual"}
+        />
       </div>
     </PublicLayout>
   );

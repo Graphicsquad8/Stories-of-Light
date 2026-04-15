@@ -1,0 +1,92 @@
+📌 Categories Page – Ad Control System
+🔹 Existing Behavior (Reference System)
+
+The ad system within the Categories Page should function as follows:
+
+Similar to:
+Admin Panel → Settings → Ad Controls → Page-level Controls → All Articles
+When an admin turns ON/OFF ads for a specific category page:
+👉 The ads on that corresponding page will be shown/hidden accordingly on the website
+
+📌 The same behavior must be maintained for the Categories Page
+
+🔹 Category Page Ad Slots
+
+Each Category Page will have the following predefined Ad Slots:
+
+Sahaba → Top Banner + Mid-Content
+Awliya → Top Banner + Mid-Content
+Karamat → Top Banner + Mid-Content
+History → Top Banner + Mid-Content
+🔹 Ad Management Icon (Category Pages)
+
+Inside the Admin Panel → Categories Section:
+
+Each Category Page will include an Ad Management icon
+
+👉 On clicking this icon:
+
+A large popup modal will open
+🔹 Ad Management Popup Behavior
+
+The popup will contain two options:
+
+1️⃣ Auto Ad
+When selected:
+Ads will continue to display exactly as they currently do
+👉 (i.e., third-party / auto ads remain unchanged)
+2️⃣ Manual Ad
+When selected:
+
+📌 The admin can upload a manual ad for a specific Ad Slot only
+
+The manually selected ad will:
+Be shown only in that specific Ad Slot
+Other Ad Slots:
+Will remain unchanged
+Will continue showing existing ads (auto/third-party)
+
+📌 Important Behavior:
+
+No other Ad Slot will be turned off
+No global changes will occur
+Control is strictly per-slot
+🔹 Supported Manual Ad Types
+
+Manual ad uploads will support:
+
+📢 Banner Ads (image-based)
+🎞️ Motion Ads (GIF / animated / HTML5)
+🎥 Video Ads (MP4 / embedded video)
+🔹 Hybrid Ad System (Per-Slot Control)
+
+For each Ad Slot on a Category Page:
+
+Admin can:
+Keep third-party auto ads enabled
+OR set a manual ad
+OR switch between them as needed
+
+📌 This means:
+A hybrid system where Auto Ads + Manual Ads can work together simultaneously
+
+🔹 Custom Company Ads Integration
+
+📌 If you partner with any company:
+
+Their provided custom ads (image / video / code)
+👉 Can be directly placed into specific Ad Slots
+
+✔ No limitations
+✔ Full control remains with the admin
+
+✅ Summary
+Categories Page supports page-level ad control
+Each Category Page has predefined Ad Slots
+Ad Management icon opens a popup system
+Auto Ads remain unchanged by default
+Manual Ads can be applied per specific Ad Slot
+Other slots remain unaffected (no global changes)
+Supports Banner, Motion, and Video ads
+Hybrid system (Auto + Manual) enabled
+Company-specific ad placement possible

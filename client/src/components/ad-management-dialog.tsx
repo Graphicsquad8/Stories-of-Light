@@ -38,6 +38,12 @@ const SLOT_LABELS: Record<string, string> = {
   "sidebar-large": "Sidebar 300×600",
 };
 
+const SLOT_LABELS_OVERRIDE: Partial<Record<AdManagementContentType, Record<string, string>>> = {
+  category: {
+    "in-feed": "Mid-Content",
+  },
+};
+
 const CONTENT_SLOTS: Record<AdManagementContentType, string[]> = {
   story: ["sidebar-small", "sidebar-small-2", "sidebar-large"],
   book: ["sidebar-small", "sidebar-small-2", "sidebar-large"],
@@ -93,6 +99,10 @@ interface AdManagementDialogProps {
   contentName: string;
   adSlotsRaw: string | null | undefined;
   invalidateKey: string[];
+}
+
+function slotLabel(contentType: AdManagementContentType, slot: string): string {
+  return SLOT_LABELS_OVERRIDE[contentType]?.[slot] ?? SLOT_LABELS[slot] ?? slot;
 }
 
 export function AdManagementDialog({
@@ -156,7 +166,7 @@ export function AdManagementDialog({
       await apiRequest("PATCH", modeApiPath, { adSlots: updated });
       queryClient.invalidateQueries({ queryKey: invalidateKey });
       updateSlot(slot, { mode: newMode, savingMode: false, expanded: newMode === "manual" });
-      toast({ title: `${SLOT_LABELS[slot] || slot} → ${newMode === "auto" ? "Auto" : "Manual"} mode` });
+      toast({ title: `${slotLabel(contentType, slot)} → ${newMode === "auto" ? "Auto" : "Manual"} mode` });
     } catch {
       toast({ title: "Failed to switch mode", variant: "destructive" });
       updateSlot(slot, { savingMode: false });
@@ -183,7 +193,7 @@ export function AdManagementDialog({
     updateSlot(slot, { saving: true });
     try {
       const payload: any = {
-        name: `${contentName} – ${SLOT_LABELS[slot] || slot}`,
+        name: `${contentName} – ${slotLabel(contentType, slot)}`,
         slot,
         type: s.type,
         fileUrl: s.fileUrl || null,
@@ -205,7 +215,7 @@ export function AdManagementDialog({
       }
       updateSlot(slot, { id: ad.id, saving: false, expanded: false });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/manual-ads/content", contentType, contentId] });
-      toast({ title: `Ad saved for ${SLOT_LABELS[slot] || slot}` });
+      toast({ title: `Ad saved for ${slotLabel(contentType, slot)}` });
     } catch {
       toast({ title: "Failed to save ad", variant: "destructive" });
       updateSlot(slot, { saving: false });
@@ -253,7 +263,7 @@ export function AdManagementDialog({
                     {/* Slot header row */}
                     <div className="flex items-center justify-between px-3 py-2.5 bg-muted/20">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-sm font-semibold truncate">{SLOT_LABELS[slot] || slot}</span>
+                        <span className="text-sm font-semibold truncate">{slotLabel(contentType, slot)}</span>
                         {hasAd && isManual && (
                           <Badge variant="default" className="text-xs h-5 gap-1 shrink-0">
                             {TYPE_ICONS[s.type]}
