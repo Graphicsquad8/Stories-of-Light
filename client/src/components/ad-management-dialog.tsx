@@ -40,7 +40,8 @@ const SLOT_LABELS: Record<string, string> = {
 
 const SLOT_LABELS_OVERRIDE: Partial<Record<AdManagementContentType, Record<string, string>>> = {
   category: {
-    "in-feed": "Mid-Content",
+    "banner": "Top Banner (728×90)",
+    "in-feed": "Mid-Content (336×280)",
   },
 };
 
@@ -215,6 +216,7 @@ export function AdManagementDialog({
       }
       updateSlot(slot, { id: ad.id, saving: false, expanded: false });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/manual-ads/content", contentType, contentId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/manual-ads/content", contentType, contentId] });
       toast({ title: `Ad saved for ${slotLabel(contentType, slot)}` });
     } catch {
       toast({ title: "Failed to save ad", variant: "destructive" });
@@ -229,6 +231,7 @@ export function AdManagementDialog({
       await apiRequest("DELETE", `/api/admin/manual-ads/${s.id}`);
       updateSlot(slot, { ...defaultSlotState(s.mode), savingMode: false });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/manual-ads/content", contentType, contentId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/manual-ads/content", contentType, contentId] });
       toast({ title: "Ad removed" });
     } catch {
       toast({ title: "Failed to remove", variant: "destructive" });

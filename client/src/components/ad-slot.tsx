@@ -90,15 +90,27 @@ function ManualAdRenderer({ ad, className }: { ad: ManualAdRecord; className: st
     );
   }
   if (ad.type === "video") {
+    const videoEl = (
+      <video
+        src={ad.fileUrl || ""}
+        autoPlay
+        loop
+        muted
+        playsInline
+        disablePictureInPicture
+        onPause={(e) => { try { e.currentTarget.play(); } catch {} }}
+        onContextMenu={(e) => e.preventDefault()}
+        style={{ pointerEvents: "none", display: "block" }}
+        className="w-full h-auto"
+      />
+    );
     return (
       <div className={className} data-ad-slot={ad.slot}>
         {ad.linkUrl ? (
-          <a href={ad.linkUrl} target="_blank" rel="noopener noreferrer">
-            <video src={ad.fileUrl || ""} autoPlay loop muted playsInline className="w-full h-auto block" />
+          <a href={ad.linkUrl} target="_blank" rel="noopener noreferrer" style={{ display: "block" }}>
+            {videoEl}
           </a>
-        ) : (
-          <video src={ad.fileUrl || ""} autoPlay loop muted playsInline className="w-full h-auto block" />
-        )}
+        ) : videoEl}
       </div>
     );
   }
