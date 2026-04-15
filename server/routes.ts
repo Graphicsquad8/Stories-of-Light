@@ -908,7 +908,7 @@ export async function registerRoutes(
 
   app.patch("/api/admin/categories/:id/ad-slots", requireAdmin, async (req, res) => {
     const { adSlots } = req.body;
-    const updated = await storage.updateCategory(req.params.id, { adSlots: JSON.stringify(adSlots) } as any);
+    const updated = await storage.updateCategory(req.params.id, { adSlots: JSON.stringify(adSlots) });
     if (!updated) return res.status(404).json({ message: "Category not found" });
     res.json(updated);
   });
