@@ -138,17 +138,30 @@ export function AdSlot({ slot, className = "", label, disabled, contentId, conte
   const { data: globalManualAd } = useQuery<ManualAdRecord | null>({
     queryKey: ["/api/manual-ads/slot", slot],
     queryFn: () => fetch(`/api/manual-ads/slot/${slot}`).then(r => r.json()),
-    enabled: isGlobalManualMode && !contentManualMode,
+    enabled: isGlobalManualMode,
+    staleTime: 30_000,
   });
 
-  const { data: contentManualAd } = useQuery<ManualAdRecord | null>({
+  // Always fetch content-specific manual ad when content info is available.
+  // This ensures the ad displays even if the parent's adSlotsMap is stale.
+  const { data: contentManualAd, isLoading: contentAdLoading } = useQuery<ManualAdRecord | null>({
     queryKey: ["/api/manual-ads/content", contentType, contentId, slot],
     queryFn: () => fetch(`/api/manual-ads/content/${contentType}/${contentId}/slot/${slot}`).then(r => r.json()),
-    enabled: !!(contentManualMode && contentId && contentType),
+    enabled: !!(contentId && contentType),
+    staleTime: 30_000,
   });
 
-  const isManualMode = contentManualMode || isGlobalManualMode;
-  const manualAd = contentManualMode ? contentManualAd : globalManualAd;
+  // Priority: active content ad > content manual mode suppression > global manual > auto
+  const hasActiveContentAd = !!(contentManualAd && contentManualAd.isActive);
+  const isManualMode = hasActiveContentAd || contentManualMode || isGlobalManualMode;
+  // If a content-specific ad exists and is active, it wins.
+  // If slot is in manual mode (even with no ad yet), fall through to null.
+  // Global manual ad only fires when there's no content override.
+  const manualAd = hasActiveContentAd ? contentManualAd : (isGlobalManualMode ? globalManualAd : null);
+
+  // While the content manual ad check is still in-flight, hold rendering to prevent
+  // a flash where the auto ad briefly appears before the manual ad is confirmed.
+  const contentAdPending = !!(contentId && contentType && contentAdLoading);
 
   const platform = settings?.adPlatform || "";
 
@@ -206,6 +219,9 @@ export function AdSlot({ slot, className = "", label, disabled, contentId, conte
   }, [code]);
 
   if (!globalEnabled || !pageEnabled || !slotEnabled || disabled) return null;
+
+  // Hold rendering while the content manual ad check is still in-flight
+  if (contentAdPending) return null;
 
   if (isManualMode) {
     if (!manualAd) return null;
