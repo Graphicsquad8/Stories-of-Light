@@ -2457,15 +2457,15 @@ export async function registerRoutes(
   });
 
   app.post("/api/admin/manual-ads", requireAuth, async (req, res) => {
-    const { name, slot, type, fileUrl, htmlCode, linkUrl, altText, isActive, sortOrder } = req.body;
+    const { name, slot, type, fileUrl, htmlCode, linkUrl, altText, isActive, sortOrder, contentId, contentType } = req.body;
     if (!name || !slot || !type) return res.status(400).json({ message: "name, slot, and type are required" });
-    const ad = await storage.createManualAd({ name, slot, type, fileUrl, htmlCode, linkUrl, altText, isActive: isActive !== false, sortOrder: sortOrder ?? 0 });
+    const ad = await storage.createManualAd({ name, slot, type, fileUrl, htmlCode, linkUrl, altText, isActive: isActive !== false, sortOrder: sortOrder ?? 0, contentId: contentId || null, contentType: contentType || null });
     res.json(ad);
   });
 
   app.patch("/api/admin/manual-ads/:id", requireAuth, async (req, res) => {
-    const { name, slot, type, fileUrl, htmlCode, linkUrl, altText, isActive, sortOrder } = req.body;
-    const ad = await storage.updateManualAd(req.params.id, { name, slot, type, fileUrl, htmlCode, linkUrl, altText, isActive, sortOrder });
+    const { name, slot, type, fileUrl, htmlCode, linkUrl, altText, isActive, sortOrder, contentId, contentType } = req.body;
+    const ad = await storage.updateManualAd(req.params.id, { name, slot, type, fileUrl, htmlCode, linkUrl, altText, isActive, sortOrder, contentId: contentId || null, contentType: contentType || null });
     if (!ad) return res.status(404).json({ message: "Ad not found" });
     res.json(ad);
   });
