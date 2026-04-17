@@ -132,17 +132,17 @@ function SidebarAds({ adSlotsMap, contentId, contentType }: { adSlotsMap: Record
     <aside className="hidden lg:block lg:col-span-1" data-testid="sidebar-ads">
       <div className="sticky top-20 space-y-4">
         {adSlotsMap["sidebar-small"] !== false && (
-          <div className="w-[300px] h-[250px] flex">
+          <div className="w-[300px] h-[250px] flex overflow-hidden">
             <AdSlot slot="sidebar-small" label="AdSense Placeholder — 300×250" className="w-full h-full" contentId={contentId} contentType={contentType} contentManualMode={adSlotsMap["sidebar-small_mode"] === "manual"} />
           </div>
         )}
         {adSlotsMap["sidebar-small-2"] !== false && (
-          <div className="w-[300px] h-[250px] flex">
+          <div className="w-[300px] h-[250px] flex overflow-hidden">
             <AdSlot slot="sidebar-small-2" label="AdSense Placeholder — 300×250 (B)" className="w-full h-full" contentId={contentId} contentType={contentType} contentManualMode={adSlotsMap["sidebar-small-2_mode"] === "manual"} />
           </div>
         )}
         {adSlotsMap["sidebar-large"] !== false && (
-          <div className="w-[300px] h-[600px] flex">
+          <div className="w-[300px] h-[600px] flex overflow-hidden">
             <AdSlot slot="sidebar-large" label="AdSense Placeholder — 300×600" className="w-full h-full" contentId={contentId} contentType={contentType} contentManualMode={adSlotsMap["sidebar-large_mode"] === "manual"} />
           </div>
         )}
@@ -582,17 +582,17 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
           <aside className={`hidden xl:block w-[300px] shrink-0 border-l ${!sidebarOpen ? "mr-4" : ""}`} data-testid="sidebar-ads-right">
             <div className="sticky top-[4.5rem] p-3 space-y-4">
               {adSlotsMap["sidebar-small"] !== false && (
-                <div className="w-[300px] h-[250px] flex">
+                <div className="w-[300px] h-[250px] flex overflow-hidden">
                   <AdSlot slot="sidebar-small" label="AdSense Placeholder — 300×250" className="w-full h-full" contentId={story.id} contentType="story" contentManualMode={adSlotsMap["sidebar-small_mode"] === "manual"} />
                 </div>
               )}
               {adSlotsMap["sidebar-small-2"] !== false && (
-                <div className="w-[300px] h-[250px] flex">
+                <div className="w-[300px] h-[250px] flex overflow-hidden">
                   <AdSlot slot="sidebar-small-2" label="AdSense Placeholder — 300×250 (B)" className="w-full h-full" contentId={story.id} contentType="story" contentManualMode={adSlotsMap["sidebar-small-2_mode"] === "manual"} />
                 </div>
               )}
               {adSlotsMap["sidebar-large"] !== false && (
-                <div className="w-[300px] h-[600px] flex">
+                <div className="w-[300px] h-[600px] flex overflow-hidden">
                   <AdSlot slot="sidebar-large" label="AdSense Placeholder — 300×600" className="w-full h-full" contentId={story.id} contentType="story" contentManualMode={adSlotsMap["sidebar-large_mode"] === "manual"} />
                 </div>
               )}

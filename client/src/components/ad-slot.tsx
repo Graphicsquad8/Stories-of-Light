@@ -82,10 +82,10 @@ function ManualAdRenderer({ ad, className }: { ad: ManualAdRecord; className: st
   }, [ad.type, ad.htmlCode]);
 
   if (ad.type === "image" || ad.type === "gif") {
-    const img = <img src={ad.fileUrl || ""} alt={ad.altText || ""} className="w-full h-auto block" />;
+    const img = <img src={ad.fileUrl || ""} alt={ad.altText || ""} className="w-full h-full object-contain block" />;
     return (
-      <div className={className} data-ad-slot={ad.slot}>
-        {ad.linkUrl ? <a href={ad.linkUrl} target="_blank" rel="noopener noreferrer">{img}</a> : img}
+      <div className={`overflow-hidden ${className}`} data-ad-slot={ad.slot}>
+        {ad.linkUrl ? <a href={ad.linkUrl} target="_blank" rel="noopener noreferrer" className="block w-full h-full">{img}</a> : img}
       </div>
     );
   }
