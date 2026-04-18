@@ -506,7 +506,7 @@ export default function AdminDuasPage() {
                 <TableRow>
                   <TableHead>Title</TableHead>
                   <TableHead>Category</TableHead>
-                  <TableHead className="hidden xl:table-cell">Contributor</TableHead>
+                  <TableHead className="hidden xl:table-cell">Author</TableHead>
                   <TableHead className="text-center">Views</TableHead>
                   <TableHead className="text-center">Rating</TableHead>
                   <TableHead className="text-center">Status</TableHead>

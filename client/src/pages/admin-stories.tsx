@@ -406,12 +406,12 @@ export default function AdminStoriesPage() {
                 {!activeCategory && (
                   <th className="text-left p-3 font-medium hidden sm:table-cell">Category</th>
                 )}
-                <th className="text-left p-3 font-medium hidden xl:table-cell">Contributor</th>
-                <th className="text-left p-3 font-medium hidden md:table-cell">Status</th>
+                <th className="text-left p-3 font-medium hidden xl:table-cell">Author</th>
                 <th className="text-left p-3 font-medium hidden md:table-cell">
                   <span className="flex items-center gap-1"><Eye className="w-3.5 h-3.5" />Views</span>
                 </th>
                 <th className="text-left p-3 font-medium hidden lg:table-cell">Date</th>
+                <th className="text-left p-3 font-medium hidden md:table-cell">Status</th>
                 {isAdmin && <th className="text-left p-3 font-medium hidden xl:table-cell">Active</th>}
                 <th className="text-right p-3 font-medium">Actions</th>
               </tr>
@@ -423,9 +423,10 @@ export default function AdminStoriesPage() {
                     <td className="p-3"><Skeleton className="h-4 w-4" /></td>
                     <td className="p-3"><Skeleton className="h-4 w-48" /></td>
                     {!activeCategory && <td className="p-3 hidden sm:table-cell"><Skeleton className="h-4 w-24" /></td>}
-                    <td className="p-3 hidden md:table-cell"><Skeleton className="h-5 w-16" /></td>
+                    <td className="p-3 hidden xl:table-cell"><Skeleton className="h-4 w-20" /></td>
                     <td className="p-3 hidden md:table-cell"><Skeleton className="h-4 w-10" /></td>
                     <td className="p-3 hidden lg:table-cell"><Skeleton className="h-4 w-20" /></td>
+                    <td className="p-3 hidden md:table-cell"><Skeleton className="h-5 w-16" /></td>
                     <td className="p-3 text-right"><Skeleton className="h-8 w-20 ml-auto" /></td>
                   </tr>
                 ))
@@ -460,11 +461,6 @@ export default function AdminStoriesPage() {
                         {story.userId ? (staffMap[story.userId] ?? story.userId.slice(0, 8)) : <span className="italic">System</span>}
                       </span>
                     </td>
-                    <td className="p-3 hidden md:table-cell">
-                      <Badge variant={story.status === "published" ? "default" : "secondary"}>
-                        {story.status}
-                      </Badge>
-                    </td>
                     <td className="p-3 hidden md:table-cell text-muted-foreground" data-testid={`text-views-${story.id}`}>
                       <span className="flex items-center gap-1">
                         <Eye className="w-3 h-3" />
@@ -476,6 +472,11 @@ export default function AdminStoriesPage() {
                         <Clock className="w-3 h-3" />
                         {story.createdAt ? format(new Date(story.createdAt), "MMM d, yyyy") : "-"}
                       </span>
+                    </td>
+                    <td className="p-3 hidden md:table-cell">
+                      <Badge variant={story.status === "published" ? "default" : "secondary"}>
+                        {story.status}
+                      </Badge>
                     </td>
                     {isAdmin && (
                       <td className="p-3 hidden xl:table-cell">

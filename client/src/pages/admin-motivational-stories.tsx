@@ -704,7 +704,7 @@ export default function AdminMotivationalStoriesPage() {
                 <TableRow>
                   <TableHead>Title</TableHead>
                   <TableHead className="hidden sm:table-cell">Category</TableHead>
-                  <TableHead className="hidden xl:table-cell">Contributor</TableHead>
+                  <TableHead className="hidden xl:table-cell">Author</TableHead>
                   <TableHead>Views</TableHead>
                   <TableHead>Rating</TableHead>
                   <TableHead>Published</TableHead>

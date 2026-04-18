@@ -447,17 +447,6 @@ export default function AdminBooksPage() {
     },
   });
 
-  const { data: staffList } = useQuery<Array<{ id: string; name: string | null; username: string }>>({
-    queryKey: ["/api/admin/staff-lookup"],
-    queryFn: () => fetch("/api/admin/staff-lookup", { credentials: "include" }).then(r => r.json()),
-    staleTime: 5 * 60 * 1000,
-  });
-  const staffMap = useMemo(() => {
-    const m: Record<string, string> = {};
-    (staffList ?? []).forEach(s => { m[s.id] = s.name || s.username; });
-    return m;
-  }, [staffList]);
-
   const { data: categoriesData } = useQuery<string[]>({
     queryKey: ["/api/admin/books/categories"],
     queryFn: async () => {
@@ -770,7 +759,6 @@ export default function AdminBooksPage() {
                   <TableHead>Book</TableHead>
                   <TableHead className="hidden md:table-cell">Author</TableHead>
                   <TableHead className="hidden sm:table-cell">Category</TableHead>
-                  <TableHead className="hidden xl:table-cell">Contributor</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Rating</TableHead>
                   <TableHead>Views</TableHead>
@@ -800,11 +788,6 @@ export default function AdminBooksPage() {
                     </TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground">{book.author}</TableCell>
                     <TableCell className="hidden sm:table-cell text-muted-foreground">{book.category || "—"}</TableCell>
-                    <TableCell className="hidden xl:table-cell">
-                      <span className="text-xs text-muted-foreground">
-                        {book.userId ? (staffMap[book.userId] ?? book.userId.slice(0, 8)) : <span className="italic">System</span>}
-                      </span>
-                    </TableCell>
                     <TableCell>
                       <Badge variant={book.type === "free" ? "default" : "secondary"} className="capitalize text-xs">
                         {book.type}
