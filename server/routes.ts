@@ -115,9 +115,9 @@ const adFileStorage = multer.diskStorage({
 });
 const adFileUpload = multer({
   storage: adFileStorage,
-  limits: { fileSize: 50 * 1024 * 1024 },
+  limits: { fileSize: 100 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif", "video/mp4", "video/webm"];
+    const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif", "video/mp4", "video/webm", "video/quicktime", "video/x-msvideo"];
     cb(null, allowed.includes(file.mimetype));
   },
 });
@@ -2450,10 +2450,18 @@ export async function registerRoutes(
     res.json(ads);
   });
 
-  app.post("/api/admin/upload/ad-file", requireAuth, adFileUpload.single("file"), async (req, res) => {
-    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
-    const url = `/uploads/ads/${req.file.filename}`;
-    res.json({ url });
+  app.post("/api/admin/upload/ad-file", requireAuth, (req: any, res: any, next: any) => {
+    adFileUpload.single("file")(req, res, (err: any) => {
+      if (err) {
+        if (err.code === "LIMIT_FILE_SIZE") {
+          return res.status(400).json({ message: "File too large — maximum size is 100 MB" });
+        }
+        return res.status(400).json({ message: err.message || "Upload failed" });
+      }
+      if (!req.file) return res.status(400).json({ message: "No file uploaded or unsupported format (allowed: JPG/PNG/WebP/GIF/MP4/WebM)" });
+      const url = `/uploads/ads/${req.file.filename}`;
+      res.json({ url });
+    });
   });
 
   app.post("/api/admin/manual-ads", requireAuth, async (req, res) => {

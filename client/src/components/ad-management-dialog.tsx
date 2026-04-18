@@ -181,9 +181,14 @@ export function AdManagementDialog({
       form.append("file", file);
       const res = await fetch("/api/admin/upload/ad-file", { method: "POST", body: form, credentials: "include" });
       const data = await res.json();
+      if (!res.ok || !data.url) {
+        toast({ title: data.message || "Upload rejected — check file type/size", variant: "destructive" });
+        return;
+      }
       updateSlot(slot, { fileUrl: data.url });
+      toast({ title: "File uploaded successfully" });
     } catch {
-      toast({ title: "Upload failed", variant: "destructive" });
+      toast({ title: "Upload failed — network error", variant: "destructive" });
     } finally {
       updateSlot(slot, { uploading: false });
     }
@@ -402,7 +407,13 @@ export function AdManagementDialog({
                                       <input
                                         ref={(el) => { fileRefs.current[slot] = el; }}
                                         type="file"
-                                        accept={s.type === "video" ? "video/*" : "image/*"}
+                                        accept={
+                                          s.type === "video"
+                                            ? "video/mp4,video/webm,.mp4,.webm"
+                                            : s.type === "gif"
+                                            ? "image/gif,.gif"
+                                            : "image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                                        }
                                         className="hidden"
                                         onChange={(e) => {
                                           const f = e.target.files?.[0];

@@ -101,20 +101,20 @@ function ManualAdRenderer({ ad, className }: { ad: ManualAdRecord; className: st
         onPause={(e) => { try { e.currentTarget.play(); } catch {} }}
         onContextMenu={(e) => e.preventDefault()}
         style={{ pointerEvents: "none", display: "block" }}
-        className="w-full h-auto"
+        className="w-full h-full object-contain"
       />
     );
     return (
-      <div className={className} data-ad-slot={ad.slot}>
+      <div className={`overflow-hidden ${className}`} data-ad-slot={ad.slot}>
         {ad.linkUrl ? (
-          <a href={ad.linkUrl} target="_blank" rel="noopener noreferrer" style={{ display: "block" }}>
+          <a href={ad.linkUrl} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
             {videoEl}
           </a>
         ) : videoEl}
       </div>
     );
   }
-  return <div ref={containerRef} className={className} data-ad-slot={ad.slot} />;
+  return <div ref={containerRef} className={`overflow-hidden ${className}`} data-ad-slot={ad.slot} />;
 }
 
 export function AdSlot({ slot, className = "", label, disabled, contentId, contentType, contentManualMode }: AdSlotProps) {

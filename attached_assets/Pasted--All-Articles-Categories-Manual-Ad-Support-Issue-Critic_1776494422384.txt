@@ -1,0 +1,98 @@
+📌 All Articles & Categories – Manual Ad Support Issue (Critical Fix)
+🔧 Current Setup
+
+Inside the All Articles (Sahaba, Awliya, Karamat, History) content pages, the following Ad Slots are used:
+
+AdSense Placeholder — 300×250 (A)
+AdSense Placeholder — 300×250 (B)
+AdSense Placeholder — 300×600
+❗ Current Problem (Critical)
+
+In Categories Page → Ad Management (Manual Ad Upload):
+
+👉 বর্তমানে only this is working:
+
+📢 Banner Ads (image-based) ✅
+
+👉 But the following two ad types are NOT working:
+
+🎞️ Motion Ads (GIF / animated / HTML5) ❌
+🎥 Video Ads (MP4 / embedded video) ❌
+📌 Issues:
+Upload option exists but does not function properly
+Ads are not rendering on the website after upload
+Data may not be saving correctly or not being fetched/rendered
+System is effectively limited to image-based ads only
+✅ Required Fix
+
+The Manual Ad system must fully support all three ad types:
+
+1️⃣ Banner Ads (Image-based)
+JPG / PNG / WebP support
+Already working ✅ (no change needed)
+2️⃣ Motion Ads (GIF / HTML5 / Animated)
+GIF upload must be supported
+HTML5 ad code (iframe / script) must be supported
+Animations must render correctly on the frontend
+3️⃣ Video Ads (MP4 / Embedded)
+MP4 video upload support required
+Embed support (YouTube or custom video)
+Video behavior:
+Auto-play enabled
+Loop continuously
+(Optional) Disable pause/close controls if required
+⚙️ Functional Requirements
+📌 Manual Ad Behavior
+When a Manual Ad is set on a specific Ad Slot:
+Auto Ad must be disabled only for that slot
+Other Ad Slots must remain unchanged
+🔄 Hybrid Ad System (Important)
+
+Each Ad Slot should support:
+
+✅ Auto Ads
+✅ Manual Ads
+✅ Switching between Auto ↔ Manual per slot
+
+📌 Meaning:
+👉 Auto Ads and Manual Ads must coexist within the same page
+
+🔗 Custom Company Ads Integration
+
+If there is a direct partnership with an ad provider:
+
+Admin must be able to:
+
+Upload image/video ads
+Add custom HTML/script-based ads
+Assign them to specific Ad Slots
+
+✅ No limitations
+✅ Full control remains with admin
+
+🚨 Critical Fix Checklist (For Developers)
+
+Ensure the following:
+
+GIF upload works correctly ✔
+MP4 video upload works ✔
+HTML5/embed ads render properly ✔
+Data is correctly saved in the database ✔
+Frontend fetch + render logic works ✔
+Slot-specific behavior is maintained ✔
+
+❌ Must NOT happen:
+
+Upload succeeds but ad does not display
+Empty or missing ad after upload
+Valid formats being rejected
+✅ Final Expected Result
+
+👉 In both All Articles and Categories Pages:
+
+All three ad types (Banner, Motion, Video) must work
+Each Ad Slot must be independently controllable
+Manual Ads must display instantly after upload
+UI and functionality must be fully consistent
+
+🔥 This is a core monetization feature, so this issue must be fixed properly and completely.
