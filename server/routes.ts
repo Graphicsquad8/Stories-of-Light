@@ -2093,6 +2093,13 @@ export async function registerRoutes(
     });
   });
 
+  app.get("/api/admin/staff-lookup", requireStaff, async (_req, res) => {
+    const result = await pool.query(
+      `SELECT id, username, name, role FROM users WHERE role IN ('super_owner','owner','admin','editor','moderator') ORDER BY name ASC`
+    );
+    res.json(result.rows);
+  });
+
   app.get("/api/admin/moderators", requireAdmin, async (req, res) => {
     const currentRole = (req.user as any)?.role;
     const roles = visibleRolesFor(currentRole);

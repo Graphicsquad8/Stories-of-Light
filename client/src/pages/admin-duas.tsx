@@ -161,6 +161,17 @@ export default function AdminDuasPage() {
     },
   });
 
+  const { data: staffList } = useQuery<Array<{ id: string; name: string | null; username: string }>>({
+    queryKey: ["/api/admin/staff-lookup"],
+    queryFn: () => fetch("/api/admin/staff-lookup", { credentials: "include" }).then(r => r.json()),
+    staleTime: 5 * 60 * 1000,
+  });
+  const staffMap = useMemo(() => {
+    const m: Record<string, string> = {};
+    (staffList ?? []).forEach(s => { m[s.id] = s.name || s.username; });
+    return m;
+  }, [staffList]);
+
   const duas = data?.duas ?? [];
 
   const createDua = useMutation({
@@ -495,6 +506,7 @@ export default function AdminDuasPage() {
                 <TableRow>
                   <TableHead>Title</TableHead>
                   <TableHead>Category</TableHead>
+                  <TableHead className="hidden xl:table-cell">Contributor</TableHead>
                   <TableHead className="text-center">Views</TableHead>
                   <TableHead className="text-center">Rating</TableHead>
                   <TableHead className="text-center">Status</TableHead>
@@ -509,6 +521,7 @@ export default function AdminDuasPage() {
                       <div>
                         <p className="font-medium text-sm truncate max-w-[170px]" title={dua.title}>{dua.title}</p>
                         <p className="text-xs text-muted-foreground truncate max-w-[170px]">/duas/{dua.slug}</p>
+                        <p className="text-[10px] font-mono text-muted-foreground/50">#{dua.id.slice(0, 8)}</p>
                       </div>
                     </TableCell>
                     <TableCell className="max-w-[110px]">
@@ -519,6 +532,11 @@ export default function AdminDuasPage() {
                       ) : (
                         <span className="text-xs text-muted-foreground">—</span>
                       )}
+                    </TableCell>
+                    <TableCell className="hidden xl:table-cell">
+                      <span className="text-xs text-muted-foreground">
+                        {dua.userId ? (staffMap[dua.userId] ?? dua.userId.slice(0, 8)) : <span className="italic">System</span>}
+                      </span>
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground">

@@ -129,6 +129,17 @@ export default function AdminStoriesPage() {
     enabled: !categorySlug || !!activeCategory,
   });
 
+  const { data: staffList } = useQuery<Array<{ id: string; name: string | null; username: string }>>({
+    queryKey: ["/api/admin/staff-lookup"],
+    queryFn: () => fetch("/api/admin/staff-lookup", { credentials: "include" }).then(r => r.json()),
+    staleTime: 5 * 60 * 1000,
+  });
+  const staffMap = useMemo(() => {
+    const m: Record<string, string> = {};
+    (staffList ?? []).forEach(s => { m[s.id] = s.name || s.username; });
+    return m;
+  }, [staffList]);
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       await apiRequest("DELETE", `/api/stories/${id}`);
@@ -395,6 +406,7 @@ export default function AdminStoriesPage() {
                 {!activeCategory && (
                   <th className="text-left p-3 font-medium hidden sm:table-cell">Category</th>
                 )}
+                <th className="text-left p-3 font-medium hidden xl:table-cell">Contributor</th>
                 <th className="text-left p-3 font-medium hidden md:table-cell">Status</th>
                 <th className="text-left p-3 font-medium hidden md:table-cell">
                   <span className="flex items-center gap-1"><Eye className="w-3.5 h-3.5" />Views</span>
@@ -431,6 +443,7 @@ export default function AdminStoriesPage() {
                       <div>
                         <span className="font-medium line-clamp-1">{story.title}</span>
                         <span className="text-xs text-muted-foreground block mt-0.5">/{story.slug}</span>
+                        <span className="text-[10px] font-mono text-muted-foreground/50 mt-0.5 block">#{story.id.slice(0, 8)}</span>
                       </div>
                     </td>
                     {!activeCategory && (
@@ -442,6 +455,11 @@ export default function AdminStoriesPage() {
                         )}
                       </td>
                     )}
+                    <td className="p-3 hidden xl:table-cell">
+                      <span className="text-xs text-muted-foreground">
+                        {story.userId ? (staffMap[story.userId] ?? story.userId.slice(0, 8)) : <span className="italic">System</span>}
+                      </span>
+                    </td>
                     <td className="p-3 hidden md:table-cell">
                       <Badge variant={story.status === "published" ? "default" : "secondary"}>
                         {story.status}

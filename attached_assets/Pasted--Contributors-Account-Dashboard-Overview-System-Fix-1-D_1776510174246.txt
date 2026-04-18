@@ -1,0 +1,100 @@
+📌 Contributors Account – Dashboard & Overview System Fix
+🔧 1. Dashboard Not Working Properly (Critical Issue)
+
+When Super Owner / Owner / Admin enters any Contributor account, the current issue is:
+
+❌ Dashboard is not functioning like the normal admin login dashboard
+❌ Previous dashboard behavior is broken in contributor impersonation mode
+🎯 Required Fix
+
+👉 The Dashboard must work exactly the same way as it works in normal Admin Panel login
+
+📌 Meaning:
+
+Same layout
+Same functionality
+Same navigation behavior
+Same data loading system
+No breakdown in contributor mode
+
+✔ Contributor impersonation mode should NOT affect dashboard functionality.
+
+🧹 2. Overview Section UI Fix
+
+Inside the Overview section:
+
+❌ Remove the text / option:
+“Viewing Contributor Mode”
+
+📌 This should be completely removed from UI
+✔ No label or indicator of this mode should be visible
+
+📊 3. Content Ownership Visibility System
+
+All website content uploaded by Contributors must be properly trackable from Admin Panel.
+
+🔹 Admin Visibility Rule
+
+Super Owner / Owner / Admin must be able to:
+
+See which Contributor uploaded each content
+View all content based on contributor ownership
+Access content from admin panel with full control
+🔹 4. Content Metadata Requirement
+
+Each content item must include:
+
+📌 Contributor Name (Content Owner)
+📌 Content ID (Unique Identifier)
+
+This data must be:
+
+Stored in the system
+Visible in Admin Panel
+Accessible during content management and editing
+🔹 5. Content Editing Control System
+
+When editing any content:
+
+👉 The system must show:
+
+Content Owner Name (Contributor)
+Content ID
+Management controls based on role
+
+📌 This ensures:
+
+Proper tracking of content ownership
+Clear identification of who uploaded what
+Controlled editing and auditing system
+🚨 Current Problem Summary
+Dashboard is broken in contributor account view
+“Viewing Contributor Mode” label is showing (needs removal)
+Content ownership tracking must be properly displayed and structured
+✅ Expected Final Behavior
+
+After fixing:
+
+👉 Dashboard:
+
+Works exactly like normal admin login mode in all cases
+
+👉 Overview:
+
+No “Viewing Contributor Mode” text visible
+
+👉 Content System:
+
+Every content clearly shows:
+Contributor Name
+Content ID
+
+✔ Fully stable dashboard system
+✔ Proper RBAC behavior
+✔ Clean UI without unnecessary labels
+✔ Accurate content ownership tracking
+
+🔥 Priority
+
+This is a high-priority system consistency + UI + RBAC fix
+👉 Must ensure dashboard behavior is identical in all access modes

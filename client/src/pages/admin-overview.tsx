@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useLocation, useSearch } from "wouter";
+import { useSearch } from "wouter";
 import { AdminLayout } from "@/components/admin-layout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +13,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import {
   FileText, BookOpen, Star, Eye, CalendarDays, MessageSquare,
-  ArrowLeft, ShieldCheck, Layers, Activity, Bookmark,
+  ShieldCheck, Layers, Activity, Bookmark,
   TrendingUp, ChevronDown, ChevronLeft, ChevronRight,
   Search, Users, Camera, Loader2, UserCircle2,
 } from "lucide-react";
@@ -304,7 +304,6 @@ const VIEW_MODE_LABELS: Record<string, string> = {
 };
 
 export default function AdminOverviewPage() {
-  const [, navigate] = useLocation();
   const search = useSearch();
   const { user, isAdmin } = useAuth();
   const { viewAs, viewMeMode, setViewMeMode } = useViewAs();
@@ -420,19 +419,6 @@ export default function AdminOverviewPage() {
             </p>
           </div>
         </div>
-
-        {isViewingOther && (
-          <div className="flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
-            <ShieldCheck className="w-5 h-5 text-amber-600 shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-amber-800 dark:text-amber-200">Viewing Contributor Mode</p>
-              <p className="text-xs text-amber-700 dark:text-amber-300">You are viewing this contributor's overview as an admin.</p>
-            </div>
-            <Button variant="outline" size="sm" className="shrink-0 border-amber-300 text-amber-800 hover:bg-amber-100" onClick={() => navigate("/image")} data-testid="button-exit-contributor-mode">
-              <ArrowLeft className="w-3.5 h-3.5 mr-1.5" /> Dashboard
-            </Button>
-          </div>
-        )}
 
         {/* ── Boxed Header ── */}
         <Card className="p-4">

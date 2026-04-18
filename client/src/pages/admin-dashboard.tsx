@@ -335,7 +335,7 @@ function TopContributors({ contributors, isLoading }: { contributors: Contributo
     if (!isAdmin) return;
     setViewAs({ id: c.id, username: c.username, name: c.name, role: c.role, permissions: c.permissions, avatar_url: c.avatar_url });
     setViewMeMode(true);
-    navigate("/image/overview");
+    navigate("/image");
   };
 
   return (
@@ -1085,14 +1085,7 @@ export default function AdminDashboardPage() {
   const [viewMode, setViewMode] = useState<"normal" | "graph">("normal");
   const { viewAs, viewMeMode } = useViewAs();
   const { isAdmin } = useAuth();
-  const [, navigate] = useLocation();
   const isContributor = !!viewAs || !isAdmin;
-
-  // When impersonating a contributor, redirect to their overview page
-  // (dashboard only shows global site-wide data — not contributor-specific data)
-  useEffect(() => {
-    if (viewAs) navigate("/image/overview");
-  }, [viewAs, navigate]);
 
   const { data, isLoading } = useQuery<DashboardData>({
     queryKey: ["/api/admin/dashboard"],

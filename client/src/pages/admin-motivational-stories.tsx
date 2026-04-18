@@ -448,6 +448,17 @@ export default function AdminMotivationalStoriesPage() {
     },
   });
 
+  const { data: staffList } = useQuery<Array<{ id: string; name: string | null; username: string }>>({
+    queryKey: ["/api/admin/staff-lookup"],
+    queryFn: () => fetch("/api/admin/staff-lookup", { credentials: "include" }).then(r => r.json()),
+    staleTime: 5 * 60 * 1000,
+  });
+  const staffMap = useMemo(() => {
+    const m: Record<string, string> = {};
+    (staffList ?? []).forEach(s => { m[s.id] = s.name || s.username; });
+    return m;
+  }, [staffList]);
+
   const stories = data?.stories || [];
 
   const deleteMutation = useMutation({
@@ -693,6 +704,7 @@ export default function AdminMotivationalStoriesPage() {
                 <TableRow>
                   <TableHead>Title</TableHead>
                   <TableHead className="hidden sm:table-cell">Category</TableHead>
+                  <TableHead className="hidden xl:table-cell">Contributor</TableHead>
                   <TableHead>Views</TableHead>
                   <TableHead>Rating</TableHead>
                   <TableHead>Published</TableHead>
@@ -706,6 +718,7 @@ export default function AdminMotivationalStoriesPage() {
                     <TableCell>
                       <span className="font-medium line-clamp-1" data-testid={`text-story-title-${story.id}`}>{story.title}</span>
                       <span className="text-xs text-muted-foreground block mt-0.5">/{story.slug}</span>
+                      <span className="text-[10px] font-mono text-muted-foreground/50 mt-0.5 block">#{story.id.slice(0, 8)}</span>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
                       {story.category ? (
@@ -713,6 +726,11 @@ export default function AdminMotivationalStoriesPage() {
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
+                    </TableCell>
+                    <TableCell className="hidden xl:table-cell">
+                      <span className="text-xs text-muted-foreground">
+                        {story.userId ? (staffMap[story.userId] ?? story.userId.slice(0, 8)) : <span className="italic">System</span>}
+                      </span>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
