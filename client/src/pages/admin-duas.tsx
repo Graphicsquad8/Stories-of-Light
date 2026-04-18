@@ -505,22 +505,16 @@ export default function AdminDuasPage() {
               <TableBody>
                 {duas.map(dua => (
                   <TableRow key={dua.id} data-testid={`row-dua-${dua.id}`}>
-                    <TableCell>
+                    <TableCell className="max-w-[180px]">
                       <div>
-                        <p className="font-medium">{dua.title}</p>
-                        <p className="text-xs text-muted-foreground">/duas/{dua.slug}</p>
+                        <p className="font-medium text-sm truncate max-w-[170px]" title={dua.title}>{dua.title}</p>
+                        <p className="text-xs text-muted-foreground truncate max-w-[170px]">/duas/{dua.slug}</p>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="max-w-[110px]">
                       {dua.category ? (
-                        <Badge variant="secondary" className="text-xs whitespace-normal text-center leading-tight max-w-[100px]">
-                          {dua.category.split(" ").reduce<string[][]>((acc, word) => {
-                            const last = acc[acc.length - 1];
-                            if (!last || last.length >= 2) { acc.push([word]); } else { last.push(word); }
-                            return acc;
-                          }, []).map((chunk, i) => (
-                            <span key={i} className="block">{chunk.join(" ")}</span>
-                          ))}
+                        <Badge variant="secondary" className="text-xs truncate max-w-[100px] block" title={dua.category}>
+                          {dua.category}
                         </Badge>
                       ) : (
                         <span className="text-xs text-muted-foreground">—</span>
