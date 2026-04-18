@@ -360,7 +360,7 @@ export default function AdminMotivationalStoriesPage() {
   const { viewAs, viewMeMode } = useViewAs();
   const isContributor = !viewMeMode && (!!viewAs || !isAdmin);
   const effectiveFilterUserId = viewMeMode ? (viewAs?.id ?? user?.id) : !isAdmin ? user?.id : undefined;
-  const shouldIncludeNull = viewMeMode && (user?.role === "super_owner" || user?.role === "owner");
+  const shouldIncludeNull = viewMeMode && !viewAs && (user?.role === "super_owner" || user?.role === "owner");
   const [adControlItem, setAdControlItem] = useState<{ id: string; adSlotsRaw: string | null } | null>(null);
   const [adManagementItem, setAdManagementItem] = useState<{ id: string; name: string; adSlotsRaw: string | null } | null>(null);
 

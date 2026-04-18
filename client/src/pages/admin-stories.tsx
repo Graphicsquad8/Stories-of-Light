@@ -61,7 +61,7 @@ export default function AdminStoriesPage() {
   const { viewAs, viewMeMode } = useViewAs();
   const isContributor = !viewMeMode && (!!viewAs || !isAdmin);
   const effectiveFilterUserId = viewMeMode ? (viewAs?.id ?? user?.id) : !isAdmin ? user?.id : undefined;
-  const shouldIncludeNull = viewMeMode && (user?.role === "super_owner" || user?.role === "owner");
+  const shouldIncludeNull = viewMeMode && !viewAs && (user?.role === "super_owner" || user?.role === "owner");
 
   const [matchCat, catParams] = useRoute("/image/stories/category/:slug");
   const categorySlug = matchCat ? catParams?.slug : null;
