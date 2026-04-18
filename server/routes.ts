@@ -1266,6 +1266,14 @@ export async function registerRoutes(
     res.json(updated);
   });
 
+  app.patch("/api/admin/stories/:id/status", requireStaff, async (req, res) => {
+    const { status } = req.body;
+    if (status !== "published" && status !== "draft") return res.status(400).json({ message: "status must be 'published' or 'draft'" });
+    const updated = await storage.updateStory(req.params.id, { status });
+    if (!updated) return res.status(404).json({ message: "Story not found" });
+    res.json(updated);
+  });
+
   app.patch("/api/admin/stories/:id/active", requireAdmin, async (req, res) => {
     const { isActive } = req.body;
     const updated = await storage.updateStory(req.params.id, { isActive });

@@ -184,6 +184,16 @@ export default function AdminStoriesPage() {
     onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
 
+  const toggleStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      await apiRequest("PATCH", `/api/admin/stories/${id}/status`, { status });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/stories"] });
+    },
+    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+  });
+
   const toggleSelect = (id: string) => {
     const next = new Set(selectedIds);
     if (next.has(id)) next.delete(id);
@@ -474,9 +484,12 @@ export default function AdminStoriesPage() {
                       </span>
                     </td>
                     <td className="p-3 hidden md:table-cell">
-                      <Badge variant={story.status === "published" ? "default" : "secondary"}>
-                        {story.status}
-                      </Badge>
+                      <Switch
+                        checked={story.status === "published"}
+                        onCheckedChange={(checked) => toggleStatusMutation.mutate({ id: story.id, status: checked ? "published" : "draft" })}
+                        data-testid={`switch-status-${story.id}`}
+                        title={story.status === "published" ? "Published" : "Draft"}
+                      />
                     </td>
                     {isAdmin && (
                       <td className="p-3 hidden xl:table-cell">

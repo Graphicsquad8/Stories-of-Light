@@ -707,7 +707,7 @@ export default function AdminMotivationalStoriesPage() {
                   <TableHead className="hidden xl:table-cell">Author</TableHead>
                   <TableHead>Views</TableHead>
                   <TableHead>Rating</TableHead>
-                  <TableHead>Published</TableHead>
+                  <TableHead>Status</TableHead>
                   {isAdmin && <TableHead>Active</TableHead>}
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
