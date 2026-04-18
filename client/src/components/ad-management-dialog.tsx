@@ -24,6 +24,7 @@ import {
   CheckCircle2, ChevronDown, ChevronUp, X,
 } from "lucide-react";
 import type { ManualAd } from "@shared/schema";
+import { isVideoEmbedUrl, toVideoEmbedUrl } from "@/components/ad-slot";
 
 export type AdManagementContentType = "story" | "book" | "motivational" | "dua" | "category";
 
@@ -374,15 +375,16 @@ export function AdManagementDialog({
 
                               {s.type === "html" ? (
                                 <div className="space-y-1">
-                                  <Label className="text-xs">HTML / Script Code</Label>
+                                  <Label className="text-xs">HTML / Embed Code</Label>
                                   <Textarea
                                     value={s.htmlCode}
                                     onChange={(e) => updateSlot(slot, { htmlCode: e.target.value })}
-                                    placeholder="Paste your ad embed code here..."
+                                    placeholder="Paste your ad embed code here — supports <iframe>, <script>, or any HTML..."
                                     rows={4}
                                     className="text-xs font-mono"
                                     data-testid={`textarea-htmlcode-${slot}`}
                                   />
+                                  <p className="text-xs text-muted-foreground">Tip: For YouTube, use the "Video" type above and paste the YouTube link directly.</p>
                                 </div>
                               ) : (
                                 <div className="space-y-2">
@@ -430,30 +432,54 @@ export function AdManagementDialog({
                                     <Input
                                       value={s.fileUrl}
                                       onChange={(e) => updateSlot(slot, { fileUrl: e.target.value })}
-                                      placeholder="https://..."
+                                      placeholder={
+                                        s.type === "video"
+                                          ? "https://... (MP4/WebM or YouTube/Vimeo link)"
+                                          : s.type === "gif"
+                                          ? "https://... (direct GIF URL)"
+                                          : "https://... (JPG/PNG/WebP URL)"
+                                      }
                                       className="h-8 text-xs"
                                       data-testid={`input-fileurl-${slot}`}
                                     />
+                                    {s.type === "video" && s.fileUrl && isVideoEmbedUrl(s.fileUrl) && (
+                                      <p className="text-xs text-emerald-600 flex items-center gap-1">
+                                        <CheckCircle2 className="w-3 h-3" /> YouTube/Vimeo link detected — will embed automatically
+                                      </p>
+                                    )}
                                   </div>
                                   {s.fileUrl && (
                                     <div className="mt-1 rounded overflow-hidden border max-h-24 flex items-center justify-center bg-muted/20">
                                       {s.type === "video" ? (
-                                        <video src={s.fileUrl} className="max-h-24 max-w-full object-contain" muted />
+                                        isVideoEmbedUrl(s.fileUrl) ? (
+                                          <iframe
+                                            src={toVideoEmbedUrl(s.fileUrl)}
+                                            className="w-full h-24"
+                                            frameBorder="0"
+                                            allow="autoplay; encrypted-media"
+                                            title="Preview"
+                                            style={{ border: "none" }}
+                                          />
+                                        ) : (
+                                          <video src={s.fileUrl} className="max-h-24 max-w-full object-contain" muted />
+                                        )
                                       ) : (
                                         <img src={s.fileUrl} alt="Preview" className="max-h-24 max-w-full object-contain" />
                                       )}
                                     </div>
                                   )}
-                                  <div className="space-y-1">
-                                    <Label className="text-xs">Alt Text</Label>
-                                    <Input
-                                      value={s.altText}
-                                      onChange={(e) => updateSlot(slot, { altText: e.target.value })}
-                                      placeholder="Image description..."
-                                      className="h-8 text-xs"
-                                      data-testid={`input-alttext-${slot}`}
-                                    />
-                                  </div>
+                                  {(s.type === "image" || s.type === "gif") && (
+                                    <div className="space-y-1">
+                                      <Label className="text-xs">Alt Text</Label>
+                                      <Input
+                                        value={s.altText}
+                                        onChange={(e) => updateSlot(slot, { altText: e.target.value })}
+                                        placeholder="Image description..."
+                                        className="h-8 text-xs"
+                                        data-testid={`input-alttext-${slot}`}
+                                      />
+                                    </div>
+                                  )}
                                 </div>
                               )}
 

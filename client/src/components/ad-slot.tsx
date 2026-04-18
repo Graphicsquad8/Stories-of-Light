@@ -72,11 +72,30 @@ interface ManualAdRecord {
   isActive: boolean;
 }
 
+export function isVideoEmbedUrl(url: string): boolean {
+  return /youtube\.com\/(watch|embed|shorts)|youtu\.be\/|vimeo\.com\/|dailymotion\.com\//i.test(url);
+}
+
+export function toVideoEmbedUrl(url: string): string {
+  const ytWatch = url.match(/youtube\.com\/watch\?.*?v=([a-zA-Z0-9_-]+)/);
+  if (ytWatch) return `https://www.youtube.com/embed/${ytWatch[1]}?autoplay=1&loop=1&mute=1&playlist=${ytWatch[1]}&controls=0&modestbranding=1`;
+  const ytShort = url.match(/youtu\.be\/([a-zA-Z0-9_-]+)/);
+  if (ytShort) return `https://www.youtube.com/embed/${ytShort[1]}?autoplay=1&loop=1&mute=1&playlist=${ytShort[1]}&controls=0&modestbranding=1`;
+  const ytShortsMatch = url.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]+)/);
+  if (ytShortsMatch) return `https://www.youtube.com/embed/${ytShortsMatch[1]}?autoplay=1&loop=1&mute=1&playlist=${ytShortsMatch[1]}&controls=0`;
+  if (url.includes("youtube.com/embed/")) {
+    return url.includes("?") ? `${url}&autoplay=1&mute=1` : `${url}?autoplay=1&mute=1`;
+  }
+  const vimeo = url.match(/vimeo\.com\/(\d+)/);
+  if (vimeo) return `https://player.vimeo.com/video/${vimeo[1]}?autoplay=1&loop=1&muted=1&background=1`;
+  return url;
+}
+
 function ManualAdRenderer({ ad, className }: { ad: ManualAdRecord; className: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if ((ad.type === "html") && containerRef.current && ad.htmlCode) {
+    if (ad.type === "html" && containerRef.current && ad.htmlCode) {
       injectHtml(containerRef.current, ad.htmlCode);
     }
   }, [ad.type, ad.htmlCode]);
@@ -89,10 +108,26 @@ function ManualAdRenderer({ ad, className }: { ad: ManualAdRecord; className: st
       </div>
     );
   }
+
   if (ad.type === "video") {
+    const url = ad.fileUrl || "";
+    if (isVideoEmbedUrl(url)) {
+      return (
+        <div className={`overflow-hidden ${className}`} data-ad-slot={ad.slot}>
+          <iframe
+            src={toVideoEmbedUrl(url)}
+            className="w-full h-full"
+            frameBorder="0"
+            allow="autoplay; encrypted-media; picture-in-picture"
+            style={{ display: "block", border: "none" }}
+            title="Ad video"
+          />
+        </div>
+      );
+    }
     const videoEl = (
       <video
-        src={ad.fileUrl || ""}
+        src={url}
         autoPlay
         loop
         muted
@@ -114,6 +149,7 @@ function ManualAdRenderer({ ad, className }: { ad: ManualAdRecord; className: st
       </div>
     );
   }
+
   return <div ref={containerRef} className={`overflow-hidden ${className}`} data-ad-slot={ad.slot} />;
 }
 
