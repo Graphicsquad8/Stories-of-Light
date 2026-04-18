@@ -513,7 +513,15 @@ export default function AdminDuasPage() {
                     </TableCell>
                     <TableCell>
                       {dua.category ? (
-                        <Badge variant="secondary" className="text-xs">{dua.category}</Badge>
+                        <Badge variant="secondary" className="text-xs whitespace-normal text-center leading-tight max-w-[100px]">
+                          {dua.category.split(" ").reduce<string[][]>((acc, word) => {
+                            const last = acc[acc.length - 1];
+                            if (!last || last.length >= 2) { acc.push([word]); } else { last.push(word); }
+                            return acc;
+                          }, []).map((chunk, i) => (
+                            <span key={i} className="block">{chunk.join(" ")}</span>
+                          ))}
+                        </Badge>
                       ) : (
                         <span className="text-xs text-muted-foreground">—</span>
                       )}
@@ -575,8 +583,8 @@ export default function AdminDuasPage() {
                               </>
                             )}
                             <Link href={`/image/duas/${dua.id}/edit`}>
-                              <Button size="sm" variant="outline" data-testid={`button-edit-parts-${dua.id}`}>
-                                <BookOpen className="w-3.5 h-3.5 mr-1" />Manage Duas
+                              <Button size="icon" variant="ghost" title="Manage Duas" data-testid={`button-edit-parts-${dua.id}`}>
+                                <BookOpen className="w-4 h-4" />
                               </Button>
                             </Link>
                             <Button size="icon" variant="ghost" onClick={() => openEdit(dua)} data-testid={`button-edit-${dua.id}`} title="Edit details">
