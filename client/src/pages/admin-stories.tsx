@@ -7,6 +7,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -20,6 +22,18 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -27,17 +41,197 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Search, Trash2, Eye, Copy, Clock, FileText, BarChart2, TrendingUp, BookOpen, CalendarDays, LayoutGrid, Megaphone, ExternalLink } from "lucide-react";
+import { Plus, Search, Trash2, Eye, Pencil, Copy, Clock, FileText, BarChart2, TrendingUp, BookOpen, CalendarDays, LayoutGrid, Megaphone, ExternalLink, GripVertical, Loader2, Save } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useMemo } from "react";
-import type { StoryWithCategory, Category } from "@shared/schema";
+import type { StoryWithCategory, Category, StoryPart } from "@shared/schema";
 import { AdControlDialog } from "@/components/ad-control-dialog";
 import { AdManagementDialog } from "@/components/ad-management-dialog";
 import { format } from "date-fns";
 
 type StatusFilter = "all" | "published" | "draft" | "recent" | "most-viewed";
 type DateFilter = "all" | "7d" | "30d" | "90d" | "month" | "custom";
+
+function StoryPartsManagerDialog({ storyId, storyTitle, open, onOpenChange }: {
+  storyId: string;
+  storyTitle: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const { toast } = useToast();
+  const [editingPart, setEditingPart] = useState<StoryPart | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editSummary, setEditSummary] = useState("");
+  const [newTitle, setNewTitle] = useState("");
+  const [newSummary, setNewSummary] = useState("");
+  const [deletingPartId, setDeletingPartId] = useState<string | null>(null);
+
+  const { data: parts = [], isLoading } = useQuery<StoryPart[]>({
+    queryKey: ["/api/admin/stories", storyId, "parts"],
+    queryFn: () => fetch(`/api/admin/stories/${storyId}/parts`, { credentials: "include" }).then(r => r.json()),
+    enabled: open,
+  });
+
+  const addMutation = useMutation({
+    mutationFn: () => apiRequest("POST", `/api/admin/stories/${storyId}/parts`, { title: newTitle, summary: newSummary, storyId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/stories", storyId, "parts"] });
+      setNewTitle(""); setNewSummary("");
+      toast({ title: "Part added" });
+    },
+    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ partId, title, summary }: { partId: string; title: string; summary: string }) =>
+      apiRequest("PATCH", `/api/admin/stories/parts/${partId}`, { title, summary }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/stories", storyId, "parts"] });
+      setEditingPart(null);
+      toast({ title: "Part updated" });
+    },
+    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (partId: string) => apiRequest("DELETE", `/api/admin/stories/parts/${partId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/stories", storyId, "parts"] });
+      setDeletingPartId(null);
+      toast({ title: "Part deleted" });
+    },
+    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+  });
+
+  const startEdit = (part: StoryPart) => {
+    setEditingPart(part);
+    setEditTitle(part.title);
+    setEditSummary(part.summary ?? "");
+  };
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto" data-testid="dialog-story-parts-manager">
+          <DialogHeader>
+            <DialogTitle className="truncate">Manage: {storyTitle}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {isLoading ? (
+              <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} className="h-12 w-full" />)}</div>
+            ) : parts.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">No parts yet. Add the first part below.</p>
+            ) : (
+              <Accordion type="multiple" className="space-y-2">
+                {parts.map((part, i) => (
+                  <AccordionItem key={part.id} value={part.id} className="border rounded-md px-3" data-testid={`part-item-${part.id}`}>
+                    <AccordionTrigger className="py-3 hover:no-underline">
+                      <div className="flex items-center gap-2 min-w-0 text-left">
+                        <GripVertical className="w-4 h-4 text-muted-foreground shrink-0" />
+                        <span className="text-sm font-medium truncate">
+                          <span className="text-muted-foreground mr-1">{i + 1}.</span>{part.title}
+                        </span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pb-3 space-y-3">
+                      {editingPart?.id === part.id ? (
+                        <div className="space-y-2">
+                          <Input
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            placeholder="Part title"
+                            data-testid={`input-edit-part-title-${part.id}`}
+                          />
+                          <Textarea
+                            value={editSummary}
+                            onChange={(e) => setEditSummary(e.target.value)}
+                            placeholder="Summary (optional)"
+                            rows={3}
+                            data-testid={`input-edit-part-summary-${part.id}`}
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => updateMutation.mutate({ partId: part.id, title: editTitle, summary: editSummary })}
+                              disabled={updateMutation.isPending || !editTitle}
+                              data-testid={`button-save-part-${part.id}`}
+                            >
+                              {updateMutation.isPending ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Save className="w-3.5 h-3.5 mr-1" />}
+                              Save
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => setEditingPart(null)} data-testid={`button-cancel-part-${part.id}`}>Cancel</Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {part.summary && <p className="text-sm text-muted-foreground">{part.summary}</p>}
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="outline" onClick={() => startEdit(part)} data-testid={`button-edit-part-${part.id}`}>
+                              <Pencil className="w-3.5 h-3.5 mr-1" /> Edit
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => setDeletingPartId(part.id)}
+                              data-testid={`button-delete-part-${part.id}`}
+                            >
+                              <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            )}
+
+            <div className="border-t pt-4 space-y-3">
+              <Label className="text-sm font-semibold">Add Part</Label>
+              <Input
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                placeholder="Part title"
+                data-testid="input-new-part-title"
+              />
+              <Textarea
+                value={newSummary}
+                onChange={(e) => setNewSummary(e.target.value)}
+                placeholder="Summary (optional)"
+                rows={2}
+                data-testid="input-new-part-summary"
+              />
+              <Button
+                size="sm"
+                onClick={() => addMutation.mutate()}
+                disabled={addMutation.isPending || !newTitle}
+                data-testid="button-add-part"
+              >
+                {addMutation.isPending ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Plus className="w-3.5 h-3.5 mr-1" />}
+                Add Part
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deletingPartId} onOpenChange={(o) => { if (!o) setDeletingPartId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Part</AlertDialogTitle>
+            <AlertDialogDescription>This will permanently delete this part and all its pages.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deletingPartId && deleteMutation.mutate(deletingPartId)}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
 
 export default function AdminStoriesPage() {
   const { toast } = useToast();
@@ -56,6 +250,7 @@ export default function AdminStoriesPage() {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [adControlItem, setAdControlItem] = useState<{ id: string; adSlotsRaw: string | null } | null>(null);
   const [adManagementItem, setAdManagementItem] = useState<{ id: string; name: string; adSlotsRaw: string | null } | null>(null);
+  const [manageStoryItem, setManageStoryItem] = useState<{ id: string; title: string } | null>(null);
 
   const { user, isAdmin } = useAuth();
   const { viewAs, viewMeMode } = useViewAs();
@@ -480,11 +675,6 @@ export default function AdminStoriesPage() {
                     </td>
                     <td className="p-3 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Link href={`/stories/${story.slug}`}>
-                          <Button size="icon" variant="ghost" data-testid={`button-view-${story.id}`} title="View">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                        </Link>
                         {!isContributor && (
                           <>
                             {isAdmin && (
@@ -509,9 +699,18 @@ export default function AdminStoriesPage() {
                                 </Button>
                               </>
                             )}
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              title="Manage Articles"
+                              onClick={() => setManageStoryItem({ id: story.id, title: story.title })}
+                              data-testid={`button-manage-${story.id}`}
+                            >
+                              <BookOpen className="w-4 h-4" />
+                            </Button>
                             <Link href={`/image/stories/${story.id}/edit`}>
-                              <Button size="icon" variant="ghost" title="Manage Article" data-testid={`button-manage-${story.id}`}>
-                                <BookOpen className="w-4 h-4" />
+                              <Button size="icon" variant="ghost" title="Edit Article" data-testid={`button-edit-${story.id}`}>
+                                <Pencil className="w-4 h-4" />
                               </Button>
                             </Link>
                             <Button
@@ -532,6 +731,13 @@ export default function AdminStoriesPage() {
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
+                            {story.status === "published" && (
+                              <a href={`/stories/${story.slug}`} target="_blank" rel="noopener noreferrer">
+                                <Button size="icon" variant="ghost" title="View Articles" data-testid={`button-view-${story.id}`}>
+                                  <ExternalLink className="w-4 h-4" />
+                                </Button>
+                              </a>
+                            )}
                             {isAdmin && (
                               <Switch
                                 checked={story.isActive !== false}
@@ -599,6 +805,16 @@ export default function AdminStoriesPage() {
           contentName={adManagementItem.name}
           adSlotsRaw={adManagementItem.adSlotsRaw}
           invalidateKey={["/api/stories"]}
+        />
+      )}
+
+      {manageStoryItem && (
+        <StoryPartsManagerDialog
+          key={manageStoryItem.id}
+          storyId={manageStoryItem.id}
+          storyTitle={manageStoryItem.title}
+          open={!!manageStoryItem}
+          onOpenChange={(v) => { if (!v) setManageStoryItem(null); }}
         />
       )}
     </AdminLayout>

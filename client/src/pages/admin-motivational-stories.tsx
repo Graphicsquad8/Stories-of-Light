@@ -227,6 +227,24 @@ function LessonsManager({ storyId }: { storyId: string }) {
   );
 }
 
+function ManageStoriesDialog({ storyId, storyTitle, open, onOpenChange }: {
+  storyId: string;
+  storyTitle: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto" data-testid="dialog-manage-story">
+        <DialogHeader>
+          <DialogTitle className="truncate">Manage: {storyTitle}</DialogTitle>
+        </DialogHeader>
+        <LessonsManager storyId={storyId} />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function StoryFormDialog({ story, open, onOpenChange, categoriesData }: {
   story?: MotivationalStory;
   open: boolean;
@@ -316,12 +334,6 @@ function StoryFormDialog({ story, open, onOpenChange, categoriesData }: {
             <Switch checked={ratingEnabled} onCheckedChange={setRatingEnabled} data-testid="switch-story-rating-enabled" />
             <Label>Enable Ratings (allow users to rate this story)</Label>
           </div>
-
-          {isEdit && story && (
-            <div className="border-t pt-4">
-              <LessonsManager storyId={story.id} />
-            </div>
-          )}
 
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="outline" onClick={() => onOpenChange(false)} data-testid="button-story-cancel">Cancel</Button>
@@ -515,6 +527,8 @@ export default function AdminMotivationalStoriesPage() {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     },
   });
+
+  const [manageStoryItem, setManageStoryItem] = useState<{ id: string; title: string } | null>(null);
 
   const openCreate = () => { setEditingStory(undefined); setFormOpen(true); };
   const openEdit = (story: MotivationalStory) => { setEditingStory(story); setFormOpen(true); };
@@ -775,7 +789,7 @@ export default function AdminMotivationalStoriesPage() {
                                 </Button>
                               </>
                             )}
-                            <Button size="icon" variant="ghost" title="Manage Story" onClick={() => openEdit(story)} data-testid={`button-manage-story-${story.id}`}>
+                            <Button size="icon" variant="ghost" title="Manage Stories" onClick={() => setManageStoryItem({ id: story.id, title: story.title })} data-testid={`button-manage-story-${story.id}`}>
                               <BookOpen className="w-3.5 h-3.5" />
                             </Button>
                             <Button size="icon" variant="ghost" onClick={() => openEdit(story)} data-testid={`button-edit-story-${story.id}`} title="Edit details">
@@ -871,6 +885,16 @@ export default function AdminMotivationalStoriesPage() {
           contentName={adManagementItem.name}
           adSlotsRaw={adManagementItem.adSlotsRaw}
           invalidateKey={["/api/admin/motivational-stories"]}
+        />
+      )}
+
+      {manageStoryItem && (
+        <ManageStoriesDialog
+          key={manageStoryItem.id}
+          storyId={manageStoryItem.id}
+          storyTitle={manageStoryItem.title}
+          open={!!manageStoryItem}
+          onOpenChange={(v) => { if (!v) setManageStoryItem(null); }}
         />
       )}
     </AdminLayout>
