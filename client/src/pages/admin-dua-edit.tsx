@@ -75,7 +75,7 @@ export default function AdminDuaEditPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-2xl">
         <div className="flex items-center gap-3 mb-6">
           <Link href="/image/duas">
             <Button variant="ghost" size="icon" data-testid="button-back">

@@ -70,7 +70,7 @@ export default function AdminMotivationalStoryEditPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-2xl">
         <div className="flex items-center gap-3 mb-6">
           <Link href="/image/motivational-stories">
             <Button variant="ghost" size="icon" data-testid="button-back">
