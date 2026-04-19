@@ -1874,11 +1874,12 @@ export async function registerRoutes(
   });
 
   app.get("/api/admin/motivational-stories", requireStaff, async (req, res) => {
-    const { category, search, sort, limit, offset, userId, includeNullUser, startDate, endDate } = req.query;
+    const { category, search, sort, limit, offset, userId, includeNullUser, startDate, endDate, published } = req.query;
     const result = await storage.getMotivationalStories({
       category: category as string,
       search: search as string,
       sort: sort as string,
+      published: published === "true" ? true : published === "false" ? false : undefined,
       limit: limit ? parseInt(limit as string) : 50,
       offset: offset ? parseInt(offset as string) : 0,
       userId: (resolveContentUserId(req) ?? userId) as string | undefined,
@@ -2301,11 +2302,12 @@ export async function registerRoutes(
   });
 
   app.get("/api/admin/duas", requireStaff, async (req, res) => {
-    const { search, category, sort, limit, offset, userId, includeNullUser, startDate, endDate } = req.query;
+    const { search, category, sort, limit, offset, userId, includeNullUser, startDate, endDate, published } = req.query;
     const result = await storage.getDuas({
       search: search as string,
       category: category as string,
       sort: sort as string,
+      published: published === "true" ? true : published === "false" ? false : undefined,
       limit: limit ? Number(limit) : 50,
       offset: offset ? Number(offset) : 0,
       userId: (resolveContentUserId(req) ?? userId) as string | undefined,

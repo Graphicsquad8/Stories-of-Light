@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Search, Trash2, Eye, Edit, Copy, Clock, FileText, BarChart2, TrendingUp, BookOpen, CalendarDays, LayoutGrid, Megaphone } from "lucide-react";
+import { Plus, Search, Trash2, Eye, Copy, Clock, FileText, BarChart2, TrendingUp, BookOpen, CalendarDays, LayoutGrid, Megaphone, ExternalLink } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useMemo } from "react";
@@ -184,15 +184,6 @@ export default function AdminStoriesPage() {
     onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
 
-  const toggleStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      await apiRequest("PATCH", `/api/admin/stories/${id}/status`, { status });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/stories"] });
-    },
-    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
-  });
 
   const toggleSelect = (id: string) => {
     const next = new Set(selectedIds);
@@ -422,7 +413,6 @@ export default function AdminStoriesPage() {
                 </th>
                 <th className="text-left p-3 font-medium hidden lg:table-cell">Date</th>
                 <th className="text-left p-3 font-medium hidden md:table-cell">Status</th>
-                {isAdmin && <th className="text-left p-3 font-medium hidden xl:table-cell">Active</th>}
                 <th className="text-right p-3 font-medium">Actions</th>
               </tr>
             </thead>
@@ -484,27 +474,14 @@ export default function AdminStoriesPage() {
                       </span>
                     </td>
                     <td className="p-3 hidden md:table-cell">
-                      <Switch
-                        checked={story.status === "published"}
-                        onCheckedChange={(checked) => toggleStatusMutation.mutate({ id: story.id, status: checked ? "published" : "draft" })}
-                        data-testid={`switch-status-${story.id}`}
-                        title={story.status === "published" ? "Published" : "Draft"}
-                      />
+                      <Badge variant={story.status === "published" ? "default" : "secondary"} className="text-xs capitalize">
+                        {story.status === "published" ? "Published" : "Draft"}
+                      </Badge>
                     </td>
-                    {isAdmin && (
-                      <td className="p-3 hidden xl:table-cell">
-                        <Switch
-                          checked={story.isActive !== false}
-                          onCheckedChange={(checked) => toggleActiveMutation.mutate({ id: story.id, isActive: checked })}
-                          data-testid={`switch-active-${story.id}`}
-                          title={story.isActive !== false ? "Active (visible on site)" : "Inactive (hidden from site)"}
-                        />
-                      </td>
-                    )}
                     <td className="p-3 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <Link href={`/stories/${story.slug}`}>
-                          <Button size="icon" variant="ghost" data-testid={`button-view-${story.id}`}>
+                          <Button size="icon" variant="ghost" data-testid={`button-view-${story.id}`} title="View">
                             <Eye className="w-4 h-4" />
                           </Button>
                         </Link>
@@ -533,8 +510,8 @@ export default function AdminStoriesPage() {
                               </>
                             )}
                             <Link href={`/image/stories/${story.id}/edit`}>
-                              <Button size="icon" variant="ghost" data-testid={`button-edit-${story.id}`}>
-                                <Edit className="w-4 h-4" />
+                              <Button size="icon" variant="ghost" title="Manage Article" data-testid={`button-manage-${story.id}`}>
+                                <BookOpen className="w-4 h-4" />
                               </Button>
                             </Link>
                             <Button
@@ -555,6 +532,14 @@ export default function AdminStoriesPage() {
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
+                            {isAdmin && (
+                              <Switch
+                                checked={story.isActive !== false}
+                                onCheckedChange={(checked) => toggleActiveMutation.mutate({ id: story.id, isActive: checked })}
+                                data-testid={`switch-active-${story.id}`}
+                                title={story.isActive !== false ? "Active" : "Inactive"}
+                              />
+                            )}
                           </>
                         )}
                       </div>

@@ -510,7 +510,6 @@ export default function AdminDuasPage() {
                   <TableHead className="text-center">Views</TableHead>
                   <TableHead className="text-center">Rating</TableHead>
                   <TableHead className="text-center">Status</TableHead>
-                  {isAdmin && <TableHead className="text-center">Active</TableHead>}
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -552,22 +551,10 @@ export default function AdminDuasPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-center">
-                      <Switch
-                        checked={dua.published ?? false}
-                        onCheckedChange={() => handleTogglePublished(dua)}
-                        data-testid={`switch-published-${dua.id}`}
-                      />
+                      <Badge variant={dua.published ? "default" : "secondary"} className="text-xs">
+                        {dua.published ? "Published" : "Draft"}
+                      </Badge>
                     </TableCell>
-                    {isAdmin && (
-                      <TableCell className="text-center">
-                        <Switch
-                          checked={dua.isActive !== false}
-                          onCheckedChange={(checked) => toggleActiveDua.mutate({ id: dua.id, isActive: checked })}
-                          data-testid={`switch-active-${dua.id}`}
-                          title={dua.isActive !== false ? "Active (visible on site)" : "Inactive (hidden from site)"}
-                        />
-                      </TableCell>
-                    )}
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
                         {!isContributor && (
@@ -620,14 +607,22 @@ export default function AdminDuasPage() {
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
+                            {dua.published && (
+                              <a href={`/duas/${dua.slug}`} target="_blank" rel="noopener noreferrer">
+                                <Button size="icon" variant="ghost" data-testid={`button-view-${dua.id}`} title="View Duas">
+                                  <ExternalLink className="w-4 h-4" />
+                                </Button>
+                              </a>
+                            )}
+                            {isAdmin && (
+                              <Switch
+                                checked={dua.isActive !== false}
+                                onCheckedChange={(checked) => toggleActiveDua.mutate({ id: dua.id, isActive: checked })}
+                                data-testid={`switch-active-${dua.id}`}
+                                title={dua.isActive !== false ? "Active" : "Inactive"}
+                              />
+                            )}
                           </>
-                        )}
-                        {dua.published && (
-                          <a href={`/duas/${dua.slug}`} target="_blank" rel="noopener noreferrer">
-                            <Button size="icon" variant="ghost" data-testid={`button-view-${dua.id}`}>
-                              <ExternalLink className="w-4 h-4" />
-                            </Button>
-                          </a>
                         )}
                       </div>
                     </TableCell>

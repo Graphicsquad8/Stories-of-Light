@@ -1,0 +1,75 @@
+📌 Admin Panel – Status, Actions & UI Update (All Sections)
+🔧 1) All Articles Section (Sahaba, Awliya, Karamat, History)
+❌ Remove the ON/OFF toggle icon from the Status option
+✅ Replace it with text-based status:
+Published (if the article is published)
+Draft (if the article is not published)
+
+📌 Actions Layout Update:
+
+Move the Active option icons (previously on the right of Status) to the right side of the Delete icon
+❌ Remove the “Active” label
+✅ Keep the “Actions” label unchanged
+
+📌 New Option:
+
+➕ Add a “Manage Article” option/icon to the right of the Ad Slot Control icon
+✔ It should function the same as Manage Duas
+🔧 2) Motivational Stories Section
+❌ Remove the Status toggle icon
+✅ Replace with:
+Published / Draft
+
+📌 New Options:
+
+➕ Add “Manage Stories” (right of Ad Slot Control)
+✔ Works like Manage Duas
+➕ Add “View Stories” (right of Delete icon)
+✔ Works like View Duas (preview functionality)
+
+📌 Actions Layout:
+
+Move Active icons → to the right of View Stories
+❌ Remove “Active” label
+✅ Keep “Actions” label
+🔧 3) Duas Section
+❌ Remove Status toggle icon
+✅ Replace with:
+Published / Draft
+
+📌 Actions Layout:
+
+Move Active icons → to the right of View Duas
+❌ Remove “Active” label
+✅ Keep “Actions” label
+🔧 4) Books Section
+❌ Remove Status toggle icon
+✅ Replace with:
+Published / Draft
+
+📌 New Options:
+
+➕ Add “Manage Books” (right of Ad Slot Control)
+✔ Works like Manage Duas
+➕ Add “View Book” (right of Delete icon)
+✔ Works like View Duas
+
+📌 Actions Layout:
+
+Move Active icons → to the right of View Book
+❌ Remove “Active” label
+✅ Keep “Actions” label
+⚠️ 5) Draft Filter Issue (Critical Fix)
+❌ Current Problem:
+In Motivational Stories and Duas, the All Status → Draft filter is not working properly
+✅ Required Fix:
+When a Contributor clicks Draft:
+👉 Only Draft content must be displayed
+❌ Published content must NOT appear
+✔ Filtering must be accurate and role-based
+✅ Final Expected Behavior
+Status system → Text-based (Published / Draft) across all sections
+Actions layout → Clean, consistent, icon-based
+Manage & View options → Properly implemented
+Draft filter → Fully functional
+UI → Consistent across All Articles, Stories, Duas, and Books

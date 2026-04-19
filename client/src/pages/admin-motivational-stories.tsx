@@ -23,7 +23,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, BookOpen, Loader2, Star, Eye, Search, GripVertical, Copy, Clock, BarChart2, CalendarDays, FileText, LayoutGrid, Megaphone } from "lucide-react";
+import { Plus, Pencil, Trash2, BookOpen, Loader2, Star, Eye, Search, GripVertical, Copy, Clock, BarChart2, CalendarDays, FileText, LayoutGrid, Megaphone, ExternalLink } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useMemo } from "react";
@@ -708,7 +708,6 @@ export default function AdminMotivationalStoriesPage() {
                   <TableHead>Views</TableHead>
                   <TableHead>Rating</TableHead>
                   <TableHead>Status</TableHead>
-                  {isAdmin && <TableHead>Active</TableHead>}
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -746,22 +745,10 @@ export default function AdminMotivationalStoriesPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Switch
-                        checked={!!story.published}
-                        onCheckedChange={(checked) => togglePublishMutation.mutate({ id: story.id, published: checked })}
-                        data-testid={`switch-publish-${story.id}`}
-                      />
+                      <Badge variant={story.published ? "default" : "secondary"} className="text-xs">
+                        {story.published ? "Published" : "Draft"}
+                      </Badge>
                     </TableCell>
-                    {isAdmin && (
-                      <TableCell>
-                        <Switch
-                          checked={story.isActive !== false}
-                          onCheckedChange={(checked) => toggleActiveMutation.mutate({ id: story.id, isActive: checked })}
-                          data-testid={`switch-active-${story.id}`}
-                          title={story.isActive !== false ? "Active (visible on site)" : "Inactive (hidden from site)"}
-                        />
-                      </TableCell>
-                    )}
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
                         {!isContributor && (
@@ -788,7 +775,10 @@ export default function AdminMotivationalStoriesPage() {
                                 </Button>
                               </>
                             )}
-                            <Button size="icon" variant="ghost" onClick={() => openEdit(story)} data-testid={`button-edit-story-${story.id}`}>
+                            <Button size="icon" variant="ghost" title="Manage Story" onClick={() => openEdit(story)} data-testid={`button-manage-story-${story.id}`}>
+                              <BookOpen className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button size="icon" variant="ghost" onClick={() => openEdit(story)} data-testid={`button-edit-story-${story.id}`} title="Edit details">
                               <Pencil className="w-3.5 h-3.5" />
                             </Button>
                             <Button
@@ -804,6 +794,21 @@ export default function AdminMotivationalStoriesPage() {
                             <Button size="icon" variant="ghost" onClick={() => handleDelete(story.id)} data-testid={`button-delete-story-${story.id}`}>
                               <Trash2 className="w-3.5 h-3.5" />
                             </Button>
+                            {story.published && (
+                              <a href={`/motivational-stories/${story.slug}`} target="_blank" rel="noopener noreferrer">
+                                <Button size="icon" variant="ghost" title="View Story" data-testid={`button-view-story-${story.id}`}>
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                </Button>
+                              </a>
+                            )}
+                            {isAdmin && (
+                              <Switch
+                                checked={story.isActive !== false}
+                                onCheckedChange={(checked) => toggleActiveMutation.mutate({ id: story.id, isActive: checked })}
+                                data-testid={`switch-active-story-${story.id}`}
+                                title={story.isActive !== false ? "Active" : "Inactive"}
+                              />
+                            )}
                           </>
                         )}
                       </div>

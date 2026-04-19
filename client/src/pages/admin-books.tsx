@@ -21,7 +21,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Plus, Pencil, Trash2, BookOpen, Loader2, Star, Eye, Copy, Upload,
+  Plus, Pencil, Trash2, BookOpen, Loader2, Star, Eye, Copy, Upload, ExternalLink,
   FileText, Info, Search, Clock, BarChart2, CalendarDays, BookMarked, LayoutGrid, Megaphone,
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -763,7 +763,6 @@ export default function AdminBooksPage() {
                   <TableHead>Rating</TableHead>
                   <TableHead>Views</TableHead>
                   <TableHead>Published</TableHead>
-                  {isAdmin && <TableHead>Active</TableHead>}
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -807,22 +806,10 @@ export default function AdminBooksPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Switch
-                        checked={!!book.published}
-                        onCheckedChange={(checked) => togglePublishMutation.mutate({ id: book.id, published: checked })}
-                        data-testid={`switch-publish-${book.id}`}
-                      />
+                      <Badge variant={book.published ? "default" : "secondary"} className="text-xs">
+                        {book.published ? "Published" : "Draft"}
+                      </Badge>
                     </TableCell>
-                    {isAdmin && (
-                      <TableCell>
-                        <Switch
-                          checked={book.isActive !== false}
-                          onCheckedChange={(checked) => toggleActiveMutation.mutate({ id: book.id, isActive: checked })}
-                          data-testid={`switch-active-${book.id}`}
-                          title={book.isActive !== false ? "Active (visible on site)" : "Inactive (hidden from site)"}
-                        />
-                      </TableCell>
-                    )}
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
                         {!isContributor && (
@@ -852,14 +839,14 @@ export default function AdminBooksPage() {
                               </>
                             )}
                             <Link href={`/image/books/${book.id}/edit`}>
-                              <Button size="icon" variant="ghost" className="h-8 w-8" data-testid={`button-edit-parts-${book.id}`} title="Edit Parts">
-                                <FileText className="w-3.5 h-3.5" />
+                              <Button size="icon" variant="ghost" className="h-8 w-8" title="Manage Books" data-testid={`button-manage-${book.id}`}>
+                                <BookOpen className="w-3.5 h-3.5" />
                               </Button>
                             </Link>
-                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => duplicateMutation.mutate(book.id)} data-testid={`button-duplicate-${book.id}`}>
+                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => duplicateMutation.mutate(book.id)} data-testid={`button-duplicate-${book.id}`} title="Duplicate">
                               <Copy className="w-3.5 h-3.5" />
                             </Button>
-                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(book)} data-testid={`button-edit-book-${book.id}`}>
+                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(book)} data-testid={`button-edit-book-${book.id}`} title="Edit details">
                               <Pencil className="w-3.5 h-3.5" />
                             </Button>
                             <Button
@@ -868,9 +855,25 @@ export default function AdminBooksPage() {
                               className="h-8 w-8 text-destructive"
                               onClick={() => { if (confirm("Delete this book?")) deleteMutation.mutate(book.id); }}
                               data-testid={`button-delete-book-${book.id}`}
+                              title="Delete"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </Button>
+                            {book.published && (
+                              <a href={`/books/${book.slug}`} target="_blank" rel="noopener noreferrer">
+                                <Button size="icon" variant="ghost" className="h-8 w-8" title="View Book" data-testid={`button-view-${book.id}`}>
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                </Button>
+                              </a>
+                            )}
+                            {isAdmin && (
+                              <Switch
+                                checked={book.isActive !== false}
+                                onCheckedChange={(checked) => toggleActiveMutation.mutate({ id: book.id, isActive: checked })}
+                                data-testid={`switch-active-${book.id}`}
+                                title={book.isActive !== false ? "Active" : "Inactive"}
+                              />
+                            )}
                           </>
                         )}
                       </div>
