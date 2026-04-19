@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
+import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Save, Loader2 } from "lucide-react";
 import type { MotivationalStory } from "@shared/schema";
@@ -70,7 +71,7 @@ export default function AdminMotivationalStoryEditPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-2xl">
+      <div className="max-w-4xl">
         <div className="flex items-center gap-3 mb-6">
           <Link href="/image/motivational-stories">
             <Button variant="ghost" size="icon" data-testid="button-back">
@@ -94,79 +95,90 @@ export default function AdminMotivationalStoryEditPage() {
         </div>
 
         {isLoading ? (
-          <div className="space-y-4">
-            {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-10 w-full" />)}
+          <div className="grid gap-6">
+            <Card className="p-6 space-y-4">
+              {[1,2,3,4].map(i => <Skeleton key={i} className="h-10 w-full" />)}
+            </Card>
           </div>
         ) : (
-          <div className="space-y-5">
-            <div className="space-y-2">
-              <Label>Title</Label>
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Story title"
-                data-testid="input-story-title"
-              />
-            </div>
+          <div className="grid gap-6">
+            <Card className="p-6">
+              <div className="space-y-5">
+                <div className="space-y-2">
+                  <Label>Title</Label>
+                  <Input
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Story title"
+                    data-testid="input-story-title"
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label>Slug</Label>
-              <Input
-                value={slug}
-                onChange={(e) => setSlug(e.target.value)}
-                placeholder="story-slug"
-                data-testid="input-story-slug"
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label>Slug</Label>
+                  <Input
+                    value={slug}
+                    onChange={(e) => setSlug(e.target.value)}
+                    placeholder="story-slug"
+                    data-testid="input-story-slug"
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label>Category</Label>
-              <Input
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                placeholder="e.g. Patience, Gratitude, Faith..."
-                list="motiv-category-suggestions"
-                data-testid="input-story-category"
-              />
-              <datalist id="motiv-category-suggestions">
-                {(categoriesData || []).map(cat => <option key={cat} value={cat} />)}
-              </datalist>
-            </div>
+                <div className="space-y-2">
+                  <Label>Category</Label>
+                  <Input
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    placeholder="e.g. Patience, Gratitude, Faith..."
+                    list="motiv-category-suggestions"
+                    data-testid="input-story-category"
+                  />
+                  <datalist id="motiv-category-suggestions">
+                    {(categoriesData || []).map(cat => <option key={cat} value={cat} />)}
+                  </datalist>
+                </div>
 
-            <div className="space-y-2">
-              <Label>Description</Label>
-              <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Short description..."
-                rows={3}
-                data-testid="input-story-description"
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label>Description</Label>
+                  <Textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Short description..."
+                    rows={3}
+                    data-testid="input-story-description"
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label>Content (HTML)</Label>
-              <Textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Full story content..."
-                rows={10}
-                className="font-mono text-sm"
-                data-testid="input-story-content"
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label>Content (HTML)</Label>
+                  <Textarea
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    placeholder="Full story content..."
+                    rows={10}
+                    className="font-mono text-sm"
+                    data-testid="input-story-content"
+                  />
+                </div>
+              </div>
+            </Card>
 
-            <div className="flex items-center gap-3">
-              <Switch checked={published} onCheckedChange={setPublished} id="story-published" data-testid="switch-story-published" />
-              <Label htmlFor="story-published" className="cursor-pointer">Published (visible to visitors)</Label>
-            </div>
+            <Card className="p-6">
+              <h2 className="font-semibold mb-4">Settings</h2>
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <Switch checked={published} onCheckedChange={setPublished} id="story-published" data-testid="switch-story-published" />
+                  <Label htmlFor="story-published" className="cursor-pointer">Published (visible to visitors)</Label>
+                </div>
 
-            <div className="flex items-center gap-3">
-              <Switch checked={ratingEnabled} onCheckedChange={setRatingEnabled} id="story-rating" data-testid="switch-story-rating" />
-              <Label htmlFor="story-rating" className="cursor-pointer">Enable Ratings (allow users to rate this story)</Label>
-            </div>
+                <div className="flex items-center gap-3">
+                  <Switch checked={ratingEnabled} onCheckedChange={setRatingEnabled} id="story-rating" data-testid="switch-story-rating" />
+                  <Label htmlFor="story-rating" className="cursor-pointer">Enable Ratings (allow users to rate this story)</Label>
+                </div>
+              </div>
+            </Card>
 
-            <div className="flex justify-end gap-3 pt-2 border-t">
+            <div className="flex justify-end gap-3">
               <Link href="/image/motivational-stories">
                 <Button variant="outline" data-testid="button-cancel">Cancel</Button>
               </Link>

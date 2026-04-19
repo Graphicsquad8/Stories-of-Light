@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Save, Loader2, ImageIcon } from "lucide-react";
 import type { Dua } from "@shared/schema";
@@ -75,7 +76,7 @@ export default function AdminDuaEditPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-2xl">
+      <div className="max-w-4xl">
         <div className="flex items-center gap-3 mb-6">
           <Link href="/image/duas">
             <Button variant="ghost" size="icon" data-testid="button-back">
@@ -108,88 +109,96 @@ export default function AdminDuaEditPage() {
         </div>
 
         {isLoading ? (
-          <div className="space-y-4">
-            {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-10 w-full" />)}
+          <div className="grid gap-6">
+            <Card className="p-6 space-y-4">
+              {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-10 w-full" />)}
+            </Card>
           </div>
         ) : (
-          <div className="space-y-5">
-            <div className="flex items-center gap-2 pb-1 border-b">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Collection Details</span>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Title</Label>
-              <Input
-                value={title}
-                onChange={(e) => { setTitle(e.target.value); if (!slugManual) setSlug(slugify(e.target.value)); }}
-                placeholder="Morning Duas"
-                data-testid="input-dua-title"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>URL Slug</Label>
-                <div className="flex items-center gap-1">
-                  <span className="text-xs text-muted-foreground shrink-0">/duas/</span>
+          <div className="grid gap-6">
+            <Card className="p-6">
+              <h2 className="font-semibold mb-4">Collection Details</h2>
+              <div className="space-y-5">
+                <div className="space-y-2">
+                  <Label>Title</Label>
                   <Input
-                    value={slug}
-                    onChange={(e) => { setSlug(e.target.value); setSlugManual(true); }}
-                    placeholder="morning-duas"
-                    data-testid="input-dua-slug"
+                    value={title}
+                    onChange={(e) => { setTitle(e.target.value); if (!slugManual) setSlug(slugify(e.target.value)); }}
+                    placeholder="Morning Duas"
+                    data-testid="input-dua-title"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>URL Slug</Label>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-muted-foreground shrink-0">/duas/</span>
+                      <Input
+                        value={slug}
+                        onChange={(e) => { setSlug(e.target.value); setSlugManual(true); }}
+                        placeholder="morning-duas"
+                        data-testid="input-dua-slug"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Category</Label>
+                    <Input
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value)}
+                      placeholder="e.g. Morning, Evening, Protection..."
+                      list="dua-category-suggestions"
+                      data-testid="input-dua-category"
+                    />
+                    <datalist id="dua-category-suggestions">
+                      {(categoriesData || []).map(cat => <option key={cat} value={cat} />)}
+                    </datalist>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Short Description</Label>
+                  <Textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    rows={3}
+                    placeholder="Brief description shown on the card..."
+                    data-testid="input-dua-description"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5">
+                    <ImageIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                    Thumbnail URL <span className="text-muted-foreground font-normal text-xs">(optional)</span>
+                  </Label>
+                  <Input
+                    value={thumbnail}
+                    onChange={(e) => setThumbnail(e.target.value)}
+                    placeholder="https://..."
+                    data-testid="input-dua-thumbnail"
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label>Category</Label>
-                <Input
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  placeholder="e.g. Morning, Evening, Protection..."
-                  list="dua-category-suggestions"
-                  data-testid="input-dua-category"
-                />
-                <datalist id="dua-category-suggestions">
-                  {(categoriesData || []).map(cat => <option key={cat} value={cat} />)}
-                </datalist>
+            </Card>
+
+            <Card className="p-6">
+              <h2 className="font-semibold mb-4">Settings</h2>
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <Switch checked={published} onCheckedChange={setPublished} id="dua-published" data-testid="switch-dua-published" />
+                  <Label htmlFor="dua-published" className="cursor-pointer">Published (visible to visitors)</Label>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <Switch checked={ratingEnabled} onCheckedChange={setRatingEnabled} id="dua-rating-enabled" data-testid="switch-dua-rating-enabled" />
+                  <Label htmlFor="dua-rating-enabled" className="cursor-pointer">Enable Ratings (allow users to rate this dua)</Label>
+                </div>
               </div>
-            </div>
+            </Card>
 
-            <div className="space-y-2">
-              <Label>Short Description</Label>
-              <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={3}
-                placeholder="Brief description shown on the card..."
-                data-testid="input-dua-description"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="flex items-center gap-1.5">
-                <ImageIcon className="w-3.5 h-3.5 text-muted-foreground" />
-                Thumbnail URL <span className="text-muted-foreground font-normal text-xs">(optional)</span>
-              </Label>
-              <Input
-                value={thumbnail}
-                onChange={(e) => setThumbnail(e.target.value)}
-                placeholder="https://..."
-                data-testid="input-dua-thumbnail"
-              />
-            </div>
-
-            <div className="flex items-center gap-3 py-1">
-              <Switch checked={published} onCheckedChange={setPublished} id="dua-published" data-testid="switch-dua-published" />
-              <Label htmlFor="dua-published" className="cursor-pointer">Published (visible to visitors)</Label>
-            </div>
-
-            <div className="flex items-center gap-3 py-1">
-              <Switch checked={ratingEnabled} onCheckedChange={setRatingEnabled} id="dua-rating-enabled" data-testid="switch-dua-rating-enabled" />
-              <Label htmlFor="dua-rating-enabled" className="cursor-pointer">Enable Ratings (allow users to rate this dua)</Label>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-2 border-t">
+            <div className="flex justify-end gap-3">
               <Link href="/image/duas">
                 <Button variant="outline" data-testid="button-cancel">Cancel</Button>
               </Link>
