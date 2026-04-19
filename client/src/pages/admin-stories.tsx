@@ -699,15 +699,11 @@ export default function AdminStoriesPage() {
                                 </Button>
                               </>
                             )}
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              title="Manage Articles"
-                              onClick={() => setManageStoryItem({ id: story.id, title: story.title })}
-                              data-testid={`button-manage-${story.id}`}
-                            >
-                              <BookOpen className="w-4 h-4" />
-                            </Button>
+                            <Link href={`/image/stories/${story.id}/edit`}>
+                              <Button size="icon" variant="ghost" title="Manage Articles" data-testid={`button-manage-${story.id}`}>
+                                <BookOpen className="w-4 h-4" />
+                              </Button>
+                            </Link>
                             <Link href={`/image/stories/${story.id}/edit`}>
                               <Button size="icon" variant="ghost" title="Edit Article" data-testid={`button-edit-${story.id}`}>
                                 <Pencil className="w-4 h-4" />

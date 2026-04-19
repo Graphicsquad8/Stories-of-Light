@@ -1624,6 +1624,12 @@ export async function registerRoutes(
     res.json(result);
   });
 
+  app.get("/api/admin/books/:id", requireStaff, async (req, res) => {
+    const book = await storage.getBookById(req.params.id);
+    if (!book) return res.status(404).json({ message: "Book not found" });
+    res.json(book);
+  });
+
   app.patch("/api/admin/books/:id/publish", requireStaff, async (req, res) => {
     const { published } = req.body;
     const updated = await storage.updateBook(req.params.id, { published });

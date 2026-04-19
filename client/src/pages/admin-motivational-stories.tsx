@@ -789,12 +789,16 @@ export default function AdminMotivationalStoriesPage() {
                                 </Button>
                               </>
                             )}
-                            <Button size="icon" variant="ghost" title="Manage Stories" onClick={() => setManageStoryItem({ id: story.id, title: story.title })} data-testid={`button-manage-story-${story.id}`}>
-                              <BookOpen className="w-3.5 h-3.5" />
-                            </Button>
-                            <Button size="icon" variant="ghost" onClick={() => openEdit(story)} data-testid={`button-edit-story-${story.id}`} title="Edit details">
-                              <Pencil className="w-3.5 h-3.5" />
-                            </Button>
+                            <Link href={`/image/motivational-stories/${story.id}/manage`}>
+                              <Button size="icon" variant="ghost" title="Manage Stories" data-testid={`button-manage-story-${story.id}`}>
+                                <BookOpen className="w-3.5 h-3.5" />
+                              </Button>
+                            </Link>
+                            <Link href={`/image/motivational-stories/${story.id}/edit`}>
+                              <Button size="icon" variant="ghost" data-testid={`button-edit-story-${story.id}`} title="Edit details">
+                                <Pencil className="w-3.5 h-3.5" />
+                              </Button>
+                            </Link>
                             <Button
                               size="icon"
                               variant="ghost"

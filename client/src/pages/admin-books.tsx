@@ -846,9 +846,11 @@ export default function AdminBooksPage() {
                             <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => duplicateMutation.mutate(book.id)} data-testid={`button-duplicate-${book.id}`} title="Duplicate">
                               <Copy className="w-3.5 h-3.5" />
                             </Button>
-                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(book)} data-testid={`button-edit-book-${book.id}`} title="Edit details">
-                              <Pencil className="w-3.5 h-3.5" />
-                            </Button>
+                            <Link href={`/image/books/${book.id}/edit-details`}>
+                              <Button size="icon" variant="ghost" className="h-8 w-8" data-testid={`button-edit-book-${book.id}`} title="Edit details">
+                                <Pencil className="w-3.5 h-3.5" />
+                              </Button>
+                            </Link>
                             <Button
                               size="icon"
                               variant="ghost"

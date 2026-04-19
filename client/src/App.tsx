@@ -33,6 +33,8 @@ import AdminSettingsPage from "@/pages/admin-settings";
 import MotivationalStoriesPage from "@/pages/motivational-stories";
 import MotivationalStoryDetailPage from "@/pages/motivational-story-detail";
 import AdminMotivationalStoriesPage from "@/pages/admin-motivational-stories";
+import AdminMotivationalStoryManagePage from "@/pages/admin-motivational-story-manage";
+import AdminMotivationalStoryEditPage from "@/pages/admin-motivational-story-edit";
 import AdminTrashPage from "@/pages/admin-trash";
 import AdminUsersPage from "@/pages/admin-users";
 import AdminModeratorsPage from "@/pages/admin-moderators";
@@ -42,6 +44,8 @@ import DuasPage from "@/pages/duas";
 import DuaDetailPage from "@/pages/dua-detail";
 import AdminDuasPage from "@/pages/admin-duas";
 import AdminDuaEditorPage from "@/pages/admin-dua-editor";
+import AdminDuaEditPage from "@/pages/admin-dua-edit";
+import AdminBookEditPage from "@/pages/admin-book-edit";
 import AdminOverviewPage from "@/pages/admin-overview";
 
 function ScrollToTop() {
@@ -90,12 +94,16 @@ function Router() {
       <Route path="/image/books/:id/edit" component={AdminBookEditorPage} />
       <Route path="/image/settings" component={AdminSettingsPage} />
       <Route path="/image/motivational-stories" component={AdminMotivationalStoriesPage} />
+      <Route path="/image/motivational-stories/:id/manage" component={AdminMotivationalStoryManagePage} />
+      <Route path="/image/motivational-stories/:id/edit" component={AdminMotivationalStoryEditPage} />
+      <Route path="/image/books/:id/edit-details" component={AdminBookEditPage} />
       <Route path="/image/trash" component={AdminTrashPage} />
       <Route path="/image/users" component={AdminUsersPage} />
       <Route path="/image/moderators" component={AdminModeratorsPage} />
       <Route path="/image/footer" component={AdminFooterPage} />
       <Route path="/image/duas" component={AdminDuasPage} />
       <Route path="/image/duas/:id/edit" component={AdminDuaEditorPage} />
+      <Route path="/image/duas/:id/edit-details" component={AdminDuaEditPage} />
       <Route path="/image/overview" component={AdminOverviewPage} />
 
       <Route path="/duas" component={DuasPage} />

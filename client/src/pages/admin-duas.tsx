@@ -586,9 +586,11 @@ export default function AdminDuasPage() {
                                 <BookOpen className="w-4 h-4" />
                               </Button>
                             </Link>
-                            <Button size="icon" variant="ghost" onClick={() => openEdit(dua)} data-testid={`button-edit-${dua.id}`} title="Edit details">
-                              <Pencil className="w-4 h-4" />
-                            </Button>
+                            <Link href={`/image/duas/${dua.id}/edit-details`}>
+                              <Button size="icon" variant="ghost" data-testid={`button-edit-${dua.id}`} title="Edit details">
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                            </Link>
                             <Button
                               size="icon" variant="ghost"
                               onClick={() => duplicateDua.mutate(dua.id)}
