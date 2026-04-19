@@ -1,4 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { AdminLayout } from "@/components/admin-layout";
 import { useAuth } from "@/lib/auth";
 import { useViewAs } from "@/lib/view-as";
