@@ -699,7 +699,7 @@ export default function AdminStoriesPage() {
                                 </Button>
                               </>
                             )}
-                            <Link href={`/image/stories/${story.id}/edit`}>
+                            <Link href={`/image/stories/${story.id}/manage`}>
                               <Button size="icon" variant="ghost" title="Manage Articles" data-testid={`button-manage-${story.id}`}>
                                 <BookOpen className="w-4 h-4" />
                               </Button>

@@ -26,6 +26,7 @@ import AdminLoginPage from "@/pages/admin-login";
 import AdminDashboardPage from "@/pages/admin-dashboard";
 import AdminStoriesPage from "@/pages/admin-stories";
 import AdminStoryEditorPage from "@/pages/admin-story-editor";
+import AdminStoryManagePage from "@/pages/admin-story-manage";
 import AdminCategoriesPage from "@/pages/admin-categories";
 import AdminBooksPage from "@/pages/admin-books";
 import AdminBookEditorPage from "@/pages/admin-book-editor";
@@ -88,6 +89,7 @@ function Router() {
       <Route path="/image/stories" component={AdminStoriesPage} />
       <Route path="/image/stories/category/:slug" component={AdminStoriesPage} />
       <Route path="/image/stories/new" component={AdminStoryEditorPage} />
+      <Route path="/image/stories/:id/manage" component={AdminStoryManagePage} />
       <Route path="/image/stories/:id/edit" component={AdminStoryEditorPage} />
       <Route path="/image/categories" component={AdminCategoriesPage} />
       <Route path="/image/books" component={AdminBooksPage} />
