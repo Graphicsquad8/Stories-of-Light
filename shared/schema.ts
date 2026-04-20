@@ -483,4 +483,22 @@ export const duaBookmarks = pgTable("dua_bookmarks", {
 });
 
 export type DuaBookmark = typeof duaBookmarks.$inferSelect;
+
+export const apiKeys = pgTable("api_keys", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name", { length: 255 }).notNull(),
+  keyHash: varchar("key_hash", { length: 64 }).notNull().unique(),
+  keyPrefix: varchar("key_prefix", { length: 20 }).notNull(),
+  permissions: text("permissions").notNull().default('["read"]'),
+  rateLimit: integer("rate_limit").notNull().default(1000),
+  isActive: boolean("is_active").notNull().default(true),
+  requestCount: integer("request_count").notNull().default(0),
+  lastUsedAt: timestamp("last_used_at"),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertApiKeySchema = createInsertSchema(apiKeys).omit({ id: true, keyHash: true, keyPrefix: true, requestCount: true, lastUsedAt: true, createdAt: true });
+export type InsertApiKey = z.infer<typeof insertApiKeySchema>;
+export type ApiKey = typeof apiKeys.$inferSelect;
 export type BookPartWithPages = BookPart & { pages: BookPage[] };

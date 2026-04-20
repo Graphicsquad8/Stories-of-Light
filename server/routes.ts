@@ -2507,5 +2507,134 @@ export async function registerRoutes(
     res.json({ success: true });
   });
 
+  // ─── API Key Management ───────────────────────────────────────────────────
+
+  async function requireApiKey(req: any, res: any, next: any) {
+    const header = req.headers["x-api-key"] || req.headers.authorization?.replace(/^Bearer\s+/i, "");
+    if (!header) return res.status(401).json({ error: "API key required. Set X-Api-Key header or Authorization: Bearer <key>" });
+    const keyHash = createHash("sha256").update(header).digest("hex");
+    const apiKey = await storage.validateApiKey(keyHash);
+    if (!apiKey) return res.status(401).json({ error: "Invalid API key" });
+    if (!apiKey.isActive) return res.status(403).json({ error: "API key is disabled" });
+    if (apiKey.expiresAt && new Date() > new Date(apiKey.expiresAt)) return res.status(403).json({ error: "API key has expired" });
+    req.apiKey = apiKey;
+    next();
+  }
+
+  function apiKeyCan(permission: string) {
+    return (req: any, res: any, next: any) => {
+      const perms: string[] = JSON.parse(req.apiKey?.permissions || '["read"]');
+      if (!perms.includes(permission)) return res.status(403).json({ error: `Permission '${permission}' required` });
+      next();
+    };
+  }
+
+  app.get("/api/admin/api-keys", requireAdmin, async (_req, res) => {
+    const keys = await storage.listApiKeys();
+    res.json(keys);
+  });
+
+  app.post("/api/admin/api-keys", requireAdmin, async (req, res) => {
+    const { name, permissions, rateLimit, expiresAt } = req.body;
+    if (!name) return res.status(400).json({ message: "name is required" });
+    const rawKey = "sol_" + randomBytes(28).toString("hex");
+    const keyHash = createHash("sha256").update(rawKey).digest("hex");
+    const keyPrefix = rawKey.slice(0, 16);
+    const record = await storage.createApiKeyRecord({
+      name,
+      keyHash,
+      keyPrefix,
+      permissions: JSON.stringify(permissions || ["read"]),
+      rateLimit: rateLimit ?? 1000,
+      expiresAt: expiresAt ? new Date(expiresAt) : null,
+    });
+    res.json({ ...record, rawKey });
+  });
+
+  app.patch("/api/admin/api-keys/:id", requireAdmin, async (req, res) => {
+    const { name, permissions, rateLimit, isActive, expiresAt } = req.body;
+    const data: any = {};
+    if (name !== undefined) data.name = name;
+    if (permissions !== undefined) data.permissions = JSON.stringify(permissions);
+    if (rateLimit !== undefined) data.rateLimit = rateLimit;
+    if (isActive !== undefined) data.isActive = isActive;
+    if (expiresAt !== undefined) data.expiresAt = expiresAt ? new Date(expiresAt) : null;
+    const key = await storage.updateApiKey(req.params.id, data);
+    if (!key) return res.status(404).json({ message: "API key not found" });
+    res.json(key);
+  });
+
+  app.delete("/api/admin/api-keys/:id", requireAdmin, async (req, res) => {
+    const ok = await storage.deleteApiKey(req.params.id);
+    if (!ok) return res.status(404).json({ message: "API key not found" });
+    res.json({ success: true });
+  });
+
+  // ─── Public API v1 (API-key authenticated) ─────────────────────────────────
+
+  app.get("/api/v1/stories", requireApiKey, async (req, res) => {
+    const { status, featured, limit = "20", offset = "0" } = req.query as any;
+    const lim = Math.min(Number(limit), 100);
+    const all = await storage.getStories({ status: status || "published", featured: featured === "true" });
+    const page = all.slice(Number(offset), Number(offset) + lim);
+    res.json({ data: page, total: all.length, limit: lim, offset: Number(offset) });
+  });
+
+  app.get("/api/v1/stories/:slug", requireApiKey, async (req, res) => {
+    const story = await storage.getStoryBySlug(req.params.slug);
+    if (!story) return res.status(404).json({ error: "Story not found" });
+    res.json({ data: story });
+  });
+
+  app.get("/api/v1/categories", requireApiKey, async (req, res) => {
+    const cats = await storage.getCategories();
+    res.json({ data: cats });
+  });
+
+  app.get("/api/v1/books", requireApiKey, async (req, res) => {
+    const { limit = "20", offset = "0", search } = req.query as any;
+    const lim = Math.min(Number(limit), 100);
+    const all = await storage.getBooks({ search });
+    const page = all.slice(Number(offset), Number(offset) + lim);
+    res.json({ data: page, total: all.length, limit: lim, offset: Number(offset) });
+  });
+
+  app.get("/api/v1/books/:slug", requireApiKey, async (req, res) => {
+    const book = await storage.getBookBySlug(req.params.slug);
+    if (!book) return res.status(404).json({ error: "Book not found" });
+    res.json({ data: book });
+  });
+
+  app.get("/api/v1/duas", requireApiKey, async (req, res) => {
+    const { limit = "20", offset = "0" } = req.query as any;
+    const result = await storage.getDuas({ limit: Math.min(Number(limit), 100), offset: Number(offset) });
+    res.json({ data: result.duas, total: result.total });
+  });
+
+  app.get("/api/v1/motivational-stories", requireApiKey, async (req, res) => {
+    const { limit = "20", offset = "0" } = req.query as any;
+    const result = await storage.getMotivationalStories({ limit: Math.min(Number(limit), 100), offset: Number(offset), published: true });
+    res.json({ data: result.stories, total: result.total });
+  });
+
+  app.post("/api/v1/stories", requireApiKey, apiKeyCan("write"), async (req, res) => {
+    const parsed = insertStorySchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "Validation failed", details: parsed.error.flatten() });
+    const story = await storage.createStory(parsed.data);
+    res.status(201).json({ data: story });
+  });
+
+  app.patch("/api/v1/stories/:id", requireApiKey, apiKeyCan("write"), async (req, res) => {
+    const story = await storage.updateStory(req.params.id, req.body);
+    if (!story) return res.status(404).json({ error: "Story not found" });
+    res.json({ data: story });
+  });
+
+  app.patch("/api/v1/stories/:id/publish", requireApiKey, apiKeyCan("publish"), async (req, res) => {
+    const story = await storage.updateStory(req.params.id, { status: "published" });
+    if (!story) return res.status(404).json({ error: "Story not found" });
+    res.json({ data: story });
+  });
+
   return httpServer;
 }

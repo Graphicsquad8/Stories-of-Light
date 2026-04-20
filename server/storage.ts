@@ -27,6 +27,7 @@ import {
   type DuaBookmark,
   type DuaRating, type StoryRating,
   type ManualAd, type InsertManualAd,
+  type ApiKey,
   users, categories, stories, books, bookChapters, bookBookmarks, bookProgress,
   bookmarks, bookRatings, passwordResetTokens, siteSettings,
   motivationalStories, motivationalLessons, motivationalBookmarks,
@@ -34,7 +35,7 @@ import {
   storyParts, storyPages, storyReadingProgress,
   bookParts, bookPages, footerPages,
   duas, duaParts, duaBookmarks, duaRatings, storyRatings,
-  manualAds,
+  manualAds, apiKeys,
 } from "@shared/schema";
 import { eq, desc, and, or, ilike, sql, count, sum, inArray, asc, gte, lte, ne, isNull, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
@@ -1913,6 +1914,34 @@ export class DatabaseStorage implements IStorage {
 
   async deleteManualAd(id: string): Promise<boolean> {
     const result = await db.delete(manualAds).where(eq(manualAds.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async listApiKeys(): Promise<Omit<ApiKey, "keyHash">[]> {
+    const rows = await db.select().from(apiKeys).orderBy(desc(apiKeys.createdAt));
+    return rows.map(({ keyHash: _kh, ...rest }) => rest);
+  }
+
+  async createApiKeyRecord(data: { name: string; keyHash: string; keyPrefix: string; permissions: string; rateLimit: number; expiresAt: Date | null }): Promise<ApiKey> {
+    const [row] = await db.insert(apiKeys).values(data).returning();
+    return row;
+  }
+
+  async validateApiKey(keyHash: string): Promise<ApiKey | undefined> {
+    const [row] = await db.select().from(apiKeys).where(eq(apiKeys.keyHash, keyHash));
+    if (row) {
+      await db.update(apiKeys).set({ lastUsedAt: new Date(), requestCount: (row.requestCount ?? 0) + 1 }).where(eq(apiKeys.id, row.id));
+    }
+    return row;
+  }
+
+  async updateApiKey(id: string, data: Partial<Pick<ApiKey, "name" | "permissions" | "rateLimit" | "isActive" | "expiresAt">>): Promise<ApiKey | undefined> {
+    const [row] = await db.update(apiKeys).set(data).where(eq(apiKeys.id, id)).returning();
+    return row;
+  }
+
+  async deleteApiKey(id: string): Promise<boolean> {
+    const result = await db.delete(apiKeys).where(eq(apiKeys.id, id));
     return (result.rowCount ?? 0) > 0;
   }
 }

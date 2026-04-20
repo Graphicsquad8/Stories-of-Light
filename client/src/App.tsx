@@ -49,6 +49,7 @@ import AdminDuaEditPage from "@/pages/admin-dua-edit";
 import AdminBookEditPage from "@/pages/admin-book-edit";
 import AdminOverviewPage from "@/pages/admin-overview";
 import AdminHomePagePage from "@/pages/admin-home-page";
+import AdminApiGeneratorPage from "@/pages/admin-api-generator";
 
 function ScrollToTop() {
   const [location] = useLocation();
@@ -109,6 +110,7 @@ function Router() {
       <Route path="/image/duas/:id/edit-details" component={AdminDuaEditPage} />
       <Route path="/image/overview" component={AdminOverviewPage} />
       <Route path="/image/home-page" component={AdminHomePagePage} />
+      <Route path="/image/api-generator" component={AdminApiGeneratorPage} />
 
       <Route path="/duas" component={DuasPage} />
       <Route path="/duas/:slug" component={DuaDetailPage} />

@@ -25,7 +25,7 @@ import {
   LayoutDashboard, FileText, FolderOpen, LogOut, BookOpen,
   Sun, Moon, ExternalLink, Book, Settings, Lightbulb, Library,
   Trash2, Users, ShieldCheck, ChevronRight, LayoutTemplate, UserCircle,
-  Eye, UserCheck, Clock, Home,
+  Eye, UserCheck, Clock, Home, Code2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
@@ -190,6 +190,14 @@ function AdminSidebar() {
       href: "/image/footer",
       icon: LayoutTemplate,
       isActive: (loc) => loc.startsWith("/image/footer"),
+      permission: "admin-only",
+    },
+    {
+      key: "api-generator",
+      title: "API Generator",
+      href: "/image/api-generator",
+      icon: Code2,
+      isActive: (loc) => loc.startsWith("/image/api-generator"),
       permission: "admin-only",
     },
     {
