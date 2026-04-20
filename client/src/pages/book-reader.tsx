@@ -38,11 +38,11 @@ export default function BookReaderPage() {
   const [, params] = useRoute("/books/:slug/read");
   const slug = params?.slug;
   const { user } = useAuth();
-  const isPreviewMode =
-    typeof window !== "undefined" &&
-    new URLSearchParams(window.location.search).get("preview") === "true";
+  const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
+  const isPreviewMode = searchParams.get("preview") === "true";
+  const startInReadMode = searchParams.get("mode") === "read";
 
-  const [phase, setPhase] = useState<Phase>("cover");
+  const [phase, setPhase] = useState<Phase>(startInReadMode ? "reading" : "cover");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activePartIndex, setActivePartIndex] = useState(0);
   const [activePageIndex, setActivePageIndex] = useState(0);

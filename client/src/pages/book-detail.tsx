@@ -248,14 +248,14 @@ export default function BookDetailPage() {
 
             <div className="flex flex-wrap gap-3 pt-2">
               {book.type === "free" && (
-                <Link href={`/books/${book.slug}/read`}>
+                <Link href={`/books/${book.slug}/read?mode=read`}>
                   <Button size="lg" data-testid="button-start-reading">
                     <BookOpen className="w-4 h-4 mr-2" /> Start Reading
                   </Button>
                 </Link>
               )}
               {book.type === "paid" && hasPreviewContent && (
-                <Link href={`/books/${book.slug}/read?preview=true`}>
+                <Link href={`/books/${book.slug}/read?preview=true&mode=read`}>
                   <Button size="lg" variant="outline" data-testid="button-read-preview">
                     <Eye className="w-4 h-4 mr-2" /> Read Preview
                   </Button>
