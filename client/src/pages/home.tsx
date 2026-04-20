@@ -21,15 +21,42 @@ function AdBand({ slot, label }: { slot: AdSlotType; label: string }) {
 
 const DEFAULT_HERO_TITLE = "Islamic Stories, Biographies &amp; Books —<br />Read, Listen and Learn";
 const DEFAULT_HERO_SUBTITLE = "Explore biographies of the Sahaba, Awliya, and great figures of Islamic history — with audio narrations, free online books, and curated reading recommendations.";
+const DEFAULT_BTN1_TEXT = "Explore Stories";
+const DEFAULT_BTN1_URL = "/motivational-stories";
+const DEFAULT_BTN2_TEXT = "Browse Categories";
+const DEFAULT_BTN2_URL = "/awliya";
 
-function HeroSection() {
-  const { data: publicSettings = {} } = useQuery<Record<string, string>>({
-    queryKey: ["/api/settings/public"],
-  });
+interface SectionConfig {
+  id: string;
+  visible: boolean;
+  count: number;
+}
 
-  const heroTitle = publicSettings["homeHeroTitle"] || DEFAULT_HERO_TITLE;
-  const heroSubtitle = publicSettings["homeHeroSubtitle"] || DEFAULT_HERO_SUBTITLE;
-  const siteName = publicSettings["siteName"] || "Stories of Light";
+const DEFAULT_SECTIONS: SectionConfig[] = [
+  { id: "categories", visible: true, count: 6 },
+  { id: "featured", visible: true, count: 6 },
+  { id: "books", visible: true, count: 6 },
+  { id: "motivational", visible: true, count: 4 },
+  { id: "duas", visible: true, count: 4 },
+  { id: "latest", visible: true, count: 6 },
+];
+
+function parseSectionsConfig(raw: string | undefined): SectionConfig[] {
+  try {
+    const parsed = JSON.parse(raw || "[]");
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+  } catch {}
+  return DEFAULT_SECTIONS;
+}
+
+function HeroSection({ settings }: { settings: Record<string, string> }) {
+  const heroTitle = settings["homeHeroTitle"] || DEFAULT_HERO_TITLE;
+  const heroSubtitle = settings["homeHeroSubtitle"] || DEFAULT_HERO_SUBTITLE;
+  const siteName = settings["siteName"] || "Stories of Light";
+  const btn1Text = settings["homeHeroBtn1Text"] || DEFAULT_BTN1_TEXT;
+  const btn1Url = settings["homeHeroBtn1Url"] || DEFAULT_BTN1_URL;
+  const btn2Text = settings["homeHeroBtn2Text"] || DEFAULT_BTN2_TEXT;
+  const btn2Url = settings["homeHeroBtn2Url"] || DEFAULT_BTN2_URL;
 
   return (
     <section className="relative overflow-hidden" data-testid="section-hero">
@@ -49,20 +76,20 @@ function HeroSection() {
             dangerouslySetInnerHTML={{ __html: heroTitle }}
           />
           <p
-            className="text-lg text-white/80 leading-relaxed max-w-xl mx-auto mb-6"
+            className="text-lg text-white/80 leading-relaxed max-xl mx-auto mb-6"
             data-testid="text-hero-subtitle"
             dangerouslySetInnerHTML={{ __html: heroSubtitle }}
           />
           <div className="flex flex-wrap gap-3 justify-center">
-            <Link href="/motivational-stories">
-              <Button size="lg" data-testid="button-explore-stories">
-                Explore Stories
+            <Link href={btn1Url}>
+              <Button size="lg" data-testid="button-hero-btn1">
+                {btn1Text}
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
-            <Link href="/awliya">
-              <Button variant="outline" size="lg" className="bg-white/10 backdrop-blur border-white/20 text-white" data-testid="button-browse-categories">
-                Browse Categories
+            <Link href={btn2Url}>
+              <Button variant="outline" size="lg" className="bg-white/10 backdrop-blur border-white/20 text-white" data-testid="button-hero-btn2">
+                {btn2Text}
               </Button>
             </Link>
           </div>
@@ -72,8 +99,9 @@ function HeroSection() {
   );
 }
 
-function CategoryTiles({ categories }: { categories: (Category & { storyCount: number })[] }) {
+function CategoryTiles({ categories, count }: { categories: (Category & { storyCount: number })[]; count: number }) {
   const fallbackImage = "/images/category-history.png";
+  const visible = categories.slice(0, count);
 
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16" data-testid="section-categories">
@@ -84,7 +112,7 @@ function CategoryTiles({ categories }: { categories: (Category & { storyCount: n
         </p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {categories.map((cat) => (
+        {visible.map((cat) => (
           <Link key={cat.id} href={`/${cat.urlSlug || cat.slug}`}>
             <Card className="group relative h-48 overflow-hidden cursor-pointer" data-testid={`card-category-${cat.urlSlug || cat.slug}`}>
               <img
@@ -140,8 +168,9 @@ function StoryCard({ story }: { story: StoryWithCategory }) {
   );
 }
 
-function FeaturedStories({ stories }: { stories: StoryWithCategory[] }) {
-  if (stories.length === 0) return null;
+function FeaturedStories({ stories, count }: { stories: StoryWithCategory[]; count: number }) {
+  const visible = stories.slice(0, count);
+  if (visible.length === 0) return null;
 
   return (
     <section className="py-16" data-testid="section-featured">
@@ -152,7 +181,7 @@ function FeaturedStories({ stories }: { stories: StoryWithCategory[] }) {
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {stories.map((story) => (
+        {visible.map((story) => (
           <StoryCard key={story.id} story={story} />
         ))}
       </div>
@@ -160,8 +189,9 @@ function FeaturedStories({ stories }: { stories: StoryWithCategory[] }) {
   );
 }
 
-function LatestStories({ stories }: { stories: StoryWithCategory[] }) {
-  if (stories.length === 0) return null;
+function LatestStories({ stories, count }: { stories: StoryWithCategory[]; count: number }) {
+  const visible = stories.slice(0, count);
+  if (visible.length === 0) return null;
 
   return (
     <section className="py-16" data-testid="section-latest">
@@ -172,14 +202,13 @@ function LatestStories({ stories }: { stories: StoryWithCategory[] }) {
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {stories.map((story) => (
+        {visible.map((story) => (
           <StoryCard key={story.id} story={story} />
         ))}
       </div>
     </section>
   );
 }
-
 
 function StoriesLoadingSkeleton() {
   return (
@@ -199,8 +228,9 @@ function StoriesLoadingSkeleton() {
   );
 }
 
-function FeaturedFreeBooks({ books }: { books: Book[] }) {
-  if (books.length === 0) return null;
+function FeaturedFreeBooks({ books, count }: { books: Book[]; count: number }) {
+  const visible = books.slice(0, count);
+  if (visible.length === 0) return null;
   return (
     <section className="py-16" data-testid="section-featured-books">
       <div className="flex items-center justify-between mb-8">
@@ -215,7 +245,7 @@ function FeaturedFreeBooks({ books }: { books: Book[] }) {
         </Link>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-        {books.map((book) => (
+        {visible.map((book) => (
           <Link key={book.id} href={`/books/${book.slug}`}>
             <Card className="overflow-hidden group cursor-pointer hover-elevate" data-testid={`featured-book-${book.id}`}>
               <div className="aspect-[3/4] overflow-hidden bg-muted relative">
@@ -247,8 +277,9 @@ function FeaturedFreeBooks({ books }: { books: Book[] }) {
   );
 }
 
-function PopularMotivational({ stories }: { stories: MotivationalStory[] }) {
-  if (stories.length === 0) return null;
+function PopularMotivational({ stories, count }: { stories: MotivationalStory[]; count: number }) {
+  const visible = stories.slice(0, count);
+  if (visible.length === 0) return null;
   return (
     <section className="py-16" data-testid="section-popular-motivational">
       <div className="flex items-center justify-between mb-8">
@@ -266,7 +297,7 @@ function PopularMotivational({ stories }: { stories: MotivationalStory[] }) {
         </Link>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stories.map((story) => (
+        {visible.map((story) => (
           <Link key={story.id} href={`/motivational-stories/${story.slug}`}>
             <Card className="group h-full p-5 cursor-pointer hover-elevate" data-testid={`card-motivational-${story.slug}`}>
               <Badge variant="secondary" className="mb-3 text-xs">{story.category}</Badge>
@@ -290,8 +321,9 @@ function PopularMotivational({ stories }: { stories: MotivationalStory[] }) {
   );
 }
 
-function PopularDuas({ duas }: { duas: Dua[] }) {
-  if (duas.length === 0) return null;
+function PopularDuas({ duas, count }: { duas: Dua[]; count: number }) {
+  const visible = duas.slice(0, count);
+  if (visible.length === 0) return null;
   return (
     <section className="py-16" data-testid="section-popular-duas">
       <div className="flex items-center justify-between mb-8">
@@ -309,7 +341,7 @@ function PopularDuas({ duas }: { duas: Dua[] }) {
         </Link>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {duas.map((dua) => (
+        {visible.map((dua) => (
           <Link key={dua.id} href={`/duas/${dua.slug}`}>
             <Card className="group h-full p-5 cursor-pointer hover-elevate" data-testid={`card-dua-${dua.slug}`}>
               {dua.thumbnail && (
@@ -343,12 +375,18 @@ function PopularDuas({ duas }: { duas: Dua[] }) {
 }
 
 export default function HomePage() {
+  const { data: publicSettings = {} } = useQuery<Record<string, string>>({
+    queryKey: ["/api/settings/public"],
+  });
+
+  const sections = parseSectionsConfig(publicSettings["homeSectionsConfig"]);
+
   const { data: featuredStories, isLoading: featuredLoading } = useQuery<StoryWithCategory[]>({
     queryKey: ["/api/stories?status=published&featured=true"],
   });
 
   const { data: latestStories, isLoading: latestLoading } = useQuery<StoryWithCategory[]>({
-    queryKey: ["/api/stories?status=published&limit=6"],
+    queryKey: ["/api/stories?status=published&limit=20"],
   });
 
   const { data: categories, isLoading: catsLoading } = useQuery<(Category & { storyCount: number })[]>({
@@ -367,62 +405,95 @@ export default function HomePage() {
     queryKey: ["/api/duas/popular"],
   });
 
+  const getSectionConfig = (id: string) => sections.find(s => s.id === id) ?? { id, visible: true, count: 6 };
+
+  const renderSection = (sec: SectionConfig) => {
+    if (!sec.visible) return null;
+
+    switch (sec.id) {
+      case "categories":
+        if (catsLoading) {
+          return (
+            <div key="categories" className="max-w-7xl mx-auto px-4 py-16">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[1, 2, 3].map((i) => <Skeleton key={i} className="h-48 rounded-md" />)}
+              </div>
+            </div>
+          );
+        }
+        if (!categories || categories.length === 0) return null;
+        return <CategoryTiles key="categories" categories={categories} count={sec.count} />;
+
+      case "featured":
+        return (
+          <div key="featured" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {featuredLoading ? (
+              <div className="py-16">
+                <Skeleton className="h-8 w-48 mb-8" />
+                <StoriesLoadingSkeleton />
+              </div>
+            ) : (
+              <FeaturedStories stories={featuredStories || []} count={sec.count} />
+            )}
+          </div>
+        );
+
+      case "books":
+        if (!freeBooks || freeBooks.length === 0) return null;
+        return (
+          <div key="books" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <FeaturedFreeBooks books={freeBooks} count={sec.count} />
+          </div>
+        );
+
+      case "motivational":
+        if (!motivationalStories || motivationalStories.length === 0) return null;
+        return (
+          <div key="motivational" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <PopularMotivational stories={motivationalStories} count={sec.count} />
+          </div>
+        );
+
+      case "duas":
+        if (!popularDuas || popularDuas.length === 0) return null;
+        return (
+          <div key="duas" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <PopularDuas duas={popularDuas} count={sec.count} />
+          </div>
+        );
+
+      case "latest":
+        return (
+          <div key="latest" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {latestLoading ? (
+              <div className="py-16">
+                <Skeleton className="h-8 w-48 mb-8" />
+                <StoriesLoadingSkeleton />
+              </div>
+            ) : (
+              <LatestStories stories={latestStories || []} count={sec.count} />
+            )}
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  const topHalf = sections.slice(0, Math.ceil(sections.length / 2));
+  const bottomHalf = sections.slice(Math.ceil(sections.length / 2));
+
   return (
     <PublicLayout>
-      <HeroSection />
+      <HeroSection settings={publicSettings} />
       <AdBand slot="banner" label="top-banner" />
 
-      {catsLoading ? (
-        <div className="max-w-7xl mx-auto px-4 py-16">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3].map((i) => <Skeleton key={i} className="h-48 rounded-md" />)}
-          </div>
-        </div>
-      ) : categories && categories.length > 0 ? (
-        <CategoryTiles categories={categories} />
-      ) : null}
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {featuredLoading ? (
-          <div className="py-16">
-            <Skeleton className="h-8 w-48 mb-8" />
-            <StoriesLoadingSkeleton />
-          </div>
-        ) : (
-          <FeaturedStories stories={featuredStories || []} />
-        )}
-      </div>
-
-      {freeBooks && freeBooks.length > 0 && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <FeaturedFreeBooks books={freeBooks} />
-        </div>
-      )}
-
-      {motivationalStories && motivationalStories.length > 0 && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <PopularMotivational stories={motivationalStories} />
-        </div>
-      )}
+      {topHalf.map(sec => renderSection(sec))}
 
       <AdBand slot="in-feed" label="mid-content" />
 
-      {popularDuas && popularDuas.length > 0 && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <PopularDuas duas={popularDuas} />
-        </div>
-      )}
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {latestLoading ? (
-          <div className="py-16">
-            <Skeleton className="h-8 w-48 mb-8" />
-            <StoriesLoadingSkeleton />
-          </div>
-        ) : (
-          <LatestStories stories={latestStories || []} />
-        )}
-      </div>
+      {bottomHalf.map(sec => renderSection(sec))}
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16" data-testid="section-newsletter">
         <Card className="p-8 sm:p-12 text-center bg-primary/5">
