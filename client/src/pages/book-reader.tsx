@@ -11,7 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   ChevronLeft, ChevronRight, BookOpen, PanelLeftClose, PanelLeftOpen,
   Home, Headphones, ExternalLink, Lock, List, Star, Video,
-  ArrowRight, BookMarked, Menu, X,
+  ArrowRight, BookMarked, ChevronDown, ChevronUp, FileText,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { apiRequest } from "@/lib/queryClient";
@@ -49,6 +49,8 @@ export default function BookReaderPage() {
   const [showAudio, setShowAudio] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
   const [previewEnded, setPreviewEnded] = useState(false);
+  const [expandedParts, setExpandedParts] = useState<Set<string>>(new Set());
+  const [viewingToc, setViewingToc] = useState(false);
 
   const { data: book, isLoading: bookLoading } = useQuery<Book>({
     queryKey: ["/api/books/slug", slug],
@@ -87,6 +89,7 @@ export default function BookReaderPage() {
     setActivePageIndex(pageIdx);
     setShowAudio(false);
     setShowVideo(false);
+    setViewingToc(false);
     saveProgress(partIdx, pageIdx);
     window.scrollTo({ top: 0, behavior: "smooth" });
     if (phase !== "reading") setPhase("reading");
@@ -97,12 +100,14 @@ export default function BookReaderPage() {
   const totalPages = activePart?.pages?.length ?? 0;
   const isFirstPage = activePageIndex === 0;
   const flatPages = parts ? flattenPages(parts) : [];
+  const totalBookPages = flatPages.length;
   const currentFlatIndex = flatPages.findIndex(
     fp => fp.partIdx === activePartIndex && fp.pageIdx === activePageIndex
   );
-  const isAtPreviewLimit = isPreviewMode && currentFlatIndex >= PREVIEW_PAGE_LIMIT - 1;
+  const globalPageNum = currentFlatIndex + 1;
 
   const isAtStart = activePageIndex === 0 && activePartIndex === 0 && !previewEnded;
+  const isAtPreviewLimit = isPreviewMode && currentFlatIndex >= PREVIEW_PAGE_LIMIT - 1;
   const isAtEnd = previewEnded
     ? true
     : isPreviewMode
@@ -127,6 +132,14 @@ export default function BookReaderPage() {
       const prevPart = parts![activePartIndex - 1];
       navigateTo(activePartIndex - 1, (prevPart.pages?.length ?? 1) - 1);
     }
+  };
+
+  const togglePartExpand = (partId: string) => {
+    setExpandedParts(prev => {
+      const s = new Set(prev);
+      s.has(partId) ? s.delete(partId) : s.add(partId);
+      return s;
+    });
   };
 
   useEffect(() => {
@@ -315,7 +328,7 @@ export default function BookReaderPage() {
             </h1>
           </div>
 
-          <div className="mb-4 flex items-center gap-2">
+          <div className="mb-4">
             <p className="text-muted-foreground text-sm">
               <span className="font-medium text-foreground">{book.title}</span>
               {" "}by {book.author}
@@ -432,7 +445,9 @@ export default function BookReaderPage() {
                     {book.title}
                   </span>
                   <span className="text-xs text-muted-foreground" data-testid="text-reader-progress">
-                    Part {activePartIndex + 1}/{parts.length} · Page {activePageIndex + 1}/{totalPages}
+                    {viewingToc
+                      ? "Table of Contents"
+                      : `Page ${globalPageNum} of ${totalBookPages}`}
                   </span>
                 </div>
               </div>
@@ -443,13 +458,20 @@ export default function BookReaderPage() {
                     <Lock className="w-3 h-3" /> Preview
                   </Badge>
                 )}
-                <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setPhase("toc")} title="Table of Contents" data-testid="button-toc">
+                <Button
+                  size="icon"
+                  variant={viewingToc ? "default" : "ghost"}
+                  className="h-8 w-8"
+                  onClick={() => setViewingToc(!viewingToc)}
+                  title="Table of Contents"
+                  data-testid="button-toc"
+                >
                   <List className="w-4 h-4" />
                 </Button>
-                <Button size="icon" variant="ghost" className="h-8 w-8" disabled={isAtStart} onClick={handlePrev} data-testid="button-prev-page">
+                <Button size="icon" variant="ghost" className="h-8 w-8" disabled={isAtStart || viewingToc} onClick={handlePrev} data-testid="button-prev-page">
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
-                <Button size="icon" variant="ghost" className="h-8 w-8" disabled={isAtEnd && !isAtPreviewLimit} onClick={handleNext} data-testid="button-next-page">
+                <Button size="icon" variant="ghost" className="h-8 w-8" disabled={(isAtEnd && !isAtPreviewLimit) || viewingToc} onClick={handleNext} data-testid="button-next-page">
                   <ChevronRight className="w-4 h-4" />
                 </Button>
                 <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setPhase("cover")} title="Back to Cover" data-testid="button-back-cover">
@@ -462,35 +484,42 @@ export default function BookReaderPage() {
 
         <div className="flex" style={{ maxWidth: "1400px", margin: "0 auto" }}>
           <aside
-            className={`${sidebarOpen ? "w-52" : "w-0 overflow-hidden"} shrink-0 border-r bg-muted/20 transition-all duration-300`}
+            className={`${sidebarOpen ? "w-56" : "w-0 overflow-hidden"} shrink-0 border-r bg-muted/20 transition-all duration-300`}
             data-testid="reader-sidebar-left"
           >
             <div className="sticky top-[calc(var(--header-h,4rem)+3.5rem)]">
-              <div className="p-2 px-3 border-b flex items-center justify-between">
-                <h2 className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">Contents</h2>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-5 w-5"
-                  onClick={() => setSidebarOpen(false)}
-                  data-testid="button-collapse-sidebar"
-                >
-                  <PanelLeftClose className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-              <ScrollArea className="h-[calc(100vh-12rem)]">
-                <div className="p-1.5 space-y-0.5">
-                  {parts.map((part, i) => (
-                    <button
-                      key={part.id}
-                      onClick={() => navigateTo(i, 0)}
-                      className={`w-full text-left px-2.5 py-2 rounded-md text-sm transition-colors ${activePartIndex === i ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
-                      data-testid={`sidebar-part-${part.id}`}
-                    >
-                      <span className="text-xs opacity-60 mr-1.5">{i + 1}.</span>
-                      {part.title}
-                    </button>
-                  ))}
+              <button
+                onClick={() => setViewingToc(!viewingToc)}
+                className={`w-full flex items-center gap-2 px-3 py-2.5 border-b text-sm font-medium transition-colors ${viewingToc ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+                data-testid="button-sidebar-toc"
+              >
+                <List className="w-4 h-4 shrink-0" />
+                <span className="flex-1 text-left">Table of Contents</span>
+                {viewingToc ? <ChevronDown className="w-3.5 h-3.5 shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 shrink-0" />}
+              </button>
+
+              <ScrollArea className="h-[calc(100vh-14rem)]">
+                <div className="p-1.5 space-y-0.5 pt-2">
+                  {parts.map((part, i) => {
+                    const partGlobalStart = flatPages.find(fp => fp.partIdx === i)?.globalIdx ?? 0;
+                    const isActive = !viewingToc && activePartIndex === i;
+                    return (
+                      <button
+                        key={part.id}
+                        onClick={() => navigateTo(i, 0)}
+                        className={`w-full text-left px-2.5 py-2 rounded-md text-sm transition-colors ${isActive ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+                        data-testid={`sidebar-part-${part.id}`}
+                      >
+                        <span className="text-xs opacity-60 mr-1.5">{i + 1}.</span>
+                        <span className="line-clamp-2">{part.title}</span>
+                        {(part.pages?.length || 0) > 0 && (
+                          <span className={`block text-xs mt-0.5 ${isActive ? "opacity-70" : "text-muted-foreground"}`}>
+                            p. {partGlobalStart + 1}–{partGlobalStart + (part.pages?.length || 0)}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </ScrollArea>
             </div>
@@ -514,165 +543,179 @@ export default function BookReaderPage() {
 
           <main className="flex-1 min-w-0">
             <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-3xl">
-              {isFirstPage && activePart && (
-                <div className="mb-8">
-                  <h2 className="font-serif text-3xl sm:text-4xl font-bold mb-3" data-testid="text-part-title">
-                    {activePart.title}
-                  </h2>
-                  {activePart.summary && (
-                    <p className="text-muted-foreground leading-relaxed mb-5 text-base" data-testid="text-part-summary">
-                      {activePart.summary}
-                    </p>
-                  )}
-
-                  {(activePart.audioUrl || activePart.videoUrl) && (
-                    <div className="flex items-center gap-3 mb-5">
-                      {activePart.audioUrl && (
-                        <button
-                          onClick={() => { setShowAudio(!showAudio); setShowVideo(false); }}
-                          className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${showAudio ? "text-primary underline underline-offset-2" : "text-primary hover:underline hover:underline-offset-2"}`}
-                          data-testid="button-toggle-audio"
-                        >
-                          <Headphones className="w-4 h-4" />
-                          {showAudio ? "Hide Audio" : "Listen"}
-                        </button>
-                      )}
-                      {activePart.videoUrl && (
-                        <>
-                          {activePart.audioUrl && <span className="text-muted-foreground/40">|</span>}
-                          <button
-                            onClick={() => { setShowVideo(!showVideo); setShowAudio(false); }}
-                            className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${showVideo ? "text-primary underline underline-offset-2" : "text-primary hover:underline hover:underline-offset-2"}`}
-                            data-testid="button-toggle-video"
-                          >
-                            <Video className="w-4 h-4" />
-                            {showVideo ? "Hide Video" : "Watch"}
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  )}
-
-                  {showAudio && activePart.audioUrl && (
-                    <div className="mb-5">
-                      <AudioPlayer url={activePart.audioUrl} title={`Listen: ${activePart.title}`} />
-                    </div>
-                  )}
-
-                  {showVideo && activePart.videoUrl ? (
-                    <div className="my-4 rounded-xl overflow-hidden aspect-video">
-                      <VideoPlayer url={activePart.videoUrl} wrapperClassName="w-full h-full" />
-                    </div>
-                  ) : (
-                    !showAudio && activePart.coverImage && (
-                      <div className="my-4 rounded-xl overflow-hidden" data-testid="cover-photo-container">
-                        <img
-                          src={activePart.coverImage}
-                          alt={activePart.title}
-                          className="w-full h-auto max-h-[60vh] object-cover block"
-                          loading="lazy"
-                          data-testid="img-part-cover"
-                        />
-                      </div>
-                    )
-                  )}
-                </div>
-              )}
-
-              {previewEnded ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center gap-6" data-testid="preview-ended-banner">
-                  <div className="w-16 h-16 rounded-full bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 flex items-center justify-center">
-                    <Lock className="w-7 h-7 text-amber-600 dark:text-amber-400" />
-                  </div>
-                  <div>
-                    <h2 className="font-serif text-2xl font-bold mb-2">Preview Ends Here</h2>
-                    <p className="text-muted-foreground max-w-md">
-                      You've read the free preview. To continue reading the full book, get your copy below.
-                    </p>
-                  </div>
-                  {((book as any).amazonAffiliateLink || (book as any).affiliateLink) && (
-                    <a
-                      href={(book as any).amazonAffiliateLink || (book as any).affiliateLink}
-                      target="_blank"
-                      rel="noopener noreferrer nofollow"
-                    >
-                      <Button size="lg" data-testid="button-buy-from-preview">
-                        <ExternalLink className="w-4 h-4 mr-2" />
-                        {(book as any).buyButtonLabel || "Buy on Amazon"}
-                      </Button>
-                    </a>
-                  )}
-                  <Link href={`/books/${book.slug}`}>
-                    <Button variant="outline" size="lg" data-testid="button-back-to-detail-from-preview">
-                      <Home className="w-4 h-4 mr-2" /> Back to Book Details
-                    </Button>
-                  </Link>
-                </div>
-              ) : activePage?.content ? (
-                <div
-                  className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-serif prose-p:leading-relaxed prose-p:text-foreground/90"
-                  dangerouslySetInnerHTML={{ __html: activePage.content }}
-                  data-testid="content-page"
+              {viewingToc ? (
+                <TocInlineView
+                  parts={parts}
+                  flatPages={flatPages}
+                  activePartIndex={activePartIndex}
+                  activePageIndex={activePageIndex}
+                  expandedParts={expandedParts}
+                  onToggleExpand={togglePartExpand}
+                  onNavigate={navigateTo}
                 />
               ) : (
-                <div className="text-center py-12 text-muted-foreground">
-                  <BookOpen className="w-10 h-10 mx-auto mb-3 opacity-40" />
-                  <p>No content on this page yet.</p>
-                </div>
-              )}
-
-              {!previewEnded && (
                 <>
-                  <div className="my-8 border-y py-4">
-                    <AdSlot
-                      slot="in-article"
-                      className="w-full"
-                      disabled={adSlotsMap["in-article"] === false}
-                      contentId={book.id}
-                      contentType="book"
-                      contentManualMode={adSlotsMap["in-article_mode"] === "manual"}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between mt-4 pt-2 gap-4">
-                    <Button
-                      variant="outline"
-                      disabled={isAtStart}
-                      onClick={handlePrev}
-                      data-testid="button-prev-bottom"
-                    >
-                      <ChevronLeft className="w-4 h-4 mr-1" /> Previous
-                    </Button>
-                    <span className="text-sm text-muted-foreground text-center hidden sm:block" data-testid="text-page-progress">
-                      {isPreviewMode
-                        ? `Preview · Page ${Math.min(currentFlatIndex + 1, PREVIEW_PAGE_LIMIT)} of ${PREVIEW_PAGE_LIMIT}`
-                        : `Part ${activePartIndex + 1} of ${parts.length} · Page ${activePageIndex + 1} of ${totalPages}`}
-                    </span>
-                    <Button
-                      variant={isAtPreviewLimit ? "default" : "outline"}
-                      onClick={handleNext}
-                      disabled={isAtEnd && !isAtPreviewLimit}
-                      data-testid="button-next-bottom"
-                    >
-                      {isAtPreviewLimit ? (
-                        <><Lock className="w-4 h-4 mr-1" /> Get Full Book</>
-                      ) : (
-                        <>Next <ChevronRight className="w-4 h-4 ml-1" /></>
+                  {isFirstPage && activePart && (
+                    <div className="mb-8">
+                      <h2 className="font-serif text-3xl sm:text-4xl font-bold mb-3" data-testid="text-part-title">
+                        {activePart.title}
+                      </h2>
+                      {activePart.summary && (
+                        <p className="text-muted-foreground leading-relaxed mb-5 text-base" data-testid="text-part-summary">
+                          {activePart.summary}
+                        </p>
                       )}
-                    </Button>
-                  </div>
 
-                  {activePageIndex === totalPages - 1 && activePartIndex < parts.length - 1 && (
-                    <div className="text-center mt-6">
-                      <Button
-                        size="lg"
-                        onClick={() => navigateTo(activePartIndex + 1, 0)}
-                        data-testid="button-next-part"
-                      >
-                        Continue to Part {activePartIndex + 2}: {parts[activePartIndex + 1]?.title}
-                        <ChevronRight className="w-4 h-4 ml-2" />
-                      </Button>
+                      {(activePart.audioUrl || activePart.videoUrl) && (
+                        <div className="flex items-center gap-3 mb-5">
+                          {activePart.audioUrl && (
+                            <button
+                              onClick={() => { setShowAudio(!showAudio); setShowVideo(false); }}
+                              className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${showAudio ? "text-primary underline underline-offset-2" : "text-primary hover:underline hover:underline-offset-2"}`}
+                              data-testid="button-toggle-audio"
+                            >
+                              <Headphones className="w-4 h-4" />
+                              {showAudio ? "Hide Audio" : "Listen"}
+                            </button>
+                          )}
+                          {activePart.videoUrl && (
+                            <>
+                              {activePart.audioUrl && <span className="text-muted-foreground/40">|</span>}
+                              <button
+                                onClick={() => { setShowVideo(!showVideo); setShowAudio(false); }}
+                                className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${showVideo ? "text-primary underline underline-offset-2" : "text-primary hover:underline hover:underline-offset-2"}`}
+                                data-testid="button-toggle-video"
+                              >
+                                <Video className="w-4 h-4" />
+                                {showVideo ? "Hide Video" : "Watch"}
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      )}
+
+                      {showAudio && activePart.audioUrl && (
+                        <div className="mb-5">
+                          <AudioPlayer url={activePart.audioUrl} title={`Listen: ${activePart.title}`} />
+                        </div>
+                      )}
+
+                      {showVideo && activePart.videoUrl ? (
+                        <div className="my-4 rounded-xl overflow-hidden aspect-video">
+                          <VideoPlayer url={activePart.videoUrl} wrapperClassName="w-full h-full" />
+                        </div>
+                      ) : (
+                        !showAudio && activePart.coverImage && (
+                          <div className="my-4 rounded-xl overflow-hidden">
+                            <img
+                              src={activePart.coverImage}
+                              alt={activePart.title}
+                              className="w-full h-auto max-h-[60vh] object-cover block"
+                              loading="lazy"
+                              data-testid="img-part-cover"
+                            />
+                          </div>
+                        )
+                      )}
                     </div>
+                  )}
+
+                  {previewEnded ? (
+                    <div className="flex flex-col items-center justify-center py-16 text-center gap-6" data-testid="preview-ended-banner">
+                      <div className="w-16 h-16 rounded-full bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 flex items-center justify-center">
+                        <Lock className="w-7 h-7 text-amber-600 dark:text-amber-400" />
+                      </div>
+                      <div>
+                        <h2 className="font-serif text-2xl font-bold mb-2">Preview Ends Here</h2>
+                        <p className="text-muted-foreground max-w-md">
+                          You've read the free preview. To continue reading the full book, get your copy below.
+                        </p>
+                      </div>
+                      {((book as any).amazonAffiliateLink || (book as any).affiliateLink) && (
+                        <a
+                          href={(book as any).amazonAffiliateLink || (book as any).affiliateLink}
+                          target="_blank"
+                          rel="noopener noreferrer nofollow"
+                        >
+                          <Button size="lg" data-testid="button-buy-from-preview">
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            {(book as any).buyButtonLabel || "Buy on Amazon"}
+                          </Button>
+                        </a>
+                      )}
+                      <Link href={`/books/${book.slug}`}>
+                        <Button variant="outline" size="lg" data-testid="button-back-to-detail-from-preview">
+                          <Home className="w-4 h-4 mr-2" /> Back to Book Details
+                        </Button>
+                      </Link>
+                    </div>
+                  ) : activePage?.content ? (
+                    <div
+                      className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-serif prose-p:leading-relaxed prose-p:text-foreground/90"
+                      dangerouslySetInnerHTML={{ __html: activePage.content }}
+                      data-testid="content-page"
+                    />
+                  ) : (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <BookOpen className="w-10 h-10 mx-auto mb-3 opacity-40" />
+                      <p>No content on this page yet.</p>
+                    </div>
+                  )}
+
+                  {!previewEnded && (
+                    <>
+                      <div className="my-8 border-y py-4">
+                        <AdSlot
+                          slot="in-article"
+                          className="w-full"
+                          disabled={adSlotsMap["in-article"] === false}
+                          contentId={book.id}
+                          contentType="book"
+                          contentManualMode={adSlotsMap["in-article_mode"] === "manual"}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between mt-4 pt-2 gap-4">
+                        <Button
+                          variant="outline"
+                          disabled={isAtStart}
+                          onClick={handlePrev}
+                          data-testid="button-prev-bottom"
+                        >
+                          <ChevronLeft className="w-4 h-4 mr-1" /> Previous
+                        </Button>
+                        <span className="text-sm text-muted-foreground text-center hidden sm:block" data-testid="text-page-progress">
+                          {isPreviewMode
+                            ? `Preview · Page ${Math.min(globalPageNum, PREVIEW_PAGE_LIMIT)} of ${PREVIEW_PAGE_LIMIT}`
+                            : `Page ${globalPageNum} of ${totalBookPages}`}
+                        </span>
+                        <Button
+                          variant={isAtPreviewLimit ? "default" : "outline"}
+                          onClick={handleNext}
+                          disabled={isAtEnd && !isAtPreviewLimit}
+                          data-testid="button-next-bottom"
+                        >
+                          {isAtPreviewLimit ? (
+                            <><Lock className="w-4 h-4 mr-1" /> Get Full Book</>
+                          ) : (
+                            <>Next <ChevronRight className="w-4 h-4 ml-1" /></>
+                          )}
+                        </Button>
+                      </div>
+
+                      {activePageIndex === totalPages - 1 && activePartIndex < parts.length - 1 && (
+                        <div className="text-center mt-6">
+                          <Button
+                            size="lg"
+                            onClick={() => navigateTo(activePartIndex + 1, 0)}
+                            data-testid="button-next-part"
+                          >
+                            Continue to Part {activePartIndex + 2}: {parts[activePartIndex + 1]?.title}
+                            <ChevronRight className="w-4 h-4 ml-2" />
+                          </Button>
+                        </div>
+                      )}
+                    </>
                   )}
                 </>
               )}
@@ -681,23 +724,6 @@ export default function BookReaderPage() {
 
           <aside className="hidden xl:block w-[300px] shrink-0 border-l" data-testid="sidebar-ads-right">
             <div className="sticky top-[calc(var(--header-h,4rem)+3.5rem)] p-3 space-y-4">
-              <div className="border rounded-lg bg-muted/20 p-3 mb-2">
-                <h3 className="font-semibold text-xs uppercase tracking-wider text-muted-foreground mb-2">In This Book</h3>
-                <div className="space-y-0.5">
-                  {parts.map((part, i) => (
-                    <button
-                      key={part.id}
-                      onClick={() => navigateTo(i, 0)}
-                      className={`w-full text-left px-2 py-1.5 rounded text-sm transition-colors ${activePartIndex === i ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted"}`}
-                      data-testid={`right-part-${part.id}`}
-                    >
-                      <span className="text-xs opacity-60 mr-1">{i + 1}.</span>
-                      <span className="line-clamp-1">{part.title}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               {adSlotsMap["sidebar-small"] !== false && (
                 <div className="w-[268px] h-[250px] flex overflow-hidden">
                   <AdSlot
@@ -741,5 +767,107 @@ export default function BookReaderPage() {
         </div>
       </div>
     </PublicLayout>
+  );
+}
+
+function TocInlineView({
+  parts,
+  flatPages,
+  activePartIndex,
+  activePageIndex,
+  expandedParts,
+  onToggleExpand,
+  onNavigate,
+}: {
+  parts: BookPartWithPages[];
+  flatPages: ReturnType<typeof flattenPages>;
+  activePartIndex: number;
+  activePageIndex: number;
+  expandedParts: Set<string>;
+  onToggleExpand: (id: string) => void;
+  onNavigate: (partIdx: number, pageIdx: number) => void;
+}) {
+  return (
+    <div data-testid="toc-inline-view">
+      <h2 className="font-serif text-2xl font-bold mb-6">Table of Contents</h2>
+      <div className="border rounded-xl overflow-hidden">
+        <div className="grid grid-cols-[2rem_1fr_auto] text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50 px-4 py-2.5 border-b">
+          <span>#</span>
+          <span>Chapter</span>
+          <span className="text-right">Pages</span>
+        </div>
+        {parts.map((part, partIdx) => {
+          const partGlobalStart = flatPages.find(fp => fp.partIdx === partIdx)?.globalIdx ?? 0;
+          const pageCount = part.pages?.length || 0;
+          const isExpanded = expandedParts.has(part.id);
+          const isCurrent = activePartIndex === partIdx;
+
+          return (
+            <div key={part.id} className="border-b last:border-0" data-testid={`inline-toc-part-${part.id}`}>
+              <div className="flex items-center px-4 py-3 hover:bg-muted/30 transition-colors group">
+                <span className="text-sm font-semibold text-muted-foreground w-8 shrink-0">{partIdx + 1}</span>
+                <button
+                  onClick={() => onNavigate(partIdx, 0)}
+                  className={`flex-1 text-left font-medium text-sm ${isCurrent ? "text-primary" : "group-hover:text-primary transition-colors"}`}
+                  data-testid={`inline-toc-nav-${part.id}`}
+                >
+                  {part.title}
+                  {isCurrent && (
+                    <span className="ml-2 text-xs font-normal text-primary/70">(current)</span>
+                  )}
+                  {part.summary && (
+                    <p className="text-xs text-muted-foreground font-normal mt-0.5 line-clamp-1">{part.summary}</p>
+                  )}
+                </button>
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="text-xs text-muted-foreground text-right">
+                    {pageCount > 0
+                      ? `p. ${partGlobalStart + 1}–${partGlobalStart + pageCount}`
+                      : "—"}
+                  </span>
+                  {pageCount > 1 && (
+                    <button
+                      onClick={() => onToggleExpand(part.id)}
+                      className="text-muted-foreground hover:text-foreground transition-colors"
+                      data-testid={`inline-toc-expand-${part.id}`}
+                    >
+                      {isExpanded
+                        ? <ChevronUp className="w-4 h-4" />
+                        : <ChevronDown className="w-4 h-4" />}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {isExpanded && part.pages && part.pages.length > 0 && (
+                <div className="pl-10 pr-4 pb-2 bg-muted/10">
+                  {part.pages.map((page, pageIdx) => {
+                    const globalNum = partGlobalStart + pageIdx + 1;
+                    const isCurrentPage = isCurrent && activePageIndex === pageIdx;
+                    return (
+                      <button
+                        key={page.id}
+                        onClick={() => onNavigate(partIdx, pageIdx)}
+                        className={`w-full flex items-center gap-3 py-2 text-sm transition-colors text-left ${isCurrentPage ? "text-primary font-medium" : "text-muted-foreground hover:text-primary"}`}
+                        data-testid={`inline-toc-page-${page.id}`}
+                      >
+                        <span className="text-xs w-6 text-right shrink-0 font-medium">{globalNum}</span>
+                        <FileText className="w-3.5 h-3.5 shrink-0 opacity-50" />
+                        <span className="line-clamp-1 flex-1">
+                          {page.content
+                            ? page.content.replace(/<[^>]+>/g, "").slice(0, 80).trim() || `Page ${pageIdx + 1}`
+                            : `Page ${pageIdx + 1}`}
+                        </span>
+                        {isCurrentPage && <ChevronLeft className="w-3.5 h-3.5 shrink-0 rotate-180" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }

@@ -91,6 +91,7 @@ export const bookChapters = pgTable("book_chapters", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   bookId: varchar("book_id").notNull().references(() => books.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
+  description: text("description"),
   orderIndex: integer("order_index").notNull().default(0),
   startPage: integer("start_page").notNull().default(1),
   endPage: integer("end_page").notNull().default(1),

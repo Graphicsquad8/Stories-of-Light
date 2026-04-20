@@ -249,8 +249,8 @@ export default function BookDetailPage() {
             <div className="flex flex-wrap gap-3 pt-2">
               {book.type === "free" && (
                 <Link href={`/books/${book.slug}/read`}>
-                  <Button size="lg" data-testid="button-read-online">
-                    <BookOpen className="w-4 h-4 mr-2" /> Read Online
+                  <Button size="lg" data-testid="button-start-reading">
+                    <BookOpen className="w-4 h-4 mr-2" /> Start Reading
                   </Button>
                 </Link>
               )}
@@ -260,11 +260,6 @@ export default function BookDetailPage() {
                     <Eye className="w-4 h-4 mr-2" /> Read Preview
                   </Button>
                 </Link>
-              )}
-              {book.type === "paid" && !hasPreviewContent && book.previewPages && book.previewPages.length > 0 && (
-                <Button size="lg" variant="outline" onClick={() => setPreviewOpen(true)} data-testid="button-view-sample">
-                  <Eye className="w-4 h-4 mr-2" /> View Sample
-                </Button>
               )}
               {book.type === "paid" && (book.amazonAffiliateLink || book.affiliateLink) && (
                 <a href={book.amazonAffiliateLink || book.affiliateLink || ""} target="_blank" rel="noopener noreferrer nofollow">

@@ -1,0 +1,121 @@
+📌 Books Section – UI, Button & TOC Management System (Updated & Organized)
+
+Below is the fully structured and refined update for the Books Section, combining UI improvements, button behavior, and a complete Table of Contents (TOC) management system:
+
+🔧 1) Free Books – Button Update
+
+Currently, when a free book is opened, a “Read Online” button is displayed.
+
+❌ This button must be completely removed.
+
+✅ New behavior:
+
+👉 Replace it with a “Start Reading” button
+👉 On click, it will directly open the book reading page
+❌ The old “Read Online” behavior will no longer exist
+💰 2) Paid Books – Button & Flow Update
+
+When a paid book is opened, the interface will be simplified.
+
+✅ থাকবে:
+
+👉 Read Preview button (opens preview reading page directly)
+👉 Buy on Amazon (affiliate button remains unchanged)
+
+❌ Remove:
+
+View Table of Content
+Start Reading
+🚫 3) Right Sidebar Cleanup
+
+After opening a book:
+
+👉 The “IN THIS BOOK” section on the right sidebar
+❌ Must be completely removed
+📚 4) Admin Panel – Table of Contents (TOC) Management System
+
+🔧 New Feature:
+
+In Admin Panel → Books Section → Manage Books:
+
+Under Book Description
+Above Part/Chapter section
+
+📑 A new option will be added:
+👉 “Table of Contents (TOC)”
+
+📌 With this feature, Admin can:
+
+Upload and manage TOC separately
+Define for each chapter:
+👉 Chapter title
+👉 Description (what the chapter covers)
+👉 Total number of pages
+🔄 5) Upload Flow (Important)
+
+The correct upload sequence will be:
+
+1️⃣ First → Upload Table of Contents (TOC)
+2️⃣ Then → Upload Chapters Part by Part
+
+📖 6) Frontend – TOC Display System
+
+When a user opens a book:
+
+👉 Left Sidebar:
+
+🔹 Top → “Table of Contents” option
+🔹 Below → Full Chapter List (Part by Part)
+📂 7) TOC Interaction System
+
+👉 Clicking “Table of Contents”:
+
+Displays the full TOC in the main content area
+
+📌 TOC Structure:
+
+Initially shows:
+👉 Chapter Title
+👉 Total page count
+On clicking a chapter:
+👉 Expands to show page list
+On clicking a page:
+👉 Opens that specific page content
+
+✔ This behaves like the previous “View Table of Contents”
+👉 But now implemented as a sidebar-based navigation system
+
+🔢 8) Page Numbering System Fix
+
+বর্তমানে:
+
+Each chapter starts page numbering separately ❌
+
+✅ New behavior:
+
+👉 Entire book will follow continuous page numbering
+
+📌 Example:
+
+Chapter 1 → Page 1, 2
+Chapter 2 → Page 3, 4
+Chapter 3 → Page 5, 6
+
+✔ Page numbering will not restart per chapter
+
+✅ Final Summary
+
+✔ Free Books → Start Reading button
+✔ Paid Books → Read Preview + Buy on Amazon only
+✔ Remove unnecessary buttons
+✔ Remove “IN THIS BOOK” sidebar
+
+📚 TOC System:
+
+Admin → Full TOC management
+Frontend → Sidebar-based TOC navigation
+Expandable chapters → Page-level navigation
+
+🔢 Page Numbering:
+
+Continuous across the entire book

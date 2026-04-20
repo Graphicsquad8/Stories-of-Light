@@ -13,12 +13,265 @@ import {
 import {
   ArrowLeft, Save, Loader2, Upload, X, Music,
   Plus, Trash2, ChevronDown, ChevronUp, GripVertical,
-  FileText, Edit2, Copy, Video, ImageIcon,
+  FileText, Edit2, Copy, Video, ImageIcon, List,
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useRef } from "react";
-import type { Book, BookPartWithPages, BookPage } from "@shared/schema";
+import type { Book, BookPartWithPages, BookPage, BookChapter } from "@shared/schema";
+
+function TocEditor({ bookId }: { bookId: string }) {
+  const { toast } = useToast();
+  const [adding, setAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  const [newTitle, setNewTitle] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [newStartPage, setNewStartPage] = useState(1);
+  const [newEndPage, setNewEndPage] = useState(1);
+
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editStartPage, setEditStartPage] = useState(1);
+  const [editEndPage, setEditEndPage] = useState(1);
+
+  const { data: chapters, isLoading } = useQuery<BookChapter[]>({
+    queryKey: ["/api/books", bookId, "chapters"],
+    queryFn: () => fetch(`/api/books/${bookId}/chapters`).then(r => r.json()),
+    enabled: !!bookId,
+  });
+
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["/api/books", bookId, "chapters"] });
+
+  const addMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", `/api/books/${bookId}/chapters`, {
+        title: newTitle,
+        description: newDescription || null,
+        startPage: newStartPage,
+        endPage: newEndPage,
+        orderIndex: chapters?.length ?? 0,
+      });
+    },
+    onSuccess: () => {
+      invalidate();
+      toast({ title: "TOC entry added" });
+      setNewTitle(""); setNewDescription(""); setNewStartPage(1); setNewEndPage(1);
+      setAdding(false);
+    },
+    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("PATCH", `/api/books/chapters/${id}`, {
+        title: editTitle,
+        description: editDescription || null,
+        startPage: editStartPage,
+        endPage: editEndPage,
+      });
+    },
+    onSuccess: () => { invalidate(); toast({ title: "Updated" }); setEditingId(null); },
+    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => { await apiRequest("DELETE", `/api/books/chapters/${id}`); },
+    onSuccess: () => { invalidate(); toast({ title: "Removed" }); },
+    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+  });
+
+  const startEdit = (ch: BookChapter) => {
+    setEditingId(ch.id);
+    setEditTitle(ch.title);
+    setEditDescription((ch as any).description || "");
+    setEditStartPage(ch.startPage);
+    setEditEndPage(ch.endPage);
+  };
+
+  return (
+    <div className="space-y-4" data-testid="toc-editor">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <List className="w-5 h-5 text-muted-foreground" />
+          <h2 className="font-semibold text-lg">Table of Contents (TOC)</h2>
+        </div>
+        <span className="text-sm text-muted-foreground">{chapters?.length || 0} chapters</span>
+      </div>
+      <p className="text-sm text-muted-foreground -mt-2">
+        Define the TOC for this book. Each entry represents a chapter with its title, description, and page range.
+      </p>
+
+      {isLoading ? (
+        <div className="space-y-2">
+          {[1, 2].map(i => <Skeleton key={i} className="h-14 w-full" />)}
+        </div>
+      ) : chapters && chapters.length > 0 ? (
+        <div className="border rounded-lg overflow-hidden">
+          <div className="grid grid-cols-[2rem_1fr_auto_auto] gap-3 px-4 py-2 bg-muted/50 text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b">
+            <span>#</span>
+            <span>Chapter</span>
+            <span className="text-center">Pages</span>
+            <span />
+          </div>
+          <div className="divide-y">
+            {chapters.map((ch, idx) => (
+              <div key={ch.id} className="grid grid-cols-[2rem_1fr_auto_auto] gap-3 items-start px-4 py-3" data-testid={`toc-chapter-${ch.id}`}>
+                <span className="text-sm text-muted-foreground pt-0.5">{idx + 1}</span>
+                <div className="min-w-0">
+                  <p className="font-medium text-sm">{ch.title}</p>
+                  {(ch as any).description && (
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{(ch as any).description}</p>
+                  )}
+                </div>
+                <span className="text-xs text-muted-foreground whitespace-nowrap pt-0.5">
+                  p. {ch.startPage}–{ch.endPage}
+                  <span className="ml-1 opacity-60">({ch.endPage - ch.startPage + 1} pgs)</span>
+                </span>
+                <div className="flex items-center gap-1">
+                  <Button
+                    size="icon" variant="ghost" className="h-7 w-7"
+                    onClick={() => startEdit(ch)}
+                    data-testid={`button-edit-toc-${ch.id}`}
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button
+                    size="icon" variant="ghost" className="h-7 w-7 text-destructive"
+                    onClick={() => { if (confirm("Remove this TOC entry?")) deleteMutation.mutate(ch.id); }}
+                    disabled={deleteMutation.isPending}
+                    data-testid={`button-delete-toc-${ch.id}`}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <Card className="p-6 text-center border-dashed">
+          <List className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+          <p className="text-sm text-muted-foreground">No TOC entries yet. Add chapters to define the Table of Contents.</p>
+        </Card>
+      )}
+
+      {adding ? (
+        <Card className="p-4 space-y-3 border-dashed">
+          <p className="text-sm font-medium">New TOC Entry</p>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Chapter Title *</Label>
+            <Input
+              value={newTitle}
+              onChange={e => setNewTitle(e.target.value)}
+              placeholder="e.g. Introduction to Tawheed"
+              data-testid="input-new-toc-title"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Description (what this chapter covers)</Label>
+            <Textarea
+              value={newDescription}
+              onChange={e => setNewDescription(e.target.value)}
+              placeholder="Brief summary of the chapter's content..."
+              rows={2}
+              data-testid="input-new-toc-description"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Start Page</Label>
+              <Input
+                type="number"
+                min={1}
+                value={newStartPage}
+                onChange={e => setNewStartPage(Number(e.target.value))}
+                data-testid="input-new-toc-start-page"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">End Page</Label>
+              <Input
+                type="number"
+                min={newStartPage}
+                value={newEndPage}
+                onChange={e => setNewEndPage(Number(e.target.value))}
+                data-testid="input-new-toc-end-page"
+              />
+            </div>
+          </div>
+          {newStartPage <= newEndPage && newEndPage >= newStartPage && (
+            <p className="text-xs text-muted-foreground">
+              Total pages: {newEndPage - newStartPage + 1}
+            </p>
+          )}
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              onClick={() => addMutation.mutate()}
+              disabled={addMutation.isPending || !newTitle || newEndPage < newStartPage}
+              data-testid="button-save-toc-entry"
+            >
+              {addMutation.isPending && <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />}
+              Save Entry
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => { setAdding(false); setNewTitle(""); setNewDescription(""); }}>Cancel</Button>
+          </div>
+        </Card>
+      ) : (
+        <Button variant="outline" size="sm" onClick={() => setAdding(true)} className="w-full" data-testid="button-add-toc-entry">
+          <Plus className="w-3.5 h-3.5 mr-1.5" /> Add TOC Entry
+        </Button>
+      )}
+
+      <Dialog open={!!editingId} onOpenChange={v => { if (!v) setEditingId(null); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Edit TOC Entry</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>Chapter Title *</Label>
+              <Input value={editTitle} onChange={e => setEditTitle(e.target.value)} data-testid="input-edit-toc-title" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Description</Label>
+              <Textarea
+                value={editDescription}
+                onChange={e => setEditDescription(e.target.value)}
+                placeholder="Brief summary of the chapter's content..."
+                rows={3}
+                data-testid="input-edit-toc-description"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Start Page</Label>
+                <Input type="number" min={1} value={editStartPage} onChange={e => setEditStartPage(Number(e.target.value))} data-testid="input-edit-toc-start-page" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>End Page</Label>
+                <Input type="number" min={editStartPage} value={editEndPage} onChange={e => setEditEndPage(Number(e.target.value))} data-testid="input-edit-toc-end-page" />
+              </div>
+            </div>
+            {editStartPage <= editEndPage && (
+              <p className="text-sm text-muted-foreground">Total pages: {editEndPage - editStartPage + 1}</p>
+            )}
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setEditingId(null)}>Cancel</Button>
+              <Button
+                onClick={() => editingId && updateMutation.mutate(editingId)}
+                disabled={updateMutation.isPending || !editTitle || editEndPage < editStartPage}
+                data-testid="button-save-edit-toc"
+              >
+                {updateMutation.isPending && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />}
+                Save Changes
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
 
 function PartEditor({
   bookId,
@@ -445,6 +698,10 @@ export default function AdminBookEditorPage() {
               <Save className="w-3.5 h-3.5 mr-1.5" /> View Book
             </Button>
           </div>
+        </Card>
+
+        <Card className="p-5">
+          <TocEditor bookId={bookId!} />
         </Card>
 
         <div className="space-y-4">
