@@ -23,6 +23,27 @@ app.use(
 
 app.use(express.urlencoded({ extended: false }));
 
+// Security headers for all routes
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "SAMEORIGIN");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  next();
+});
+
+// CORS — API v1 routes are public (mobile apps / external integrations)
+// Admin and session routes stay same-origin only
+app.use("/api/v1", (req, res, next) => {
+  const allowedOrigin = process.env.APP_URL || "*";
+  res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Api-Key, Authorization");
+  res.setHeader("Access-Control-Max-Age", "86400");
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+});
+
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
     hour: "numeric",

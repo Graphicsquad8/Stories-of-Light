@@ -1270,6 +1270,7 @@ export default function AdminSettingsPage() {
               { key: "siteName", label: "Site Name", placeholder: "Stories of Light", hint: "The name displayed in the browser tab and site header." },
               { key: "tagline", label: "Site Tagline", placeholder: "Inspiring Islamic Stories for Western Audiences", hint: "A short description of what the site is about." },
               { key: "contactEmail", label: "Contact Email", placeholder: "contact@storiesoflight.com", type: "url", hint: "Displayed in the site footer for visitors to reach you." },
+              { key: "siteUrl", label: "Production Site URL", placeholder: "https://storiesoflight.com", type: "url", hint: "Your live domain. Used in the API Generator for accurate base URLs and in CORS configuration for the mobile app API." },
             ]}
           />
         </AccordionSection>

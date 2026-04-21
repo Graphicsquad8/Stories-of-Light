@@ -16,6 +16,7 @@ import {
   Shield, Zap, Send, ChevronDown, ChevronRight,
   Eye, EyeOff, AlertCircle, Code2, Terminal,
   Smartphone, Wifi, ArrowLeftRight, Upload,
+  Globe, Link2, Wand2, Settings2,
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -365,9 +366,8 @@ function KeysTab() {
   );
 }
 
-function DocsTab() {
+function DocsTab({ baseUrl }: { baseUrl: string }) {
   const [open, setOpen] = useState<string | null>(null);
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
 
   return (
     <div className="space-y-4">
@@ -460,155 +460,293 @@ Authorization: Bearer sol_your_api_key_here`}</pre>
   );
 }
 
-function TesterTab({ apiKeys }: { apiKeys: ApiKeyRecord[] }) {
-  const { toast } = useToast();
-  const [selectedKey, setSelectedKey] = useState<string>("");
-  const [method, setMethod] = useState("GET");
-  const [path, setPath] = useState("/api/v1/stories");
-  const [body, setBody] = useState("");
-  const [response, setResponse] = useState<{ status: number; data: any; time: number } | null>(null);
-  const [loading, setLoading] = useState(false);
+// Maps API paths to their equivalent frontend page URLs
+function getPageUrl(method: string, apiPath: string, pathParams: Record<string, string>): string | null {
+  if (method !== "GET") return null;
+  const resolved = Object.entries(pathParams).reduce(
+    (acc, [k, v]) => acc.replace(`:${k}`, v || `{${k}}`),
+    apiPath
+  );
+  const pageMap: Record<string, string> = {
+    "/api/v1/stories": "/stories",
+    "/api/v1/books": "/books",
+    "/api/v1/duas": "/duas",
+    "/api/v1/motivational-stories": "/motivational-stories",
+    "/api/v1/categories": "/",
+  };
+  if (pageMap[apiPath]) return pageMap[apiPath];
+  const m = resolved.match(/^\/api\/v1\/([^/]+)\/([^/]+)$/);
+  if (m && !m[2].includes("{")) {
+    const sectionMap: Record<string, string> = {
+      stories: "/stories",
+      books: "/books",
+      duas: "/duas",
+      "motivational-stories": "/motivational-stories",
+    };
+    const base = sectionMap[m[1]];
+    if (base) return `${base}/${m[2]}`;
+  }
+  return null;
+}
+
+function CurlBuilderTab({ apiKeys, baseUrl }: { apiKeys: ApiKeyRecord[]; baseUrl: string }) {
+  // Flatten all endpoints into a single list for the dropdown
+  const allEndpoints = API_DOCS.flatMap(group =>
+    group.endpoints.map(ep => ({ ...ep, category: group.category, color: group.color, icon: group.icon }))
+  );
+
+  const [selectedIdx, setSelectedIdx] = useState(0);
+  const [apiKey, setApiKey] = useState("");
+  const [pathParams, setPathParams] = useState<Record<string, string>>({});
+  const [queryParams, setQueryParams] = useState<Record<string, string>>({});
+  const [bodyJson, setBodyJson] = useState("");
+
+  const ep = allEndpoints[selectedIdx];
+
+  // Extract path params like :slug, :id
+  const pathParamNames = (ep.path.match(/:(\w+)/g) || []).map(s => s.slice(1));
+
+  // Build the full URL
+  const resolvedPath = pathParamNames.reduce(
+    (acc, name) => acc.replace(`:${name}`, pathParams[name] || `{${name}}`),
+    ep.path
+  );
+  const queryString = Object.entries(queryParams)
+    .filter(([, v]) => v !== "")
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+    .join("&");
+  const fullUrl = `${baseUrl}${resolvedPath}${queryString ? `?${queryString}` : ""}`;
+
+  // Generate cURL command
+  const curlLines: string[] = [`curl -X ${ep.method}`];
+  curlLines.push(`  -H "X-Api-Key: ${apiKey || "YOUR_API_KEY"}"`);
+  if (ep.method !== "GET") curlLines.push(`  -H "Content-Type: application/json"`);
+  if ((ep.method === "POST" || ep.method === "PATCH") && bodyJson) {
+    const oneLineBody = bodyJson.replace(/\s+/g, " ").trim();
+    curlLines.push(`  -d '${oneLineBody}'`);
+  }
+  curlLines.push(`  "${fullUrl}"`);
+  const curlCommand = curlLines.join(" \\\n");
+
+  const pageUrl = getPageUrl(ep.method, ep.path, pathParams);
+
+  // When endpoint changes, reset params and pre-fill body defaults
+  const handleEndpointChange = (idxStr: string) => {
+    const idx = parseInt(idxStr, 10);
+    setSelectedIdx(idx);
+    setPathParams({});
+    setQueryParams({});
+    const newEp = allEndpoints[idx];
+    if (newEp.method === "POST") {
+      const bodyDefaults = Object.fromEntries(
+        (newEp.params || []).filter(p => p.type !== "number" && p.type !== "boolean").map(p => [p.name, p.default || ""])
+      );
+      setBodyJson(JSON.stringify(bodyDefaults, null, 2));
+    } else {
+      setBodyJson("");
+    }
+  };
 
   const activeKeys = apiKeys.filter(k => k.isActive);
 
-  const send = async () => {
-    if (!selectedKey) { toast({ title: "Select an API key first", variant: "destructive" }); return; }
-    const key = apiKeys.find(k => k.id === selectedKey);
-    if (!key) return;
-
-    setLoading(true);
-    const start = Date.now();
-    try {
-      const opts: RequestInit = {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          "X-Api-Key": `${key.keyPrefix}[HIDDEN]`,
-        },
-      };
-      if (method !== "GET" && body) opts.body = body;
-      toast({ title: "Note: API tester uses your session auth for security. Use curl/Postman with real keys for external testing." });
-      const realOpts: RequestInit = {
-        method,
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      };
-      if (method !== "GET" && body) realOpts.body = body;
-      const res = await fetch(path.startsWith("/api/v1/") ? path.replace("/api/v1/", "/api/") : path, realOpts);
-      const data = await res.json().catch(() => ({}));
-      setResponse({ status: res.status, data, time: Date.now() - start });
-    } catch (e: any) {
-      setResponse({ status: 0, data: { error: e.message }, time: Date.now() - start });
-    }
-    setLoading(false);
-  };
-
   return (
     <div className="space-y-4">
-      <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-sm flex items-start gap-2">
-        <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-        <span className="text-amber-800 dark:text-amber-200">
-          The built-in tester runs requests through your admin session. For full external API testing with real key authentication, use <strong>curl</strong> or <strong>Postman</strong>.
-        </span>
-      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Builder panel */}
+        <div className="space-y-4">
+          <Card className="p-5 space-y-4">
+            <p className="font-semibold text-sm flex items-center gap-2">
+              <Settings2 className="w-4 h-4 text-primary" /> Request Builder
+            </p>
 
-      <Card className="p-5 space-y-4">
-        <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">API Key (for reference)</Label>
-          <Select value={selectedKey} onValueChange={setSelectedKey}>
-            <SelectTrigger data-testid="select-api-key">
-              <SelectValue placeholder="Select an API key..." />
-            </SelectTrigger>
-            <SelectContent>
-              {activeKeys.map(k => (
-                <SelectItem key={k.id} value={k.id}>
-                  {k.name} — <code className="text-xs">{k.keyPrefix}•••</code>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex gap-2">
-          <Select value={method} onValueChange={setMethod}>
-            <SelectTrigger className="w-28" data-testid="select-method">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {["GET", "POST", "PATCH", "DELETE"].map(m => (
-                <SelectItem key={m} value={m}><Badge className={`${METHOD_COLORS[m]} text-xs`}>{m}</Badge></SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Input
-            value={path}
-            onChange={e => setPath(e.target.value)}
-            placeholder="/api/v1/stories"
-            className="flex-1 font-mono text-sm"
-            data-testid="input-test-path"
-          />
-          <Button onClick={send} disabled={loading} data-testid="button-send-request">
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Send className="w-4 h-4 mr-1" /> Send</>}
-          </Button>
-        </div>
-
-        {(method === "POST" || method === "PATCH") && (
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Request Body (JSON)</Label>
-            <Textarea
-              value={body}
-              onChange={e => setBody(e.target.value)}
-              rows={5}
-              placeholder='{"title": "My Story", "content": "..."}'
-              className="font-mono text-sm"
-              data-testid="input-test-body"
-            />
-          </div>
-        )}
-      </Card>
-
-      {response && (
-        <Card className="p-4">
-          <div className="flex items-center gap-3 mb-3">
-            <Badge className={response.status >= 200 && response.status < 300 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}>
-              {response.status || "Error"}
-            </Badge>
-            <span className="text-xs text-muted-foreground">{response.time}ms</span>
-            <div className="ml-auto">
-              <CopyButton text={JSON.stringify(response.data, null, 2)} />
+            {/* Endpoint selector */}
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Endpoint</Label>
+              <Select value={String(selectedIdx)} onValueChange={handleEndpointChange}>
+                <SelectTrigger data-testid="select-curl-endpoint">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="max-h-80">
+                  {API_DOCS.map(group =>
+                    group.endpoints.map((e) => {
+                      const flatIdx = allEndpoints.findIndex(x => x.method === e.method && x.path === e.path && x.category === group.category);
+                      return (
+                        <SelectItem key={`${e.method}${e.path}`} value={String(flatIdx)}>
+                          <span className="flex items-center gap-2 text-xs">
+                            <Badge className={`${METHOD_COLORS[e.method]} text-xs font-mono shrink-0`}>{e.method}</Badge>
+                            <span className="font-mono">{e.path}</span>
+                          </span>
+                        </SelectItem>
+                      );
+                    })
+                  )}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">{ep.desc}</p>
             </div>
-          </div>
-          <pre className="text-xs bg-muted rounded p-3 overflow-x-auto max-h-96">{JSON.stringify(response.data, null, 2)}</pre>
-        </Card>
-      )}
 
-      <Card className="p-5">
-        <p className="font-semibold text-sm mb-3 flex items-center gap-2">
-          <Terminal className="w-4 h-4 text-primary" /> Sample curl Commands
-        </p>
-        <div className="space-y-3">
-          {[
-            { label: "List Stories", cmd: `curl -H "X-Api-Key: YOUR_KEY" ${window.location.origin}/api/v1/stories?limit=5` },
-            { label: "Get Single Story", cmd: `curl -H "X-Api-Key: YOUR_KEY" ${window.location.origin}/api/v1/stories/story-slug` },
-            { label: "Create Story (AI Agent)", cmd: `curl -X POST -H "X-Api-Key: YOUR_KEY" -H "Content-Type: application/json" \\\n  -d '{"title":"AI Story","content":"<p>Content</p>","status":"draft"}' \\\n  ${window.location.origin}/api/v1/stories` },
-            { label: "Publish Draft", cmd: `curl -X PATCH -H "X-Api-Key: YOUR_KEY" ${window.location.origin}/api/v1/stories/STORY_ID/publish` },
-          ].map(item => (
-            <div key={item.label}>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-semibold text-muted-foreground">{item.label}</span>
-                <CopyButton text={item.cmd} />
+            {/* API Key */}
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">API Key</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={apiKey}
+                  onChange={e => setApiKey(e.target.value)}
+                  placeholder="sol_your_api_key_here"
+                  className="flex-1 font-mono text-xs"
+                  data-testid="input-curl-api-key"
+                />
+                {activeKeys.length > 0 && (
+                  <Select value="" onValueChange={v => {
+                    const k = apiKeys.find(k => k.id === v);
+                    if (k) setApiKey(`${k.keyPrefix}••• (use full key)`);
+                  }}>
+                    <SelectTrigger className="w-32 text-xs" data-testid="select-curl-key-fill">
+                      <SelectValue placeholder="Pick key" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {activeKeys.map(k => (
+                        <SelectItem key={k.id} value={k.id} className="text-xs">
+                          {k.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
-              <pre className="text-xs bg-muted rounded p-2.5 overflow-x-auto">{item.cmd}</pre>
             </div>
-          ))}
+
+            {/* Path params */}
+            {pathParamNames.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Path Parameters</Label>
+                {pathParamNames.map(name => (
+                  <div key={name} className="flex items-center gap-2">
+                    <code className="text-xs bg-muted px-2 py-1 rounded font-mono shrink-0 text-primary">:{name}</code>
+                    <Input
+                      value={pathParams[name] || ""}
+                      onChange={e => setPathParams(prev => ({ ...prev, [name]: e.target.value }))}
+                      placeholder={name === "slug" ? "content-slug" : name === "id" ? "content-id" : name}
+                      className="flex-1 text-sm font-mono"
+                      data-testid={`input-curl-param-${name}`}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Query params */}
+            {ep.method === "GET" && ep.params.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Query Parameters <span className="font-normal">(optional)</span></Label>
+                {ep.params.map(p => (
+                  <div key={p.name} className="flex items-center gap-2">
+                    <code className="text-xs bg-muted px-2 py-1 rounded font-mono shrink-0 min-w-[70px]">{p.name}</code>
+                    <Input
+                      value={queryParams[p.name] || ""}
+                      onChange={e => setQueryParams(prev => ({ ...prev, [p.name]: e.target.value }))}
+                      placeholder={p.default || p.type}
+                      className="flex-1 text-sm"
+                      data-testid={`input-curl-query-${p.name}`}
+                    />
+                    <span className="text-xs text-muted-foreground shrink-0 hidden sm:block">{p.desc}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Request body */}
+            {(ep.method === "POST" || ep.method === "PATCH") && (
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Request Body (JSON)</Label>
+                <Textarea
+                  value={bodyJson}
+                  onChange={e => setBodyJson(e.target.value)}
+                  rows={6}
+                  placeholder='{"title": "My Content", "content": "..."}'
+                  className="font-mono text-xs resize-none"
+                  data-testid="input-curl-body"
+                />
+              </div>
+            )}
+          </Card>
         </div>
-      </Card>
+
+        {/* Output panel */}
+        <div className="space-y-4">
+          <Card className="p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="font-semibold text-sm flex items-center gap-2">
+                <Terminal className="w-4 h-4 text-primary" /> Generated cURL
+              </p>
+              <CopyButton text={curlCommand} />
+            </div>
+            <pre className="text-xs bg-muted rounded-md p-4 overflow-x-auto whitespace-pre-wrap break-all leading-relaxed">{curlCommand}</pre>
+
+            {pageUrl && (
+              <div className="pt-2 border-t space-y-1.5">
+                <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                  <Link2 className="w-3.5 h-3.5" /> Equivalent Page URL
+                </p>
+                <div className="flex items-center gap-2">
+                  <code className="text-xs bg-muted px-3 py-1.5 rounded-md flex-1 break-all font-mono">
+                    {baseUrl}{pageUrl}
+                  </code>
+                  <CopyButton text={`${baseUrl}${pageUrl}`} />
+                </div>
+                <p className="text-xs text-muted-foreground">The frontend page that serves this content to visitors.</p>
+              </div>
+            )}
+          </Card>
+
+          <Card className="p-5">
+            <p className="font-semibold text-sm mb-3 flex items-center gap-2">
+              <Wand2 className="w-4 h-4 text-primary" /> Quick Examples
+            </p>
+            <div className="space-y-3">
+              {[
+                {
+                  label: "List Stories",
+                  cmd: `curl -H "X-Api-Key: YOUR_KEY" \\\n  "${baseUrl}/api/v1/stories?limit=5"`,
+                },
+                {
+                  label: "Get Single Story",
+                  cmd: `curl -H "X-Api-Key: YOUR_KEY" \\\n  "${baseUrl}/api/v1/stories/sahaba-abu-hurairah"`,
+                },
+                {
+                  label: "Create Story (AI Agent)",
+                  cmd: `curl -X POST \\\n  -H "X-Api-Key: YOUR_KEY" \\\n  -H "Content-Type: application/json" \\\n  -d '{"title":"New Story","content":"<p>Content</p>","status":"draft"}' \\\n  "${baseUrl}/api/v1/stories"`,
+                },
+                {
+                  label: "Publish a Draft",
+                  cmd: `curl -X PATCH \\\n  -H "X-Api-Key: YOUR_KEY" \\\n  "${baseUrl}/api/v1/stories/STORY_ID/publish"`,
+                },
+                {
+                  label: "List Books",
+                  cmd: `curl -H "X-Api-Key: YOUR_KEY" \\\n  "${baseUrl}/api/v1/books?limit=10"`,
+                },
+                {
+                  label: "List Duas",
+                  cmd: `curl -H "X-Api-Key: YOUR_KEY" \\\n  "${baseUrl}/api/v1/duas?limit=20"`,
+                },
+              ].map(item => (
+                <div key={item.label}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-semibold text-muted-foreground">{item.label}</span>
+                    <CopyButton text={item.cmd} />
+                  </div>
+                  <pre className="text-xs bg-muted rounded p-2.5 overflow-x-auto whitespace-pre-wrap">{item.cmd}</pre>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
 
-function AppConnectTab({ apiKeys }: { apiKeys: ApiKeyRecord[] }) {
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+function AppConnectTab({ apiKeys, baseUrl }: { apiKeys: ApiKeyRecord[]; baseUrl: string }) {
   const wsUrl = baseUrl.replace(/^https?/, "wss") + "/ws";
   const hasReadKey = apiKeys.find(k => k.isActive && JSON.parse(k.permissions || '["read"]').includes("read"));
 
@@ -821,15 +959,46 @@ export default function AdminApiGeneratorPage() {
     queryKey: ["/api/admin/api-keys"],
   });
 
+  const { data: adminSettings } = useQuery<Record<string, string>>({
+    queryKey: ["/api/admin/settings"],
+  });
+
+  const configuredDomain = adminSettings?.siteUrl?.trim();
+  const baseUrl = configuredDomain || (typeof window !== "undefined" ? window.location.origin : "");
+  const isUsingFallback = !configuredDomain;
+
   return (
     <AdminLayout>
-      <div className="space-y-6 max-w-4xl">
+      <div className="space-y-6 max-w-5xl">
         <div className="flex items-center gap-3">
           <Code2 className="w-6 h-6 text-primary" />
           <div>
             <h1 className="text-xl font-bold">API Generator</h1>
             <p className="text-sm text-muted-foreground">Manage API keys and integrate with external systems or AI agents</p>
           </div>
+        </div>
+
+        {/* Domain banner */}
+        <div className={`flex items-center gap-3 p-4 rounded-lg border text-sm ${
+          isUsingFallback
+            ? "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800"
+            : "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
+        }`}>
+          <Globe className={`w-4 h-4 shrink-0 ${isUsingFallback ? "text-amber-600" : "text-green-600"}`} />
+          <div className="flex-1 min-w-0">
+            <span className={`font-semibold ${isUsingFallback ? "text-amber-800 dark:text-amber-200" : "text-green-800 dark:text-green-200"}`}>
+              {isUsingFallback ? "Development URL (fallback)" : "Production URL"}
+            </span>
+            <code className={`ml-2 text-xs px-2 py-0.5 rounded font-mono ${isUsingFallback ? "bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-300" : "bg-green-100 dark:bg-green-900/40 text-green-900 dark:text-green-300"}`}>
+              {baseUrl}
+            </code>
+            {isUsingFallback && (
+              <span className="text-amber-700 dark:text-amber-400 text-xs ml-2">
+                — Set your production domain in Settings → General → Production Site URL
+              </span>
+            )}
+          </div>
+          <CopyButton text={baseUrl} />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -864,13 +1033,13 @@ export default function AdminApiGeneratorPage() {
             <TabsTrigger value="docs" data-testid="tab-docs">
               <FileText className="w-4 h-4 mr-2" /> Documentation
             </TabsTrigger>
-            <TabsTrigger value="tester" data-testid="tab-tester">
-              <Terminal className="w-4 h-4 mr-2" /> API Tester
+            <TabsTrigger value="curl" data-testid="tab-curl">
+              <Terminal className="w-4 h-4 mr-2" /> cURL Builder
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="connect" className="mt-4">
-            <AppConnectTab apiKeys={keys} />
+            <AppConnectTab apiKeys={keys} baseUrl={baseUrl} />
           </TabsContent>
 
           <TabsContent value="keys" className="mt-4">
@@ -878,11 +1047,11 @@ export default function AdminApiGeneratorPage() {
           </TabsContent>
 
           <TabsContent value="docs" className="mt-4">
-            <DocsTab />
+            <DocsTab baseUrl={baseUrl} />
           </TabsContent>
 
-          <TabsContent value="tester" className="mt-4">
-            <TesterTab apiKeys={keys} />
+          <TabsContent value="curl" className="mt-4">
+            <CurlBuilderTab apiKeys={keys} baseUrl={baseUrl} />
           </TabsContent>
         </Tabs>
       </div>

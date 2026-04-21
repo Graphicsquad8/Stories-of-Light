@@ -163,6 +163,38 @@ Key architectural decisions include:
 - **API routes (books)**: `GET /api/books/:id/ratings`, `POST /api/books/:id/rate`, `GET /api/books/:id/my-rating`
 - **Average rating update**: After each rating submission, `average_rating` and `total_ratings` are recalculated from the ratings table.
 
+## Production Readiness & API Configuration
+
+### Dynamic Domain / Site URL
+- **Setting key**: `siteUrl` — stored in `site_settings`, editable in Settings → General → "Production Site URL"
+- **API Generator** reads `siteUrl` from admin settings and displays it in a prominent domain banner; falls back to `window.location.origin` if not set
+- The banner turns green when a production domain is configured, amber when using the dev fallback
+- All cURL commands, code examples, and page URL equivalents in the API Generator use the configured domain
+
+### CORS Configuration
+- **API v1 routes** (`/api/v1/*`) automatically include CORS headers for mobile app / external integration use
+- `Access-Control-Allow-Origin`: Uses `APP_URL` environment variable if set, otherwise `*` (open)
+- `Access-Control-Allow-Headers`: `Content-Type, X-Api-Key, Authorization`
+- `APP_URL` env var can be set to restrict the allowed origin to a specific production domain
+- Pre-flight OPTIONS requests are handled automatically (HTTP 204 response)
+- Admin/session routes (`/api/admin/*`) are NOT CORS-enabled (same-origin only for security)
+
+### Security Headers (all routes)
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: SAMEORIGIN`
+- `X-XSS-Protection: 1; mode=block`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+
+### Enhanced cURL Builder (API Generator → cURL Builder tab)
+- Visual request builder with endpoint selector (dropdown grouped by content type with method badges)
+- Auto-detects path parameters (`:slug`, `:id`) and shows input fields for each
+- Query parameter builder for list endpoints (limit, offset, search, featured)
+- Request body editor (JSON) for POST/PATCH — pre-fills sensible defaults
+- API key input with quick-fill from existing active keys
+- Real-time generated cURL command output (copy to clipboard)
+- "Equivalent Page URL" — shows the frontend page that serves the same content (e.g., `/api/v1/stories/abu-hurairah` → `/stories/abu-hurairah`)
+- Quick Examples section with 6 ready-to-use cURL commands
+
 ## External Dependencies
 - **PostgreSQL**: Primary database for all application data.
 - **Passport.js**: Authentication middleware for Express.js.
