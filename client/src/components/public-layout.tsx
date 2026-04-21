@@ -175,7 +175,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen flex flex-col bg-background">
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between gap-4 h-16">
+          <div className="flex items-center justify-between gap-4 h-20">
             <Link href="/" className="flex items-center gap-2 shrink-0" data-testid="link-home">
               <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
                 <BookOpen className="w-4 h-4 text-primary-foreground" />
@@ -274,7 +274,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
       </main>
 
       <footer className="border-t bg-card mt-16" data-testid="section-footer">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-10">
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
 
@@ -390,7 +390,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
 
           </div>
 
-          <div className="border-t pt-6 text-center text-xs text-muted-foreground">
+          <div className="border-t pt-8 text-center text-xs text-muted-foreground">
             <span>{siteName}. All rights reserved.</span>
           </div>
 

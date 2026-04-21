@@ -23,7 +23,7 @@ export default function SignupPage() {
     queryKey: ["/api/settings/public"],
   });
 
-  const googleEnabled = settings?.googleLoginEnabled !== "false" && !!settings?.googleClientId;
+  const googleEnabled = settings?.googleLoginEnabled !== "false";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

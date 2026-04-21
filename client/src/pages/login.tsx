@@ -33,7 +33,7 @@ export default function LoginPage() {
     queryKey: ["/api/settings/public"],
   });
 
-  const googleEnabled = settings?.googleLoginEnabled !== "false" && !!settings?.googleClientId;
+  const googleEnabled = settings?.googleLoginEnabled !== "false";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,7 +70,7 @@ export default function LoginPage() {
             <a href="/auth/google" data-testid="button-google-login">
               <Button variant="outline" className="w-full flex items-center gap-2 mb-4" type="button">
                 <FcGoogle className="w-5 h-5" />
-                Continue with Google
+                Sign in with Google
               </Button>
             </a>
             <div className="relative mb-4">
