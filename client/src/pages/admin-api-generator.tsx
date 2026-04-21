@@ -15,6 +15,7 @@ import {
   Book, FileText, FolderOpen, Moon, Lightbulb,
   Shield, Zap, Send, ChevronDown, ChevronRight,
   Eye, EyeOff, AlertCircle, Code2, Terminal,
+  Smartphone, Wifi, ArrowLeftRight, Upload,
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -38,6 +39,7 @@ const ALL_PERMISSIONS = [
   { id: "read", label: "Read", description: "GET endpoints — list and retrieve content", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
   { id: "write", label: "Write", description: "POST/PATCH endpoints — create and update content", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
   { id: "publish", label: "Publish", description: "Publish drafts to live — use for AI automation", color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" },
+  { id: "delete", label: "Delete", description: "DELETE endpoints — remove content (soft delete)", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
 ];
 
 const API_DOCS = [
@@ -48,9 +50,10 @@ const API_DOCS = [
     endpoints: [
       { method: "GET", path: "/api/v1/stories", desc: "List published stories", permission: "read", params: [{ name: "limit", type: "number", default: "20", desc: "Max results (1–100)" }, { name: "offset", type: "number", default: "0", desc: "Pagination offset" }, { name: "featured", type: "boolean", default: "false", desc: "Filter featured only" }] },
       { method: "GET", path: "/api/v1/stories/:slug", desc: "Get a single story by slug", permission: "read", params: [] },
-      { method: "POST", path: "/api/v1/stories", desc: "Create a new story", permission: "write", params: [{ name: "title", type: "string", default: "", desc: "Story title (required)" }, { name: "content", type: "string", default: "", desc: "HTML content (required)" }, { name: "categoryId", type: "string", default: "", desc: "Category ID" }, { name: "status", type: "string", default: "draft", desc: "draft | published" }] },
-      { method: "PATCH", path: "/api/v1/stories/:id", desc: "Update an existing story", permission: "write", params: [] },
+      { method: "POST", path: "/api/v1/stories", desc: "Create a new story (saved as draft)", permission: "write", params: [{ name: "title", type: "string", default: "", desc: "Story title (required)" }, { name: "content", type: "string", default: "", desc: "HTML content" }, { name: "categoryId", type: "string", default: "", desc: "Category ID" }, { name: "status", type: "string", default: "draft", desc: "draft | published" }, { name: "featured", type: "boolean", default: "false", desc: "Feature on home page" }] },
+      { method: "PATCH", path: "/api/v1/stories/:id", desc: "Update an existing story", permission: "write", params: [{ name: "title", type: "string", default: "", desc: "Updated title" }, { name: "content", type: "string", default: "", desc: "Updated HTML content" }, { name: "status", type: "string", default: "", desc: "draft | published" }] },
       { method: "PATCH", path: "/api/v1/stories/:id/publish", desc: "Publish a draft story", permission: "publish", params: [] },
+      { method: "DELETE", path: "/api/v1/stories/:id", desc: "Soft-delete a story (moves to trash)", permission: "delete", params: [] },
     ]
   },
   {
@@ -58,7 +61,7 @@ const API_DOCS = [
     icon: FolderOpen,
     color: "text-orange-600",
     endpoints: [
-      { method: "GET", path: "/api/v1/categories", desc: "List all categories", permission: "read", params: [] },
+      { method: "GET", path: "/api/v1/categories", desc: "List all categories (story, book, motivational, dua)", permission: "read", params: [] },
     ]
   },
   {
@@ -66,8 +69,12 @@ const API_DOCS = [
     icon: Book,
     color: "text-blue-600",
     endpoints: [
-      { method: "GET", path: "/api/v1/books", desc: "List all books", permission: "read", params: [{ name: "limit", type: "number", default: "20", desc: "Max results" }, { name: "offset", type: "number", default: "0", desc: "Pagination offset" }, { name: "search", type: "string", default: "", desc: "Search query" }] },
+      { method: "GET", path: "/api/v1/books", desc: "List all published books", permission: "read", params: [{ name: "limit", type: "number", default: "20", desc: "Max results" }, { name: "offset", type: "number", default: "0", desc: "Pagination offset" }, { name: "search", type: "string", default: "", desc: "Search query" }] },
       { method: "GET", path: "/api/v1/books/:slug", desc: "Get a single book by slug", permission: "read", params: [] },
+      { method: "POST", path: "/api/v1/books", desc: "Create a new book", permission: "write", params: [{ name: "title", type: "string", default: "", desc: "Book title (required)" }, { name: "description", type: "string", default: "", desc: "Book description" }, { name: "type", type: "string", default: "free", desc: "free | paid" }, { name: "published", type: "boolean", default: "false", desc: "Publish immediately" }] },
+      { method: "PATCH", path: "/api/v1/books/:id", desc: "Update an existing book", permission: "write", params: [] },
+      { method: "PATCH", path: "/api/v1/books/:id/publish", desc: "Publish a draft book", permission: "publish", params: [] },
+      { method: "DELETE", path: "/api/v1/books/:id", desc: "Soft-delete a book", permission: "delete", params: [] },
     ]
   },
   {
@@ -75,7 +82,12 @@ const API_DOCS = [
     icon: Moon,
     color: "text-violet-600",
     endpoints: [
-      { method: "GET", path: "/api/v1/duas", desc: "List duas", permission: "read", params: [{ name: "limit", type: "number", default: "20", desc: "Max results" }, { name: "offset", type: "number", default: "0", desc: "Pagination offset" }] },
+      { method: "GET", path: "/api/v1/duas", desc: "List all duas", permission: "read", params: [{ name: "limit", type: "number", default: "20", desc: "Max results" }, { name: "offset", type: "number", default: "0", desc: "Pagination offset" }] },
+      { method: "GET", path: "/api/v1/duas/:slug", desc: "Get a single dua by slug", permission: "read", params: [] },
+      { method: "POST", path: "/api/v1/duas", desc: "Create a new dua", permission: "write", params: [{ name: "title", type: "string", default: "", desc: "Dua title (required)" }, { name: "arabicText", type: "string", default: "", desc: "Arabic text" }, { name: "translation", type: "string", default: "", desc: "Translation" }, { name: "published", type: "boolean", default: "false", desc: "Publish immediately" }] },
+      { method: "PATCH", path: "/api/v1/duas/:id", desc: "Update an existing dua", permission: "write", params: [] },
+      { method: "PATCH", path: "/api/v1/duas/:id/publish", desc: "Publish a draft dua", permission: "publish", params: [] },
+      { method: "DELETE", path: "/api/v1/duas/:id", desc: "Soft-delete a dua", permission: "delete", params: [] },
     ]
   },
   {
@@ -84,6 +96,11 @@ const API_DOCS = [
     color: "text-amber-600",
     endpoints: [
       { method: "GET", path: "/api/v1/motivational-stories", desc: "List motivational stories", permission: "read", params: [{ name: "limit", type: "number", default: "20", desc: "Max results" }, { name: "offset", type: "number", default: "0", desc: "Pagination offset" }] },
+      { method: "GET", path: "/api/v1/motivational-stories/:slug", desc: "Get a single motivational story by slug", permission: "read", params: [] },
+      { method: "POST", path: "/api/v1/motivational-stories", desc: "Create a motivational story", permission: "write", params: [{ name: "title", type: "string", default: "", desc: "Title (required)" }, { name: "content", type: "string", default: "", desc: "HTML content" }, { name: "published", type: "boolean", default: "false", desc: "Publish immediately" }] },
+      { method: "PATCH", path: "/api/v1/motivational-stories/:id", desc: "Update a motivational story", permission: "write", params: [] },
+      { method: "PATCH", path: "/api/v1/motivational-stories/:id/publish", desc: "Publish a draft motivational story", permission: "publish", params: [] },
+      { method: "DELETE", path: "/api/v1/motivational-stories/:id", desc: "Soft-delete a motivational story", permission: "delete", params: [] },
     ]
   },
 ];
@@ -590,6 +607,215 @@ function TesterTab({ apiKeys }: { apiKeys: ApiKeyRecord[] }) {
   );
 }
 
+function AppConnectTab({ apiKeys }: { apiKeys: ApiKeyRecord[] }) {
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+  const wsUrl = baseUrl.replace(/^https?/, "wss") + "/ws";
+  const hasReadKey = apiKeys.find(k => k.isActive && JSON.parse(k.permissions || '["read"]').includes("read"));
+
+  const reactNativeExample = `// React Native / Expo — Stories of Light API Client
+import { useState, useEffect } from 'react';
+
+const API_BASE = '${baseUrl}/api/v1';
+const API_KEY = 'YOUR_API_KEY'; // Generate in API Keys tab
+
+// Fetch stories
+async function getStories(limit = 10, offset = 0) {
+  const res = await fetch(\`\${API_BASE}/stories?limit=\${limit}&offset=\${offset}\`, {
+    headers: { 'X-Api-Key': API_KEY }
+  });
+  return res.json(); // { data: [...], total, limit, offset }
+}
+
+// Create a story (requires write permission)
+async function createStory(title, content, categoryId) {
+  const res = await fetch(\`\${API_BASE}/stories\`, {
+    method: 'POST',
+    headers: {
+      'X-Api-Key': API_KEY,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ title, content, categoryId, status: 'draft' })
+  });
+  return res.json(); // { data: { id, title, ... } }
+}
+
+// Publish a story (requires publish permission)
+async function publishStory(storyId) {
+  return fetch(\`\${API_BASE}/stories/\${storyId}/publish\`, {
+    method: 'PATCH',
+    headers: { 'X-Api-Key': API_KEY }
+  });
+}`;
+
+  const flutterExample = `// Flutter — Stories of Light API Client
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+const String apiBase = '${baseUrl}/api/v1';
+const String apiKey = 'YOUR_API_KEY'; // Generate in API Keys tab
+
+final headers = {
+  'X-Api-Key': apiKey,
+  'Content-Type': 'application/json',
+};
+
+// Fetch stories
+Future<Map> getStories({int limit = 10, int offset = 0}) async {
+  final res = await http.get(
+    Uri.parse('\$apiBase/stories?limit=\$limit&offset=\$offset'),
+    headers: headers,
+  );
+  return jsonDecode(res.body); // { data: [...], total, limit, offset }
+}
+
+// Create a story (requires write permission)
+Future<Map> createStory(String title, String content, String categoryId) async {
+  final res = await http.post(
+    Uri.parse('\$apiBase/stories'),
+    headers: headers,
+    body: jsonEncode({'title': title, 'content': content, 'categoryId': categoryId, 'status': 'draft'}),
+  );
+  return jsonDecode(res.body); // { data: { id, title, ... } }
+}`;
+
+  const wsExample = `// Real-time sync via WebSocket
+const ws = new WebSocket('${wsUrl}');
+
+ws.onmessage = (event) => {
+  const msg = JSON.parse(event.data);
+  if (msg.type === 'invalidate') {
+    // msg.keys = ['/api/stories', '/api/books', ...]
+    // Re-fetch the data for these keys in your app
+    msg.keys.forEach(key => refetchData(key));
+  }
+};
+
+ws.onclose = () => {
+  // Auto-reconnect after 3 seconds
+  setTimeout(() => connectWebSocket(), 3000);
+};`;
+
+  const [codeTab, setCodeTab] = useState<"react-native" | "flutter" | "websocket">("react-native");
+
+  return (
+    <div className="space-y-5">
+      <div className="grid sm:grid-cols-3 gap-4">
+        {[
+          { icon: <Smartphone className="w-5 h-5 text-primary" />, title: "Mobile App Ready", desc: "Full REST API with JSON responses formatted for mobile consumption" },
+          { icon: <Wifi className="w-5 h-5 text-emerald-600" />, title: "Real-Time WebSocket", desc: `Connect to ${wsUrl} to receive instant content-change notifications` },
+          { icon: <ArrowLeftRight className="w-5 h-5 text-blue-600" />, title: "Two-Way Sync", desc: "Upload from app → appears on website. Website changes → push to app in real time" },
+        ].map(f => (
+          <div key={f.title} className="border rounded-xl p-4 space-y-2">
+            <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center">{f.icon}</div>
+            <p className="font-semibold text-sm">{f.title}</p>
+            <p className="text-xs text-muted-foreground">{f.desc}</p>
+          </div>
+        ))}
+      </div>
+
+      <Card className="p-5 space-y-4">
+        <p className="font-semibold flex items-center gap-2">
+          <Shield className="w-4 h-4 text-primary" /> Quick Setup Guide
+        </p>
+        <ol className="space-y-3 text-sm">
+          {[
+            { n: 1, title: "Generate an API key", desc: `Go to the "API Keys" tab → click "New API Key" → choose permissions (Read for fetching, Write for creating content, Publish for making content live, Delete for removing content).` },
+            { n: 2, title: "Set your base URL", desc: `All API endpoints start with: ` },
+            { n: 3, title: "Add the auth header", desc: `Every request must include: X-Api-Key: YOUR_KEY_HERE (or: Authorization: Bearer YOUR_KEY_HERE)` },
+            { n: 4, title: "Handle responses", desc: `List endpoints return { data: [...], total, limit, offset }. Single-item endpoints return { data: { ... } }. Errors return { error: "description" }` },
+            { n: 5, title: "Enable real-time sync (optional)", desc: `Connect to the WebSocket URL below to receive instant updates when content changes on the website.` },
+          ].map(step => (
+            <li key={step.n} className="flex gap-3">
+              <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">{step.n}</span>
+              <div>
+                <p className="font-medium">{step.title}</p>
+                <p className="text-muted-foreground text-xs mt-0.5">{step.desc}</p>
+                {step.n === 2 && (
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <code className="text-xs bg-muted px-2 py-1 rounded font-mono">{baseUrl}/api/v1</code>
+                    <CopyButton text={`${baseUrl}/api/v1`} />
+                  </div>
+                )}
+                {step.n === 5 && (
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <code className="text-xs bg-muted px-2 py-1 rounded font-mono">{wsUrl}</code>
+                    <CopyButton text={wsUrl} />
+                  </div>
+                )}
+              </div>
+            </li>
+          ))}
+        </ol>
+      </Card>
+
+      {!hasReadKey && (
+        <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-sm flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+          <span className="text-amber-800 dark:text-amber-200">
+            You don't have an active API key yet. Go to the <strong>API Keys</strong> tab to generate one.
+          </span>
+        </div>
+      )}
+
+      <Card className="p-5 space-y-3">
+        <p className="font-semibold flex items-center gap-2">
+          <Code2 className="w-4 h-4 text-primary" /> Code Examples
+        </p>
+        <div className="flex gap-2 border-b pb-2">
+          {([
+            { id: "react-native", label: "React Native / Expo" },
+            { id: "flutter", label: "Flutter" },
+            { id: "websocket", label: "WebSocket Sync" },
+          ] as const).map(t => (
+            <button
+              key={t.id}
+              onClick={() => setCodeTab(t.id)}
+              className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${codeTab === t.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+        <div className="relative">
+          <pre className="text-xs bg-muted rounded-lg p-4 overflow-x-auto max-h-96 whitespace-pre-wrap">
+            {codeTab === "react-native" ? reactNativeExample : codeTab === "flutter" ? flutterExample : wsExample}
+          </pre>
+          <div className="absolute top-2 right-2">
+            <CopyButton text={codeTab === "react-native" ? reactNativeExample : codeTab === "flutter" ? flutterExample : wsExample} />
+          </div>
+        </div>
+      </Card>
+
+      <Card className="p-5 space-y-3">
+        <p className="font-semibold flex items-center gap-2">
+          <Upload className="w-4 h-4 text-primary" /> Supported Content Types
+        </p>
+        <div className="grid sm:grid-cols-2 gap-3">
+          {[
+            { icon: <FileText className="w-4 h-4 text-emerald-600" />, title: "Articles & Stories", ops: ["Read (all)", "Create", "Update", "Publish", "Delete"] },
+            { icon: <Book className="w-4 h-4 text-blue-600" />, title: "Books", ops: ["Read (all)", "Create", "Update", "Publish", "Delete"] },
+            { icon: <Moon className="w-4 h-4 text-violet-600" />, title: "Duas", ops: ["Read (all)", "Create", "Update", "Publish", "Delete"] },
+            { icon: <Lightbulb className="w-4 h-4 text-amber-600" />, title: "Motivational Stories", ops: ["Read (all)", "Create", "Update", "Publish", "Delete"] },
+            { icon: <FolderOpen className="w-4 h-4 text-orange-600" />, title: "Categories", ops: ["Read (all)"] },
+          ].map(ct => (
+            <div key={ct.title} className="border rounded-lg p-3 space-y-1.5">
+              <div className="flex items-center gap-2">
+                {ct.icon}
+                <span className="font-medium text-sm">{ct.title}</span>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {ct.ops.map(op => (
+                  <Badge key={op} variant="outline" className="text-xs">{op}</Badge>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 export default function AdminApiGeneratorPage() {
   const { data: keys = [], isLoading } = useQuery<ApiKeyRecord[]>({
     queryKey: ["/api/admin/api-keys"],
@@ -627,8 +853,11 @@ export default function AdminApiGeneratorPage() {
           })}
         </div>
 
-        <Tabs defaultValue="keys">
-          <TabsList className="w-full sm:w-auto">
+        <Tabs defaultValue="connect">
+          <TabsList className="w-full sm:w-auto flex-wrap h-auto gap-1">
+            <TabsTrigger value="connect" data-testid="tab-connect">
+              <Smartphone className="w-4 h-4 mr-2" /> App Connect
+            </TabsTrigger>
             <TabsTrigger value="keys" data-testid="tab-keys">
               <Key className="w-4 h-4 mr-2" /> API Keys
             </TabsTrigger>
@@ -639,6 +868,10 @@ export default function AdminApiGeneratorPage() {
               <Terminal className="w-4 h-4 mr-2" /> API Tester
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="connect" className="mt-4">
+            <AppConnectTab apiKeys={keys} />
+          </TabsContent>
 
           <TabsContent value="keys" className="mt-4">
             <KeysTab />

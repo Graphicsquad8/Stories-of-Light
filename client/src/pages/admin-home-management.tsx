@@ -382,7 +382,7 @@ export default function AdminHomeManagementPage() {
   if (settingsLoading) {
     return (
       <AdminLayout>
-        <div className="max-w-3xl space-y-4">
+        <div className="max-w-4xl space-y-4">
           <Skeleton className="h-8 w-64" />
           <Skeleton className="h-32 w-full" />
           <Skeleton className="h-96 w-full" />
@@ -393,7 +393,7 @@ export default function AdminHomeManagementPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-3xl">
+      <div className="max-w-4xl">
         <div className="mb-6">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">

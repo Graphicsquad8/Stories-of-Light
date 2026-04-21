@@ -185,14 +185,6 @@ function AdminSidebar() {
       permission: "admin-only",
     },
     {
-      key: "api-generator",
-      title: "API Generator",
-      href: "/image/api-generator",
-      icon: Code2,
-      isActive: (loc) => loc.startsWith("/image/api-generator"),
-      permission: "admin-only",
-    },
-    {
       key: "settings",
       title: "Settings",
       href: "/image/settings",

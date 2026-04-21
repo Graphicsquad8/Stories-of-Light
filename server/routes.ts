@@ -2647,5 +2647,110 @@ export async function registerRoutes(
     res.json({ data: story });
   });
 
+  app.delete("/api/v1/stories/:id", requireApiKey, apiKeyCan("delete"), async (req, res) => {
+    const ok = await storage.deleteStory(req.params.id);
+    if (!ok) return res.status(404).json({ error: "Story not found" });
+    res.json({ success: true });
+  });
+
+  app.get("/api/v1/motivational-stories/:slug", requireApiKey, async (req, res) => {
+    const story = await storage.getMotivationalStoryBySlug(req.params.slug);
+    if (!story) return res.status(404).json({ error: "Not found" });
+    res.json({ data: story });
+  });
+
+  app.post("/api/v1/motivational-stories", requireApiKey, apiKeyCan("write"), async (req, res) => {
+    try {
+      const story = await storage.createMotivationalStory(req.body);
+      res.status(201).json({ data: story });
+    } catch (e: any) {
+      res.status(400).json({ error: e.message });
+    }
+  });
+
+  app.patch("/api/v1/motivational-stories/:id", requireApiKey, apiKeyCan("write"), async (req, res) => {
+    const story = await storage.updateMotivationalStory(req.params.id, req.body);
+    if (!story) return res.status(404).json({ error: "Not found" });
+    res.json({ data: story });
+  });
+
+  app.patch("/api/v1/motivational-stories/:id/publish", requireApiKey, apiKeyCan("publish"), async (req, res) => {
+    const story = await storage.updateMotivationalStory(req.params.id, { published: true });
+    if (!story) return res.status(404).json({ error: "Not found" });
+    res.json({ data: story });
+  });
+
+  app.delete("/api/v1/motivational-stories/:id", requireApiKey, apiKeyCan("delete"), async (req, res) => {
+    const ok = await storage.deleteMotivationalStory(req.params.id);
+    if (!ok) return res.status(404).json({ error: "Not found" });
+    res.json({ success: true });
+  });
+
+  app.get("/api/v1/books/:slug", requireApiKey, async (req, res) => {
+    const book = await storage.getBookBySlug(req.params.slug);
+    if (!book) return res.status(404).json({ error: "Not found" });
+    res.json({ data: book });
+  });
+
+  app.post("/api/v1/books", requireApiKey, apiKeyCan("write"), async (req, res) => {
+    try {
+      const book = await storage.createBook(req.body);
+      res.status(201).json({ data: book });
+    } catch (e: any) {
+      res.status(400).json({ error: e.message });
+    }
+  });
+
+  app.patch("/api/v1/books/:id", requireApiKey, apiKeyCan("write"), async (req, res) => {
+    const book = await storage.updateBook(req.params.id, req.body);
+    if (!book) return res.status(404).json({ error: "Not found" });
+    res.json({ data: book });
+  });
+
+  app.patch("/api/v1/books/:id/publish", requireApiKey, apiKeyCan("publish"), async (req, res) => {
+    const book = await storage.updateBook(req.params.id, { published: true });
+    if (!book) return res.status(404).json({ error: "Not found" });
+    res.json({ data: book });
+  });
+
+  app.delete("/api/v1/books/:id", requireApiKey, apiKeyCan("delete"), async (req, res) => {
+    const ok = await storage.deleteBook(req.params.id);
+    if (!ok) return res.status(404).json({ error: "Not found" });
+    res.json({ success: true });
+  });
+
+  app.get("/api/v1/duas/:slug", requireApiKey, async (req, res) => {
+    const dua = await storage.getDuaBySlug(req.params.slug);
+    if (!dua) return res.status(404).json({ error: "Not found" });
+    res.json({ data: dua });
+  });
+
+  app.post("/api/v1/duas", requireApiKey, apiKeyCan("write"), async (req, res) => {
+    try {
+      const dua = await storage.createDua(req.body);
+      res.status(201).json({ data: dua });
+    } catch (e: any) {
+      res.status(400).json({ error: e.message });
+    }
+  });
+
+  app.patch("/api/v1/duas/:id", requireApiKey, apiKeyCan("write"), async (req, res) => {
+    const dua = await storage.updateDua(req.params.id, req.body);
+    if (!dua) return res.status(404).json({ error: "Not found" });
+    res.json({ data: dua });
+  });
+
+  app.patch("/api/v1/duas/:id/publish", requireApiKey, apiKeyCan("publish"), async (req, res) => {
+    const dua = await storage.updateDua(req.params.id, { published: true });
+    if (!dua) return res.status(404).json({ error: "Not found" });
+    res.json({ data: dua });
+  });
+
+  app.delete("/api/v1/duas/:id", requireApiKey, apiKeyCan("delete"), async (req, res) => {
+    const ok = await storage.deleteDua(req.params.id);
+    if (!ok) return res.status(404).json({ error: "Not found" });
+    res.json({ success: true });
+  });
+
   return httpServer;
 }

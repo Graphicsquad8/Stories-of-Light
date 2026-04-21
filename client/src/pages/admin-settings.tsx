@@ -12,10 +12,11 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/component
 import {
   Save, Loader2, Upload, Globe, Home,
   BookOpen, Mail, Info, Eye, EyeOff, AtSign, Megaphone,
-  CheckCircle2, X, ChevronDown, Type, Minus, Plus,
-  ToggleLeft, LogIn, Shield, KeyRound, Lock,
+  CheckCircle2, X, ChevronDown, ChevronRight, Type, Minus, Plus,
+  ToggleLeft, LogIn, Shield, KeyRound, Lock, Code2,
 } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
+import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
@@ -1137,6 +1138,24 @@ export default function AdminSettingsPage() {
           <h1 className="text-2xl font-bold" data-testid="text-settings-title">Site Settings</h1>
           <p className="text-sm text-muted-foreground">Configure and manage all aspects of your website</p>
         </div>
+
+        <Link href="/image/api-generator">
+          <div
+            className="w-full flex items-center justify-between border-2 border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/60 transition-all rounded-xl px-5 py-4 mb-4 cursor-pointer group"
+            data-testid="button-api-generator"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <Code2 className="w-5 h-5 text-primary" />
+              </div>
+              <div className="text-left">
+                <p className="font-semibold text-sm text-foreground">API Generator & App Integration</p>
+                <p className="text-xs text-muted-foreground">Generate API keys, connect a mobile app, and manage content via API</p>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+          </div>
+        </Link>
 
         {isSuperOwner && <AccordionSection
           id="account-security"
