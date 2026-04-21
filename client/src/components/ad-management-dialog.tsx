@@ -26,7 +26,7 @@ import {
 import type { ManualAd } from "@shared/schema";
 import { isVideoEmbedUrl, toVideoEmbedUrl } from "@/components/ad-slot";
 
-export type AdManagementContentType = "story" | "book" | "motivational" | "dua" | "category";
+export type AdManagementContentType = "story" | "book" | "motivational" | "dua" | "category" | "home-top" | "home-mid" | "home-bottom";
 
 const SLOT_LABELS: Record<string, string> = {
   banner: "Top Banner",
@@ -44,6 +44,9 @@ const SLOT_LABELS_OVERRIDE: Partial<Record<AdManagementContentType, Record<strin
     "banner": "Top Banner (728×90)",
     "in-feed": "Mid-Content (336×280)",
   },
+  "home-top": { "banner": "Top Banner (728×90)" },
+  "home-mid": { "in-feed": "Mid Content (336×280)" },
+  "home-bottom": { "banner": "Bottom Banner (728×90)" },
 };
 
 const CONTENT_SLOTS: Record<AdManagementContentType, string[]> = {
@@ -52,6 +55,9 @@ const CONTENT_SLOTS: Record<AdManagementContentType, string[]> = {
   motivational: ["story-bottom"],
   dua: ["story-bottom"],
   category: ["banner", "in-feed"],
+  "home-top": ["banner"],
+  "home-mid": ["in-feed"],
+  "home-bottom": ["banner"],
 };
 
 const AD_SLOT_PATH: Record<AdManagementContentType, string> = {
@@ -60,6 +66,9 @@ const AD_SLOT_PATH: Record<AdManagementContentType, string> = {
   motivational: "motivational-stories",
   dua: "duas",
   category: "categories",
+  "home-top": "home-page/top",
+  "home-mid": "home-page/mid",
+  "home-bottom": "home-page/bottom",
 };
 
 const TYPE_ICONS: Record<string, JSX.Element> = {

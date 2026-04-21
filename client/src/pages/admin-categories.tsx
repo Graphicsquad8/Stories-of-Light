@@ -49,6 +49,8 @@ import {
   Copy,
   Eye,
   Megaphone,
+  LayoutDashboard,
+  ChevronRight,
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -57,6 +59,7 @@ import { useViewAs } from "@/lib/view-as";
 import { useState, useRef } from "react";
 import type { Category } from "@shared/schema";
 import { AdManagementDialog } from "@/components/ad-management-dialog";
+import { HomePageManagementDialog } from "@/components/home-page-management-dialog";
 
 function slugify(text: string): string {
   return text
@@ -116,6 +119,7 @@ export default function AdminCategoriesPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [adManagementItem, setAdManagementItem] = useState<{ id: string; name: string; adSlotsRaw: string | null } | null>(null);
+  const [homePageMgmtOpen, setHomePageMgmtOpen] = useState(false);
 
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -299,6 +303,25 @@ export default function AdminCategoriesPage() {
           </Button>
         )}
       </div>
+
+      {isAdmin && (
+        <button
+          className="w-full flex items-center justify-between border-2 border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/60 transition-all rounded-xl px-5 py-4 mb-2 cursor-pointer group"
+          onClick={() => setHomePageMgmtOpen(true)}
+          data-testid="button-home-page-management"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <LayoutDashboard className="w-5 h-5 text-primary" />
+            </div>
+            <div className="text-left">
+              <p className="font-semibold text-sm text-foreground">Home Page Management</p>
+              <p className="text-xs text-muted-foreground">Control the hero, sections, ads, and full layout of the home page</p>
+            </div>
+          </div>
+          <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+        </button>
+      )}
 
       <div className="space-y-3">
         {isLoading ? (
@@ -593,6 +616,11 @@ export default function AdminCategoriesPage() {
             invalidateKey={["/api/categories"]}
           />
         )}
+
+        <HomePageManagementDialog
+          open={homePageMgmtOpen}
+          onOpenChange={setHomePageMgmtOpen}
+        />
       </>}
     </AdminLayout>
   );

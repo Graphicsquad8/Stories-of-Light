@@ -30,21 +30,29 @@ interface SectionConfig {
   id: string;
   visible: boolean;
   count: number;
+  title?: string;
+  desc?: string;
+  categoryIds?: string[];
 }
 
 const DEFAULT_SECTIONS: SectionConfig[] = [
-  { id: "categories", visible: true, count: 6 },
-  { id: "featured", visible: true, count: 6 },
-  { id: "books", visible: true, count: 6 },
-  { id: "motivational", visible: true, count: 4 },
-  { id: "duas", visible: true, count: 4 },
-  { id: "latest", visible: true, count: 6 },
+  { id: "categories", visible: true, count: 6, title: "Explore by Category", desc: "Dive into different aspects of Islamic heritage, each offering unique lessons and inspiration.", categoryIds: [] },
+  { id: "featured", visible: true, count: 6, title: "Featured Stories", desc: "Handpicked stories to inspire and enlighten" },
+  { id: "books", visible: true, count: 6, title: "Islamic Books", desc: "Read online — no download required" },
+  { id: "motivational", visible: true, count: 4, title: "Islamic Motivational Stories", desc: "Inspiring stories to guide your daily life and strengthen your faith" },
+  { id: "duas", visible: true, count: 4, title: "Popular Duas", desc: "The most-read supplications to strengthen your connection with Allah" },
+  { id: "latest", visible: true, count: 6, title: "Latest Stories", desc: "Recently published narratives from Islamic history" },
 ];
 
 function parseSectionsConfig(raw: string | undefined): SectionConfig[] {
   try {
     const parsed = JSON.parse(raw || "[]");
-    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return DEFAULT_SECTIONS.map(def => {
+        const saved = parsed.find((s: any) => s.id === def.id);
+        return saved ? { ...def, ...saved } : def;
+      });
+    }
   } catch {}
   return DEFAULT_SECTIONS;
 }
@@ -99,16 +107,19 @@ function HeroSection({ settings }: { settings: Record<string, string> }) {
   );
 }
 
-function CategoryTiles({ categories, count }: { categories: (Category & { storyCount: number })[]; count: number }) {
+function CategoryTiles({ categories, count, title, desc, categoryIds }: { categories: (Category & { storyCount: number })[]; count: number; title?: string; desc?: string; categoryIds?: string[] }) {
   const fallbackImage = "/images/category-history.png";
-  const visible = categories.slice(0, count);
+  const filtered = categoryIds && categoryIds.length > 0
+    ? categories.filter(c => categoryIds.includes(c.id))
+    : categories;
+  const visible = filtered.slice(0, count);
 
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16" data-testid="section-categories">
       <div className="text-center mb-10">
-        <h2 className="font-serif text-3xl font-bold mb-3">Explore by Category</h2>
+        <h2 className="font-serif text-3xl font-bold mb-3">{title || "Explore by Category"}</h2>
         <p className="text-muted-foreground max-w-lg mx-auto">
-          Dive into different aspects of Islamic heritage, each offering unique lessons and inspiration.
+          {desc || "Dive into different aspects of Islamic heritage, each offering unique lessons and inspiration."}
         </p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -168,7 +179,7 @@ function StoryCard({ story }: { story: StoryWithCategory }) {
   );
 }
 
-function FeaturedStories({ stories, count }: { stories: StoryWithCategory[]; count: number }) {
+function FeaturedStories({ stories, count, title, desc }: { stories: StoryWithCategory[]; count: number; title?: string; desc?: string }) {
   const visible = stories.slice(0, count);
   if (visible.length === 0) return null;
 
@@ -176,8 +187,8 @@ function FeaturedStories({ stories, count }: { stories: StoryWithCategory[]; cou
     <section className="py-16" data-testid="section-featured">
       <div className="flex items-center justify-between gap-4 mb-8">
         <div>
-          <h2 className="font-serif text-3xl font-bold mb-2">Featured Stories</h2>
-          <p className="text-muted-foreground">Handpicked stories to inspire and enlighten</p>
+          <h2 className="font-serif text-3xl font-bold mb-2">{title || "Featured Stories"}</h2>
+          <p className="text-muted-foreground">{desc || "Handpicked stories to inspire and enlighten"}</p>
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -189,7 +200,7 @@ function FeaturedStories({ stories, count }: { stories: StoryWithCategory[]; cou
   );
 }
 
-function LatestStories({ stories, count }: { stories: StoryWithCategory[]; count: number }) {
+function LatestStories({ stories, count, title, desc }: { stories: StoryWithCategory[]; count: number; title?: string; desc?: string }) {
   const visible = stories.slice(0, count);
   if (visible.length === 0) return null;
 
@@ -197,8 +208,8 @@ function LatestStories({ stories, count }: { stories: StoryWithCategory[]; count
     <section className="py-16" data-testid="section-latest">
       <div className="flex items-center justify-between gap-4 mb-8">
         <div>
-          <h2 className="font-serif text-3xl font-bold mb-2">Latest Stories</h2>
-          <p className="text-muted-foreground">Recently published narratives from Islamic history</p>
+          <h2 className="font-serif text-3xl font-bold mb-2">{title || "Latest Stories"}</h2>
+          <p className="text-muted-foreground">{desc || "Recently published narratives from Islamic history"}</p>
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -228,15 +239,15 @@ function StoriesLoadingSkeleton() {
   );
 }
 
-function FeaturedFreeBooks({ books, count }: { books: Book[]; count: number }) {
+function FeaturedFreeBooks({ books, count, title, desc }: { books: Book[]; count: number; title?: string; desc?: string }) {
   const visible = books.slice(0, count);
   if (visible.length === 0) return null;
   return (
     <section className="py-16" data-testid="section-featured-books">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h2 className="font-serif text-2xl sm:text-3xl font-bold">Free Islamic Books</h2>
-          <p className="text-muted-foreground mt-1">Read online — no download required</p>
+          <h2 className="font-serif text-2xl sm:text-3xl font-bold">{title || "Islamic Books"}</h2>
+          <p className="text-muted-foreground mt-1">{desc || "Read online — no download required"}</p>
         </div>
         <Link href="/books">
           <Button variant="ghost" size="sm" data-testid="link-all-books">
@@ -277,7 +288,7 @@ function FeaturedFreeBooks({ books, count }: { books: Book[]; count: number }) {
   );
 }
 
-function PopularMotivational({ stories, count }: { stories: MotivationalStory[]; count: number }) {
+function PopularMotivational({ stories, count, title, desc }: { stories: MotivationalStory[]; count: number; title?: string; desc?: string }) {
   const visible = stories.slice(0, count);
   if (visible.length === 0) return null;
   return (
@@ -286,9 +297,9 @@ function PopularMotivational({ stories, count }: { stories: MotivationalStory[];
         <div>
           <div className="flex items-center gap-2 mb-2">
             <Lightbulb className="w-5 h-5 text-primary" />
-            <h2 className="font-serif text-2xl sm:text-3xl font-bold">Islamic Motivational Stories</h2>
+            <h2 className="font-serif text-2xl sm:text-3xl font-bold">{title || "Islamic Motivational Stories"}</h2>
           </div>
-          <p className="text-muted-foreground">Inspiring stories to guide your daily life and strengthen your faith</p>
+          <p className="text-muted-foreground">{desc || "Inspiring stories to guide your daily life and strengthen your faith"}</p>
         </div>
         <Link href="/motivational-stories">
           <Button variant="ghost" size="sm" data-testid="link-all-motivational">
@@ -321,7 +332,7 @@ function PopularMotivational({ stories, count }: { stories: MotivationalStory[];
   );
 }
 
-function PopularDuas({ duas, count }: { duas: Dua[]; count: number }) {
+function PopularDuas({ duas, count, title, desc }: { duas: Dua[]; count: number; title?: string; desc?: string }) {
   const visible = duas.slice(0, count);
   if (visible.length === 0) return null;
   return (
@@ -330,9 +341,9 @@ function PopularDuas({ duas, count }: { duas: Dua[]; count: number }) {
         <div>
           <div className="flex items-center gap-2 mb-2">
             <Moon className="w-5 h-5 text-primary" />
-            <h2 className="font-serif text-2xl sm:text-3xl font-bold">Popular Duas</h2>
+            <h2 className="font-serif text-2xl sm:text-3xl font-bold">{title || "Popular Duas"}</h2>
           </div>
-          <p className="text-muted-foreground">The most-read supplications to strengthen your connection with Allah</p>
+          <p className="text-muted-foreground">{desc || "The most-read supplications to strengthen your connection with Allah"}</p>
         </div>
         <Link href="/duas">
           <Button variant="ghost" size="sm" data-testid="link-all-duas">
@@ -405,95 +416,81 @@ export default function HomePage() {
     queryKey: ["/api/duas/popular"],
   });
 
-  const getSectionConfig = (id: string) => sections.find(s => s.id === id) ?? { id, visible: true, count: 6 };
+  const getSection = (id: string): SectionConfig => sections.find(s => s.id === id) ?? DEFAULT_SECTIONS.find(s => s.id === id) ?? { id, visible: true, count: 6 };
 
-  const renderSection = (sec: SectionConfig) => {
-    if (!sec.visible) return null;
-
-    switch (sec.id) {
-      case "categories":
-        if (catsLoading) {
-          return (
-            <div key="categories" className="max-w-7xl mx-auto px-4 py-16">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[1, 2, 3].map((i) => <Skeleton key={i} className="h-48 rounded-md" />)}
-              </div>
-            </div>
-          );
-        }
-        if (!categories || categories.length === 0) return null;
-        return <CategoryTiles key="categories" categories={categories} count={sec.count} />;
-
-      case "featured":
-        return (
-          <div key="featured" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            {featuredLoading ? (
-              <div className="py-16">
-                <Skeleton className="h-8 w-48 mb-8" />
-                <StoriesLoadingSkeleton />
-              </div>
-            ) : (
-              <FeaturedStories stories={featuredStories || []} count={sec.count} />
-            )}
-          </div>
-        );
-
-      case "books":
-        if (!freeBooks || freeBooks.length === 0) return null;
-        return (
-          <div key="books" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <FeaturedFreeBooks books={freeBooks} count={sec.count} />
-          </div>
-        );
-
-      case "motivational":
-        if (!motivationalStories || motivationalStories.length === 0) return null;
-        return (
-          <div key="motivational" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <PopularMotivational stories={motivationalStories} count={sec.count} />
-          </div>
-        );
-
-      case "duas":
-        if (!popularDuas || popularDuas.length === 0) return null;
-        return (
-          <div key="duas" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <PopularDuas duas={popularDuas} count={sec.count} />
-          </div>
-        );
-
-      case "latest":
-        return (
-          <div key="latest" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            {latestLoading ? (
-              <div className="py-16">
-                <Skeleton className="h-8 w-48 mb-8" />
-                <StoriesLoadingSkeleton />
-              </div>
-            ) : (
-              <LatestStories stories={latestStories || []} count={sec.count} />
-            )}
-          </div>
-        );
-
-      default:
-        return null;
-    }
-  };
-
-  const topHalf = sections.slice(0, Math.ceil(sections.length / 2));
-  const bottomHalf = sections.slice(Math.ceil(sections.length / 2));
+  const catSec = getSection("categories");
+  const featSec = getSection("featured");
+  const booksSec = getSection("books");
+  const motivSec = getSection("motivational");
+  const duasSec = getSection("duas");
+  const latestSec = getSection("latest");
 
   return (
     <PublicLayout>
       <HeroSection settings={publicSettings} />
+
+      {/* Fixed layout: Ad Top → Categories → Featured → Books → Ad Mid → Motivational → Duas → Latest → Ad Bottom */}
       <AdBand slot="banner" label="top-banner" />
 
-      {topHalf.map(sec => renderSection(sec))}
+      {catSec.visible && (
+        catsLoading ? (
+          <div className="max-w-7xl mx-auto px-4 py-16">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3].map((i) => <Skeleton key={i} className="h-48 rounded-md" />)}
+            </div>
+          </div>
+        ) : categories && categories.length > 0 ? (
+          <CategoryTiles
+            categories={categories}
+            count={catSec.count}
+            title={catSec.title}
+            desc={catSec.desc}
+            categoryIds={catSec.categoryIds}
+          />
+        ) : null
+      )}
+
+      {featSec.visible && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {featuredLoading ? (
+            <div className="py-16"><Skeleton className="h-8 w-48 mb-8" /><StoriesLoadingSkeleton /></div>
+          ) : (
+            <FeaturedStories stories={featuredStories || []} count={featSec.count} title={featSec.title} desc={featSec.desc} />
+          )}
+        </div>
+      )}
+
+      {booksSec.visible && freeBooks && freeBooks.length > 0 && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <FeaturedFreeBooks books={freeBooks} count={booksSec.count} title={booksSec.title} desc={booksSec.desc} />
+        </div>
+      )}
 
       <AdBand slot="in-feed" label="mid-content" />
 
-      {bottomHalf.map(sec => renderSection(sec))}
+      {motivSec.visible && motivationalStories && motivationalStories.length > 0 && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <PopularMotivational stories={motivationalStories} count={motivSec.count} title={motivSec.title} desc={motivSec.desc} />
+        </div>
+      )}
+
+      {duasSec.visible && popularDuas && popularDuas.length > 0 && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <PopularDuas duas={popularDuas} count={duasSec.count} title={duasSec.title} desc={duasSec.desc} />
+        </div>
+      )}
+
+      {latestSec.visible && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {latestLoading ? (
+            <div className="py-16"><Skeleton className="h-8 w-48 mb-8" /><StoriesLoadingSkeleton /></div>
+          ) : (
+            <LatestStories stories={latestStories || []} count={latestSec.count} title={latestSec.title} desc={latestSec.desc} />
+          )}
+        </div>
+      )}
+
+      <AdBand slot="banner" label="bottom-banner" />
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16" data-testid="section-newsletter">
         <Card className="p-8 sm:p-12 text-center bg-primary/5">
@@ -516,7 +513,6 @@ export default function HomePage() {
         </Card>
       </section>
 
-      <AdBand slot="banner" label="bottom-banner" />
     </PublicLayout>
   );
 }

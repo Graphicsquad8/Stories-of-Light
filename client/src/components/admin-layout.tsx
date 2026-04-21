@@ -25,7 +25,7 @@ import {
   LayoutDashboard, FileText, FolderOpen, LogOut, BookOpen,
   Sun, Moon, ExternalLink, Book, Settings, Lightbulb, Library,
   Trash2, Users, ShieldCheck, ChevronRight, LayoutTemplate, UserCircle,
-  Eye, UserCheck, Clock, Home, Code2,
+  Eye, UserCheck, Clock, Code2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
@@ -110,14 +110,6 @@ function AdminSidebar() {
       icon: UserCircle,
       isActive: (loc) => loc.startsWith("/image/overview"),
       permission: "staff-only",
-    },
-    {
-      key: "home-page",
-      title: "Home Page",
-      href: "/image/home-page",
-      icon: Home,
-      isActive: (loc) => loc.startsWith("/image/home-page"),
-      permission: "settings",
     },
     {
       key: "categories",

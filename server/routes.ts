@@ -2507,6 +2507,17 @@ export async function registerRoutes(
     res.json({ success: true });
   });
 
+  // ─── Home Page Ad Slot Mode ──────────────────────────────────────────────
+
+  app.patch("/api/admin/home-page/:slotId/ad-slots", requireAdmin, async (req, res) => {
+    const { slotId } = req.params;
+    const { adSlots } = req.body;
+    if (!adSlots) return res.status(400).json({ message: "adSlots is required" });
+    await storage.setSetting(`homeAdSlot_${slotId}`, JSON.stringify(adSlots));
+    queryClient.invalidateQueries && undefined; // frontend invalidation only
+    res.json({ success: true });
+  });
+
   // ─── API Key Management ───────────────────────────────────────────────────
 
   async function requireApiKey(req: any, res: any, next: any) {

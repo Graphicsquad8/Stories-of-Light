@@ -1,0 +1,277 @@
+📌 Home Page Management – Category Section Integration Update
+🔧 1) Location Change (Important)
+👉 The existing Home Page Section in the Admin Panel:
+❌ Must be removed from its current location
+✅ Must be added inside the Category Section
+📌 Behavior:
+
+
+Inside the Category Section, there will be a button-style option:
+👉 Home Page Management
+
+
+On click:
+👉 The Home Page Management panel will open
+
+
+
+🎨 2) UI Structure (Box/Button Style)
+Inside Home Page Management:
+👉 Two main options:
+
+
+Hero Section
+
+
+Page Section
+
+
+📌 UI Behavior:
+
+
+Each option will appear as a box-style button
+
+
+On click:
+👉 The full settings will expand/open
+
+
+
+❌ 3) Remove Old Ad Slot Section
+❌ Remove the Home Page Ad Slot Section completely
+✅ Move all its functionalities into:
+👉 Page Section
+
+📑 4) Page Section Structure (Ordered Layout)
+The Home Page layout must follow this exact order:
+
+
+Ad Space – Top Banner
+
+
+Explore by Category
+
+
+Featured Stories
+
+
+Islamic Books
+
+
+Ad Space – Mid Content
+
+
+Islamic Motivational Stories
+
+
+Popular Duas
+
+
+Latest Stories
+
+
+Ad Space – Bottom Banner
+
+
+
+📢 5) Ad Slot Management (Top / Mid / Bottom)
+Each Ad Space must include:
+👉 An Ad Management icon
+📌 On click:
+
+
+1️⃣ Auto Ads
+
+
+2️⃣ Manual Ads
+
+
+👉 Manual option:
+✔ Allows custom ad upload
+✔ Same system as Category Pages
+✔ Per-slot control
+
+🧭 6) Explore by Category
+
+
+✔ Title & Description must be editable
+
+
+✔ Admin can manually select which categories to display
+
+
+📌 Supported Categories:
+
+
+Sahaba
+
+
+Awliya
+
+
+Karamat
+
+
+History
+
+
+Stories
+
+
+Duas
+
+
+Books
+
+
+
+
+Any newly created categories
+
+
+
+
+
+⭐ 7) Featured Stories
+
+
+✔ Title & Description editable
+
+
+✔ Default: Most viewed articles (Sahaba, Awliya, Karamat, History)
+
+
+✔ Manual override supported
+
+
+
+📚 8) Islamic Books (Updated)
+
+
+❌ Remove name: “Free Islamic Books”
+✅ Rename to: Islamic Books
+
+
+✔ Title & Description editable
+
+
+✔ Shows:
+
+
+Most viewed Free Books
+
+
+Most viewed Paid Books
+
+
+
+
+✔ Manual selection available
+
+
+
+📢 9) Mid Content Ad
+
+
+Same behavior as Top Banner:
+
+
+Auto / Manual toggle
+
+
+Custom ad upload
+
+
+
+
+
+💡 10) Islamic Motivational Stories
+
+
+✔ Title & Description editable
+
+
+✔ Default: Most viewed stories
+
+
+✔ Manual selection supported
+
+
+
+🤲 11) Popular Duas
+
+
+✔ Title & Description editable
+
+
+✔ Default: Most viewed duas
+
+
+✔ Manual override supported
+
+
+
+🆕 12) Latest Stories
+
+
+✔ Title & Description editable
+
+
+✔ Default: Latest uploaded articles
+
+
+✔ Manual control supported
+
+
+
+📢 13) Bottom Banner Ad
+
+
+Same system:
+
+
+Auto / Manual
+
+
+Custom upload
+
+
+Slot-based control
+
+
+
+
+
+⚙️ Final System Behavior
+✔ Home Page Management is inside the Category Section
+✔ Full homepage layout is admin-controlled
+✔ Each section:
+
+
+Can be reordered
+
+
+Has content limit control
+
+
+Supports manual selection
+
+
+✔ Ad System:
+
+
+Auto + Manual (hybrid)
+
+
+Slot-wise control
+
+
+Custom company ads fully supported
+
+
+
+🚀 Final Result
+👉 Fully dynamic homepage control system
+👉 No hardcoded layout
+👉 Completely admin-driven structure
+👉 Result: A powerful, flexible, and scalable Home Page Management System
