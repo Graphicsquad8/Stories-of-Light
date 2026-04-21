@@ -501,7 +501,6 @@ export default function BookReaderPage() {
               <ScrollArea className="h-[calc(100vh-14rem)]">
                 <div className="p-1.5 space-y-0.5 pt-2">
                   {parts.map((part, i) => {
-                    const partGlobalStart = flatPages.find(fp => fp.partIdx === i)?.globalIdx ?? 0;
                     const isActive = !viewingToc && activePartIndex === i;
                     return (
                       <button
@@ -512,11 +511,6 @@ export default function BookReaderPage() {
                       >
                         <span className="text-xs opacity-60 mr-1.5">{i + 1}.</span>
                         <span className="line-clamp-2">{part.title}</span>
-                        {(part.pages?.length || 0) > 0 && (
-                          <span className={`block text-xs mt-0.5 ${isActive ? "opacity-70" : "text-muted-foreground"}`}>
-                            p. {partGlobalStart + 1}–{partGlobalStart + (part.pages?.length || 0)}
-                          </span>
-                        )}
                       </button>
                     );
                   })}

@@ -15,6 +15,7 @@ import {
   SidebarTrigger,
   SidebarHeader,
   SidebarFooter,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
@@ -58,7 +59,9 @@ function ThemeToggle() {
 }
 
 function AdminSidebar() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
+  const { state: sidebarState } = useSidebar();
+  const isCollapsed = sidebarState === "collapsed";
   const { logout, isAdmin, isModerator, hasPermission, user } = useAuth();
   const { viewAs, clearViewAs, viewMeMode, setViewMeMode } = useViewAs();
 
@@ -207,15 +210,15 @@ function AdminSidebar() {
     !location.startsWith("/image/stories/category/");
 
   return (
-    <Sidebar>
-      <SidebarHeader className="p-4">
-        <Link href="/image" className="flex items-center gap-2" data-testid="link-admin-home">
-          <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
+    <Sidebar collapsible="icon">
+      <SidebarHeader className="p-3">
+        <Link href="/image" className="flex items-center gap-2 min-w-0" data-testid="link-admin-home">
+          <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center shrink-0">
             <BookOpen className="w-4 h-4 text-primary-foreground" />
           </div>
-          <div>
-            <span className="font-serif font-semibold text-sm">Stories of Light</span>
-            <p className="text-[10px] text-muted-foreground">
+          <div className={cn("min-w-0 transition-all duration-200", isCollapsed && "hidden")}>
+            <span className="font-serif font-semibold text-sm truncate block">Stories of Light</span>
+            <p className="text-[10px] text-muted-foreground truncate">
               {({ super_owner: "Super Owner Panel", owner: "Owner Panel", admin: "Admin Panel", moderator: "Moderator Panel", editor: "Editor Panel" } as Record<string,string>)[user?.role ?? ""] ?? "Admin Panel"}
             </p>
           </div>
@@ -224,25 +227,36 @@ function AdminSidebar() {
 
       <SidebarContent>
         {viewAs ? (
-          <div className="mx-3 mt-2 mb-1 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-2.5">
-            <div className="flex items-center gap-2">
-              <Avatar className="h-7 w-7 shrink-0">
-                <AvatarImage src={viewAs.avatar_url ?? ""} alt={viewAs.name || viewAs.username} />
-                <AvatarFallback className="text-[9px] bg-amber-100 text-amber-700">{(viewAs.name || viewAs.username).slice(0, 2).toUpperCase()}</AvatarFallback>
-              </Avatar>
-              <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-semibold text-amber-900 dark:text-amber-100 truncate">{viewAs.name || viewAs.username}</p>
-                <p className="text-[10px] text-amber-700 dark:text-amber-300 capitalize">{viewAs.role} View</p>
-              </div>
+          <div className={cn("mx-2 mt-2 mb-1 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-2", isCollapsed ? "flex items-center justify-center" : "")}>
+            {isCollapsed ? (
               <button
                 onClick={clearViewAs}
-                title="View Me — Return to Admin"
+                title={`${viewAs.name || viewAs.username} — Click to exit view`}
                 data-testid="button-view-me-admin"
-                className="shrink-0 p-1 rounded-md text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-800 transition-colors"
+                className="p-1 rounded-md text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-800 transition-colors"
               >
-                <UserCheck className="w-3.5 h-3.5" />
+                <UserCheck className="w-4 h-4" />
               </button>
-            </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Avatar className="h-7 w-7 shrink-0">
+                  <AvatarImage src={viewAs.avatar_url ?? ""} alt={viewAs.name || viewAs.username} />
+                  <AvatarFallback className="text-[9px] bg-amber-100 text-amber-700">{(viewAs.name || viewAs.username).slice(0, 2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-semibold text-amber-900 dark:text-amber-100 truncate">{viewAs.name || viewAs.username}</p>
+                  <p className="text-[10px] text-amber-700 dark:text-amber-300 capitalize">{viewAs.role} View</p>
+                </div>
+                <button
+                  onClick={clearViewAs}
+                  title="View Me — Return to Admin"
+                  data-testid="button-view-me-admin"
+                  className="shrink-0 p-1 rounded-md text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-800 transition-colors"
+                >
+                  <UserCheck className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
           </div>
         ) : null}
 
@@ -253,22 +267,30 @@ function AdminSidebar() {
               {visibleItems.map((item) => {
                 if (item.type === "collapsible") {
                   return (
-                    <Collapsible key={item.key} open={articlesOpen} onOpenChange={setArticlesOpen}>
+                    <Collapsible key={item.key} open={!isCollapsed && articlesOpen}>
                       <SidebarMenuItem>
-                        <CollapsibleTrigger asChild>
-                          <SidebarMenuButton
-                            data-active={item.isActive(location)}
-                            data-testid="link-admin-all-articles"
-                            className="w-full"
-                          >
-                            <item.icon className="w-4 h-4" />
-                            <span>{item.title}</span>
+                        <SidebarMenuButton
+                          tooltip={item.title}
+                          data-active={item.isActive(location)}
+                          data-testid="link-admin-all-articles"
+                          className="w-full"
+                          onClick={() => {
+                            if (isCollapsed) {
+                              setLocation(item.href);
+                            } else {
+                              setArticlesOpen(prev => !prev);
+                            }
+                          }}
+                        >
+                          <item.icon className="w-4 h-4 shrink-0" />
+                          <span>{item.title}</span>
+                          {!isCollapsed && (
                             <ChevronRight className={cn(
-                              "ml-auto w-4 h-4 transition-transform duration-200",
+                              "ml-auto w-4 h-4 transition-transform duration-200 shrink-0",
                               articlesOpen && "rotate-90"
                             )} />
-                          </SidebarMenuButton>
-                        </CollapsibleTrigger>
+                          )}
+                        </SidebarMenuButton>
                         <CollapsibleContent>
                           <SidebarMenuSub>
                             <SidebarMenuSubItem>
@@ -301,11 +323,14 @@ function AdminSidebar() {
                 }
                 return (
                   <SidebarMenuItem key={item.key}>
-                    <SidebarMenuButton asChild data-active={item.isActive(location)}>
-                      <Link href={item.href} data-testid={`link-admin-${item.title.toLowerCase().replace(/\s+/g, "-")}`}>
-                        <item.icon className="w-4 h-4" />
-                        <span>{item.title}</span>
-                      </Link>
+                    <SidebarMenuButton
+                      tooltip={item.title}
+                      data-active={item.isActive(location)}
+                      data-testid={`link-admin-${item.title.toLowerCase().replace(/\s+/g, "-")}`}
+                      onClick={() => setLocation(item.href)}
+                    >
+                      <item.icon className="w-4 h-4 shrink-0" />
+                      <span>{item.title}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
@@ -319,11 +344,13 @@ function AdminSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link href="/" data-testid="link-admin-view-site">
-                    <ExternalLink className="w-4 h-4" />
-                    <span>View Site</span>
-                  </Link>
+                <SidebarMenuButton
+                  tooltip="View Site"
+                  data-testid="link-admin-view-site"
+                  onClick={() => window.open("/", "_blank")}
+                >
+                  <ExternalLink className="w-4 h-4 shrink-0" />
+                  <span>View Site</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -331,12 +358,22 @@ function AdminSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4">
-        <div className="text-xs text-muted-foreground mb-2 truncate">{user?.email || user?.username}</div>
-        <Button variant="ghost" className="w-full justify-start" onClick={logout} data-testid="button-admin-logout">
-          <LogOut className="w-4 h-4 mr-2" />
-          Logout
-        </Button>
+      <SidebarFooter className="p-3">
+        {!isCollapsed && (
+          <div className="text-xs text-muted-foreground mb-2 truncate">{user?.email || user?.username}</div>
+        )}
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              tooltip="Logout"
+              onClick={logout}
+              data-testid="button-admin-logout"
+            >
+              <LogOut className="w-4 h-4 shrink-0" />
+              <span>Logout</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
   );
