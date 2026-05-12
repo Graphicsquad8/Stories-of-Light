@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, BookOpen, Sparkles, Star, Lightbulb, Moon, Bookmark, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, BookOpen, Sparkles, Star, Lightbulb, Moon, Bookmark, ChevronLeft, ChevronRight, ShieldCheck, Users } from "lucide-react";
 import type { StoryWithCategory, Category, Book, MotivationalStory, Dua } from "@shared/schema";
 import { AdSlot } from "@/components/ad-slot";
 import type { AdSlotType } from "@/components/ad-slot";
@@ -89,75 +89,92 @@ function SectionHeader({ title, desc, viewAllHref, viewAllLabel = "View All" }: 
   );
 }
 
+const TRUST_BADGES = [
+  { label: "Authentic Content", icon: <ShieldCheck className="w-5 h-5 text-primary" strokeWidth={1.5} /> },
+  { label: "Verified Sources",  icon: <ShieldCheck className="w-5 h-5 text-primary" strokeWidth={1.5} /> },
+  { label: "New Stories Weekly",icon: <Sparkles   className="w-5 h-5 text-primary" strokeWidth={1.5} /> },
+  { label: "For All Ages",      icon: <Users       className="w-5 h-5 text-primary" strokeWidth={1.5} /> },
+];
+
 /* ── Hero ── */
 function HeroSection({ settings }: { settings: Record<string, string> }) {
-  const heroTitle = settings["homeHeroTitle"] || DEFAULT_HERO_TITLE;
   const heroSubtitle = settings["homeHeroSubtitle"] || DEFAULT_HERO_SUBTITLE;
-  const siteName = settings["siteName"] || "Stories of Light";
   const btn1Text = settings["homeHeroBtn1Text"] || DEFAULT_BTN1_TEXT;
-  const btn1Url = settings["homeHeroBtn1Url"] || DEFAULT_BTN1_URL;
+  const btn1Url  = settings["homeHeroBtn1Url"]  || DEFAULT_BTN1_URL;
   const btn2Text = settings["homeHeroBtn2Text"] || DEFAULT_BTN2_TEXT;
-  const btn2Url = settings["homeHeroBtn2Url"] || DEFAULT_BTN2_URL;
-  const heroBg = settings["homeHeroBgImage"] || "/images/hero-bg.png";
+  const btn2Url  = settings["homeHeroBtn2Url"]  || DEFAULT_BTN2_URL;
 
   return (
-    <section className="relative overflow-hidden" data-testid="section-hero">
-      <div className="absolute inset-0">
-        <img src={heroBg} alt="" className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/40 to-black/20" />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/30" />
-      </div>
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-        <div className="max-w-xl">
-          <Badge
-            variant="secondary"
-            className="mb-4 bg-white/15 text-white border-white/20 backdrop-blur-sm"
-            data-testid="badge-hero"
-          >
-            <Sparkles className="w-3 h-3 mr-1.5" />
-            {siteName}
-          </Badge>
-          <h1
-            className="font-serif text-3xl sm:text-4xl font-bold text-white leading-[1.15] mb-4 tracking-tight"
-            data-testid="text-hero-title"
-            dangerouslySetInnerHTML={{ __html: heroTitle }}
-          />
-          <p
-            className="text-sm sm:text-base text-white/80 leading-relaxed mb-6 max-w-md"
-            data-testid="text-hero-subtitle"
-            dangerouslySetInnerHTML={{ __html: heroSubtitle }}
-          />
-          <div className="flex flex-wrap gap-3">
-            <Link href={btn1Url}>
-              <Button size="lg" className="shadow-lg" data-testid="button-hero-btn1">
-                {btn1Text}
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </Link>
-            <Link href={btn2Url}>
-              <Button
-                variant="outline"
-                size="lg"
-                className="bg-white/10 backdrop-blur-sm border-white/25 text-white hover:bg-white/20"
-                data-testid="button-hero-btn2"
-              >
-                {btn2Text}
-              </Button>
-            </Link>
+    <section className="bg-background overflow-hidden" data-testid="section-hero">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 items-end">
+
+          {/* ── Left: text ── */}
+          <div className="py-10 sm:py-12 lg:py-14 pr-4 lg:pr-10">
+            <h1
+              className="font-serif font-bold leading-[1.18] tracking-tight mb-5"
+              data-testid="text-hero-title"
+            >
+              <span className="block text-[1.85rem] sm:text-4xl lg:text-[2.6rem] text-foreground">
+                Islamic Stories,
+              </span>
+              <span className="block text-[1.85rem] sm:text-4xl lg:text-[2.6rem] text-foreground">
+                Biographies &amp; Books
+              </span>
+              <span className="block text-[1.85rem] sm:text-4xl lg:text-[2.6rem] text-amber-700">
+                Read. Listen &amp; Learn
+              </span>
+            </h1>
+
+            <p
+              className="text-sm sm:text-base text-muted-foreground leading-relaxed mb-7 max-w-[340px] sm:max-w-sm"
+              data-testid="text-hero-subtitle"
+              dangerouslySetInnerHTML={{ __html: heroSubtitle }}
+            />
+
+            <div className="flex flex-wrap gap-3 mb-8">
+              <Link href={btn1Url}>
+                <Button size="lg" className="rounded-md font-medium" data-testid="button-hero-btn1">
+                  {btn1Text}
+                </Button>
+              </Link>
+              <Link href={btn2Url}>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="rounded-md font-medium border-foreground/25 text-foreground hover:bg-muted"
+                  data-testid="button-hero-btn2"
+                >
+                  {btn2Text}
+                </Button>
+              </Link>
+            </div>
+
+            {/* Trust badges */}
+            <div className="flex flex-wrap gap-x-5 gap-y-4">
+              {TRUST_BADGES.map(({ label, icon }) => (
+                <div key={label} className="flex flex-col items-center gap-1.5">
+                  <div className="w-10 h-10 rounded-lg border border-primary/20 bg-primary/5 flex items-center justify-center">
+                    {icon}
+                  </div>
+                  <span className="text-[11px] font-medium text-muted-foreground text-center leading-tight w-[72px]">
+                    {label}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-6">
-            {["Authentic Content", "Verified Sources", "New Stories Weekly", "For All Ages"].map(label => (
-              <div key={label} className="flex items-center gap-1.5">
-                <div className="w-4 h-4 rounded-full bg-primary/80 flex items-center justify-center">
-                  <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <span className="text-xs text-white/75 font-medium">{label}</span>
-              </div>
-            ))}
+          {/* ── Right: image ── */}
+          <div className="relative overflow-hidden max-h-[360px] sm:max-h-[440px] lg:max-h-full lg:h-full lg:min-h-[480px]">
+            <img
+              src="/images/hero-quran.png"
+              alt="Open Quran with Islamic lantern in a mosque"
+              className="w-full h-full object-cover object-top"
+              data-testid="img-hero"
+            />
           </div>
+
         </div>
       </div>
     </section>
@@ -772,16 +789,26 @@ export default function HomePage() {
 
       {/* Newsletter */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10" data-testid="section-newsletter">
-        <div className="relative overflow-hidden rounded-2xl bg-primary/8 border border-primary/15 p-8 sm:p-10">
-          <div className="absolute inset-0 opacity-5 pointer-events-none" style={{
-            backgroundImage: "repeating-linear-gradient(45deg, currentColor 0, currentColor 1px, transparent 0, transparent 50%)",
-            backgroundSize: "20px 20px"
-          }} />
+        <div className="relative overflow-hidden rounded-2xl border border-primary/15 p-8 sm:p-12"
+          style={{ background: "linear-gradient(135deg, hsl(155 56% 24% / 0.07) 0%, hsl(42 40% 94%) 50%, hsl(155 56% 24% / 0.05) 100%)" }}
+        >
+          {/* Decorative corner arcs */}
+          <svg className="absolute top-0 left-0 w-32 h-32 text-primary/8 pointer-events-none" viewBox="0 0 128 128" fill="none">
+            <circle cx="0" cy="0" r="80" stroke="currentColor" strokeWidth="1.5" fill="none" />
+            <circle cx="0" cy="0" r="56" stroke="currentColor" strokeWidth="1" fill="none" />
+            <circle cx="0" cy="0" r="32" stroke="currentColor" strokeWidth="0.75" fill="none" />
+          </svg>
+          <svg className="absolute bottom-0 right-0 w-32 h-32 text-primary/8 pointer-events-none" viewBox="0 0 128 128" fill="none">
+            <circle cx="128" cy="128" r="80" stroke="currentColor" strokeWidth="1.5" fill="none" />
+            <circle cx="128" cy="128" r="56" stroke="currentColor" strokeWidth="1" fill="none" />
+            <circle cx="128" cy="128" r="32" stroke="currentColor" strokeWidth="0.75" fill="none" />
+          </svg>
+
           <div className="relative text-center max-w-md mx-auto">
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-              <BookOpen className="w-6 h-6 text-primary" />
+            <div className="w-12 h-12 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-4">
+              <BookOpen className="w-5 h-5 text-primary" />
             </div>
-            <h2 className="font-serif text-xl sm:text-2xl font-bold mb-2">Never Miss an Inspiring Story</h2>
+            <h2 className="font-serif text-xl sm:text-2xl font-bold mb-2 text-foreground">Never Miss an Inspiring Story</h2>
             <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
               Subscribe to receive the latest stories and updates directly in your inbox.
             </p>
