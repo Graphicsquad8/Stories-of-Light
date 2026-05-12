@@ -1,16 +1,24 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { Link } from "wouter";
 import { PublicLayout } from "@/components/public-layout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, BookOpen, Sparkles, Clock, Star, Eye, Lightbulb, Moon } from "lucide-react";
+import { ArrowRight, BookOpen, Sparkles, Clock, Star, Eye, Lightbulb, Moon, Bookmark, ChevronLeft, ChevronRight } from "lucide-react";
 import type { StoryWithCategory, Category, Book, MotivationalStory, Dua } from "@shared/schema";
 import { format } from "date-fns";
 import { AdSlot } from "@/components/ad-slot";
 import type { AdSlotType } from "@/components/ad-slot";
 import { cn } from "@/lib/utils";
+
+function estimateReadTime(content?: string | null): string {
+  if (!content) return "5 min read";
+  const words = content.replace(/<[^>]*>/g, "").split(/\s+/).filter(Boolean).length;
+  const mins = Math.max(1, Math.round(words / 200));
+  return `${mins} min read`;
+}
 
 function AdBand({ slot, label, heightClass = "min-h-[90px]" }: { slot: AdSlotType; label: string; heightClass?: string }) {
   return (
@@ -217,87 +225,219 @@ function CategoryTiles({ categories, count, title, desc, categoryIds }: {
   );
 }
 
-/* ── Story Card ── */
-function StoryCard({ story }: { story: StoryWithCategory }) {
+/* ── Featured Story Card ── */
+function FeaturedStoryCard({ story }: { story: StoryWithCategory }) {
   return (
     <Link href={`/stories/${story.slug}`}>
-      <Card className="group h-full overflow-hidden cursor-pointer hover-elevate border border-card-border shadow-sm hover:shadow-md transition-shadow" data-testid={`card-story-${story.slug}`}>
-        <div className="aspect-[16/10] overflow-hidden">
+      <div
+        className="group bg-card border border-card-border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer h-full flex flex-col"
+        data-testid={`card-story-${story.slug}`}
+      >
+        <div className="aspect-[4/3] overflow-hidden shrink-0">
           <img
             src={story.thumbnail || "/images/category-history.png"}
             alt={story.title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         </div>
-        <div className="p-4 sm:p-5">
-          <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <div className="p-4 flex flex-col flex-1">
+          <div className="flex items-center justify-between mb-2.5">
             {story.category && (
-              <Badge variant="secondary" className="text-xs" data-testid={`badge-category-${story.slug}`}>
+              <span className="text-xs font-semibold text-primary" data-testid={`badge-category-${story.slug}`}>
                 {story.category.name}
-              </Badge>
-            )}
-            {story.publishedAt && (
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                {format(new Date(story.publishedAt), "MMM d, yyyy")}
               </span>
             )}
+            <span className="text-xs text-muted-foreground">{estimateReadTime(story.content)}</span>
           </div>
           <h3
-            className="font-serif text-base sm:text-lg font-semibold mb-2 line-clamp-2 leading-snug"
+            className="font-serif text-sm sm:text-base font-bold leading-snug mb-2 line-clamp-2 text-foreground"
             data-testid={`text-title-${story.slug}`}
             dangerouslySetInnerHTML={{ __html: story.title }}
           />
           <p
-            className="text-sm text-muted-foreground line-clamp-2 leading-relaxed"
+            className="text-xs text-muted-foreground line-clamp-2 leading-relaxed flex-1"
             dangerouslySetInnerHTML={{ __html: story.excerpt || "" }}
           />
+          <div className="flex justify-end mt-3">
+            <Bookmark className="w-4 h-4 text-muted-foreground/40" />
+          </div>
         </div>
-      </Card>
+      </div>
     </Link>
   );
 }
 
 /* ── Featured Stories ── */
 function FeaturedStories({ stories, count, title, desc }: { stories: StoryWithCategory[]; count: number; title?: string; desc?: string }) {
+  const [page, setPage] = useState(0);
+  const perPage = 4;
   const visible = stories.slice(0, count);
   if (visible.length === 0) return null;
 
+  const totalPages = Math.ceil(visible.length / perPage);
+  const pageItems = visible.slice(page * perPage, (page + 1) * perPage);
+
   return (
     <section className="py-14" data-testid="section-featured">
-      <SectionHeader
-        title={title || "Featured Stories"}
-        desc={desc || "Handpicked stories to inspire and enlighten"}
-        viewAllHref="/stories"
-        viewAllLabel="View All Stories"
-      />
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {visible.map((story) => (
-          <StoryCard key={story.id} story={story} />
+      <div className="flex items-start justify-between gap-4 mb-2">
+        <div>
+          <h2 className="font-serif text-2xl sm:text-3xl font-bold text-foreground">{title || "Featured Stories"}</h2>
+          {desc && <p className="text-sm text-muted-foreground mt-1.5">{desc}</p>}
+        </div>
+        <Link href="/stories">
+          <span className="flex items-center gap-1.5 text-sm font-medium text-foreground hover:text-primary shrink-0 mt-1 transition-colors">
+            View All Stories <ArrowRight className="w-4 h-4" />
+          </span>
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-7">
+        {pageItems.map((story) => (
+          <FeaturedStoryCard key={story.id} story={story} />
         ))}
+      </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-7">
+          {Array.from({ length: totalPages }).map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setPage(i)}
+              className={cn(
+                "w-2.5 h-2.5 rounded-full transition-colors",
+                i === page ? "bg-foreground" : "bg-muted-foreground/25 hover:bg-muted-foreground/50"
+              )}
+            />
+          ))}
+        </div>
+      )}
+
+      <div className="mt-8 bg-card border border-card-border rounded-xl px-5 sm:px-7 py-4 flex items-center gap-4">
+        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+          <BookOpen className="w-5 h-5 text-primary" />
+        </div>
+        <p className="flex-1 text-sm text-muted-foreground leading-relaxed">
+          Explore more inspiring stories that educate the heart and strengthen your faith.
+        </p>
+        <Link href="/stories">
+          <Button className="shrink-0 hidden sm:flex">
+            Explore All Stories <ArrowRight className="w-4 h-4 ml-1.5" />
+          </Button>
+        </Link>
       </div>
     </section>
   );
 }
 
+/* ── Latest Story Card ── */
+function LatestStoryCard({ story }: { story: StoryWithCategory }) {
+  return (
+    <Link href={`/stories/${story.slug}`}>
+      <div
+        className="group bg-card border border-card-border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer h-full flex flex-col"
+        data-testid={`card-story-latest-${story.slug}`}
+      >
+        <div className="aspect-square overflow-hidden shrink-0">
+          <img
+            src={story.thumbnail || "/images/category-history.png"}
+            alt={story.title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        </div>
+        <div className="p-3 sm:p-4 flex flex-col flex-1">
+          <div className="flex items-center justify-between mb-2">
+            {story.category && (
+              <span className="text-xs font-semibold text-amber-700 dark:text-amber-500">
+                {story.category.name}
+              </span>
+            )}
+            <span className="text-xs text-muted-foreground">{estimateReadTime(story.content)}</span>
+          </div>
+          <h3
+            className="font-serif text-sm font-bold leading-snug mb-1.5 line-clamp-2 text-foreground"
+            dangerouslySetInnerHTML={{ __html: story.title }}
+          />
+          <p
+            className="text-xs text-muted-foreground line-clamp-2 leading-relaxed flex-1"
+            dangerouslySetInnerHTML={{ __html: story.excerpt || "" }}
+          />
+          <div className="flex justify-end mt-3">
+            <Bookmark className="w-4 h-4 text-muted-foreground/40" />
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 /* ── Latest Stories ── */
 function LatestStories({ stories, count, title, desc }: { stories: StoryWithCategory[]; count: number; title?: string; desc?: string }) {
+  const [page, setPage] = useState(0);
+  const perPage = 5;
   const visible = stories.slice(0, count);
   if (visible.length === 0) return null;
 
+  const totalPages = Math.ceil(visible.length / perPage);
+  const pageItems = visible.slice(page * perPage, (page + 1) * perPage);
+
   return (
     <section className="py-14" data-testid="section-latest">
-      <SectionHeader
-        title={title || "Latest Stories"}
-        desc={desc || "Recently published narratives from Islamic history"}
-        viewAllHref="/stories"
-        viewAllLabel="View All Stories"
-      />
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {visible.map((story) => (
-          <StoryCard key={story.id} story={story} />
-        ))}
+      <div className="flex items-start justify-between gap-4 mb-2">
+        <div>
+          <h2 className="font-serif text-2xl sm:text-3xl font-bold text-foreground">{title || "Latest Stories"}</h2>
+          <div className="flex items-center gap-1 mt-1.5 mb-2">
+            <div className="w-10 h-0.5 bg-amber-600" />
+            <span className="text-amber-600 text-sm leading-none">✦</span>
+          </div>
+          {desc && <p className="text-sm text-muted-foreground">{desc}</p>}
+        </div>
+        <Link href="/stories">
+          <span className="flex items-center gap-1.5 text-sm font-medium text-foreground hover:text-primary shrink-0 mt-1 transition-colors">
+            View All Stories <ArrowRight className="w-4 h-4" />
+          </span>
+        </Link>
       </div>
+
+      <div className="relative mt-7">
+        {totalPages > 1 && (
+          <button
+            onClick={() => setPage(p => Math.max(0, p - 1))}
+            disabled={page === 0}
+            className="absolute -left-5 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-card border border-card-border shadow-sm flex items-center justify-center disabled:opacity-25 hover:bg-muted transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+        )}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          {pageItems.map((story) => (
+            <LatestStoryCard key={story.id} story={story} />
+          ))}
+        </div>
+        {totalPages > 1 && (
+          <button
+            onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+            disabled={page === totalPages - 1}
+            className="absolute -right-5 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-card border border-card-border shadow-sm flex items-center justify-center disabled:opacity-25 hover:bg-muted transition-colors"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-7">
+          {Array.from({ length: totalPages }).map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setPage(i)}
+              className={cn(
+                "w-2.5 h-2.5 rounded-full transition-colors",
+                i === page ? "bg-foreground" : "bg-muted-foreground/25 hover:bg-muted-foreground/50"
+              )}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -505,7 +645,7 @@ export default function HomePage() {
   const sections = parseSectionsConfig(publicSettings["homeSectionsConfig"]);
 
   const { data: featuredStories, isLoading: featuredLoading } = useQuery<StoryWithCategory[]>({
-    queryKey: ["/api/stories?status=published&featured=true"],
+    queryKey: ["/api/stories?status=published&sortBy=views&limit=20"],
   });
 
   const { data: latestStories, isLoading: latestLoading } = useQuery<StoryWithCategory[]>({
