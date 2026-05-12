@@ -1,0 +1,80 @@
+You are a senior Next.js developer with expertise in multi-part content layouts, rich media integration, and consistent UI/UX across categories.
+
+Continue / extend the existing English Islamic stories website (Next.js 14+ App Router, TypeScript, Tailwind v4 + shadcn/ui, protected /admin dashboard, existing articles in categories: Sahaba, Awliya, History).
+
+Now update the article detail pages for Sahaba, Awliya, and History categories to match the exact structure and design as the current Stories page detail view — with multi-part, multi-page support, media controls, and admin enhancements.
+
+Exact Update Requirements:
+
+1. Design Consistency Across Article Categories
+   - All article detail pages (/articles/[slug] or category-specific routes) must now follow the same layout as /stories/[slug]:
+     - Multi-Part structure: Each article has one or more Parts
+     - Each Part can have multiple Pages
+     - Left sidebar removed (if present) — full-width content
+     - Load first Part's first Page by default
+
+2. Part-Level Structure (Every Part)
+   - First Page of each Part:
+     - Article main Title (H1, large font, centered)
+     - 12-line Summary (short paragraph overview of the entire article — readable font)
+     - Cover Photo: Kaaba-themed image (or category-relevant Islamic image)
+       - Only on the first page of each Part
+       - Responsive next/image, full-width or centered
+   - Subsequent Pages of the Part:
+     - No cover photo
+     - Main rich content: text, sub-headings, images, quotes (same as Stories page style)
+
+3. Page Navigation
+   - Next / Previous Page buttons at bottom (or top) of each page
+   - Part switch: When user clicks next Part (from navigation or auto), load new Part's first page
+   - Show current Part/Page indicator (e.g., "Part 2 - Page 3/7")
+
+4. Part-Level Media Controls (Above content in every Part)
+   - Two buttons on top of each Part:
+     1. Video Button → Click replaces cover photo area with embedded YouTube/Vimeo video player
+     2. Audio Button → Click launches audio player (FM radio-style voice narration) — play/pause, progress, speed control
+   - Admin uploads video URL and audio file per Part
+
+5. Admin Panel Enhancements (/admin/articles or category-specific)
+   - Article CRUD: Add/Edit/Delete/Duplicate full article
+   - Per-Part management:
+     - Add/Edit/Duplicate/Delete individual Parts
+     - For each Part: Title, 12-line summary, cover image upload, video URL, audio file upload, multiple pages content
+   - Rich editor (Tiptap/ReactQuill) for page content
+   - Order/reorder Parts and Pages
+
+6. Suggested Extra Features (Implement these too)
+   - Bookmark & Continue Reading: Logged-in users bookmark article + resume from last Part/Page
+   - Recommendation Section: At bottom of article — suggest similar articles (same category or related tags)
+   - Next Part Button: At end of each Part — prominent button to go to next Part
+   - Auto-Play Option: Optional timer-based auto-advance pages (configurable in admin)
+   - Multimedia Support: Allow additional images/audio/video embeds inside pages (beyond cover)
+
+Guidelines:
+- Use Server Actions for media uploads, bookmark, views
+- Zod validation on admin forms
+- Responsive & accessible (mobile-friendly reader)
+- Keep calm Islamic aesthetic (green/white/gold tones)
+- Do NOT break existing Stories page or other categories
+- Optimize images/videos with next/image & lazy loading
+- Track views per article (increment on load)
+
+First Step:
+Show detailed implementation plan:
+- Folder/component updates (article/[slug]/page.tsx, admin/articles, new Part model if needed)
+- DB schema changes (add Part model, relations, media fields)
+- Dependencies (if any new, e.g., react-player for audio/video)
+- Key code structure overview (Part layout JSX, media toggle logic)
+
+Once I approve the plan, implement step-by-step:
+1. Update article detail layout (multi-part, first-page cover + summary)
+2. Remove left sidebar/lessons (if present)
+3. Add Next/Prev page navigation + Part switching
+4. Implement Video & Audio buttons per Part
+5. Admin enhancements (Part CRUD, media upload)
+6. Bookmark, continue reading, recommendations
+7. Final polish, responsiveness, accessibility
+
+After each step: "Step X completed. Review? Proceed or changes?"
+
+Start now: Show the complete detailed plan before writing any code.

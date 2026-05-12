@@ -1,0 +1,103 @@
+You are a senior full-stack Next.js developer with expertise in building content platforms, online readers, affiliate monetization, and user personalization features.
+
+Continue / extend the existing Islamic stories website (Next.js 14+ App Router, TypeScript, Tailwind v4 + shadcn/ui, protected /admin dashboard, articles section).
+
+Now completely upgrade and rebuild the Books section (/books) according to these exact requirements. Build incrementally, pause after each major milestone, and ask for confirmation.
+
+Project Goals for Books Section:
+- Support Free Books (online reading only, no PDF download) and Paid Books (preview only + affiliate purchase)
+- Books categorized (e.g., Aqeedah, Seerah, Dawah, Beginners, Tafsir, etc.)
+- Secure online reader with chapters/lessons sidebar
+- Admin full control (CRUD + duplicate)
+- Monetization: Ads in free reader, affiliate links for paid
+- User engagement: Rating, views, bookmark, continue reading, recommendations
+
+Core Requirements – Implement in this order:
+
+1. Book Model (DB Schema)
+   - id, title, author, category (string or relation), type: "free" | "paid"
+   - price?: number (paid only)
+   - coverUrl: string (upload)
+   - description: string
+   - previewPages: string[] (1–2 image URLs for paid preview)
+   - fullContentUrl?: string (free only – secure streaming/protected URL, NEVER public direct PDF)
+   - amazonAffiliateLink?: string (paid only)
+   - averageRating: number (0–5)
+   - totalRatings: number
+   - views: number (auto-increment on read/detail view)
+   - createdAt: Date
+
+2. /books Page Layout
+   - Tabs: Free Books | Paid Books | All Books (shadcn Tabs)
+   - Search bar + Filters: Category dropdown, Rating (1–5), Popularity (views), Sort (newest, most viewed, highest rated)
+   - Responsive card grid (cover, title, author, category badge, rating stars, views count)
+   - Homepage integration: "Featured Free Books" carousel (random 4–6 free books)
+
+3. Free Books Behavior (No PDF Download)
+   - "Read Online" button → /books/[slug]/read
+   - Full online reader using react-pdf / @react-pdf-viewer
+   - Left sidebar: List of chapters/lessons (collapsible tree or simple list)
+   - Click lesson → load its pages in main viewer (multi-page pagination: Next/Prev, page numbers)
+   - Disable download, print, copy text, right-click save
+   - Show AdSense ads in reader page (in-content or sidebar) – non-intrusive
+   - Track views count
+
+4. Paid Books Behavior (Preview Only)
+   - "View Sample" button → modal → show only 1–2 preview pages (image carousel or limited PDF viewer)
+   - Strictly NO ads in preview modal
+   - Prominent "Buy on Amazon" button → amazonAffiliateLink
+   - Show rating stars on card & detail page
+
+5. Reader UI (for Free Books)
+   - Left: Fixed/collapsible sidebar with lesson/chapter list
+   - Right/Main: PDF viewer with page navigation
+   - Support multiple pages per lesson
+   - Continue reading: Store last lesson + last page (for logged-in users)
+
+6. Admin Books Management (/admin/books)
+   - Full CRUD: Create, Edit, Duplicate, Delete
+   - Form:
+     - Type toggle (Free/Paid)
+     - Category select/input
+     - Cover upload
+     - Free: Full content upload (PDF → secure process)
+     - Paid: Amazon link + preview pages upload (1–2 files)
+   - List: DataTable with columns: Title, Category, Type, Rating, Views, Actions
+   - Stats cards: Most viewed, highest rated
+
+7. Additional User Features
+   - Search & Filter: On /books page (category, rating, popularity)
+   - Bookmark & Continue Reading: Logged-in users can bookmark books + resume from last page/lesson
+   - User Review System: 5-star + short comment on book detail page (update averageRating)
+   - Recommendation Engine: Basic – "You May Also Like" (same category or high-rated books)
+
+Guidelines & Constraints:
+- Never expose direct public PDF URLs (use protected endpoints/signed URLs for free books)
+- Ads only in free reader, NEVER in paid preview
+- Use Server Actions for uploads, ratings, bookmarks
+- Zod validation on forms
+- Responsive, accessible, calm Islamic aesthetic
+- Do NOT break existing site features
+- Seed /books page with 4–6 random free Islamic books (public domain or free licensed titles) for testing
+
+First Step:
+Show detailed implementation plan:
+- Folder structure updates
+- New/updated DB models
+- Dependencies needed (e.g., @react-pdf-viewer/core, lucide-react)
+- Key routes (/books, /books/[slug]/read, /admin/books)
+- Components overview (BookCard, ReaderLayout, LessonSidebar)
+
+Once I approve the plan, implement step-by-step:
+1. Book model + category support
+2. /books page with tabs, search & filter
+3. Admin CRUD (create/edit/duplicate/delete)
+4. Free books reader (lessons sidebar + multi-page viewer, no download)
+5. Paid books preview modal (1–2 pages, no ads)
+6. Rating, views, bookmark, continue reading
+7. Recommendations + homepage carousel
+8. Final polish, ads placement, security
+
+After each step: "Step X completed. Review? Proceed or changes?"
+
+Start now: Show the complete detailed plan before writing any code.

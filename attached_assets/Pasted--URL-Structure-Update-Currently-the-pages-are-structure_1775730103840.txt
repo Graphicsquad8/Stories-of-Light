@@ -1,0 +1,86 @@
+📌 URL Structure Update
+Currently, the pages are structured like this:
+/category/sahaba, /category/awliya, /category/karamat, /category/history, /category/prophets
+
+These need to be updated by removing the /category part entirely.
+
+✅ New URL structure will be:
+
+/sahaba
+
+/awliya
+
+/karamat
+
+/history
+
+/prophets
+
+📌 This will follow the same structure as /motivational-stories, /duas, /books.
+
+📎 Example:
+
+.../category/sahaba ➜ .../sahaba
+
+.../motivational-stories (already correct)
+
+📌 Admin Panel – Articles Management
+🔹 All Articles Section
+The All Articles option must display all published articles together.
+
+Add a Custom Filter Option to filter articles by:
+
+Specific days (Last X days)
+
+Specific month
+
+Specific year + month
+
+Total number of months
+
+🔹 Recent Articles Section
+The Recent Articles option must show recently uploaded articles.
+
+Include a Custom time selection (Last X days) option so the admin can view recent articles within a chosen timeframe.
+
+📌 Positioning:
+
+The Recent Articles section will be placed below the Categories Section and above the All Articles Section.
+
+📌 Category-based Article System
+Pages like sahaba, awliya, karamat, history, prophets must display articles belonging to their respective categories.
+
+If the admin creates a new category/page:
+
+It will automatically be added to the All Articles section.
+
+All articles under that category will be visible.
+
+Admin must be able to easily view, edit, update, and delete articles in each category.
+
+⚠️ Important:
+
+In the previous update, some data/functionality was deleted — this must not happen again.
+
+📌 Admin Role & Access Control Fix
+🔹 Problem:
+When the admin switches to a Top Contributors account and then returns to the admin panel, some functions go missing.
+
+Resetting the admin role fixes it temporarily.
+
+✅ Solution:
+This role switching bug must be completely fixed.
+
+After returning to the admin panel, all functions must work normally.
+
+📌 Role-based Access Control:
+
+Admin has full access to the panel.
+
+Contributors and Moderators must have access to features according to their permissions.
+
+📌 Ensure:
+
+No features are missing.
+
+Consistent access control is maintained according to roles.

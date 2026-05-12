@@ -1,0 +1,95 @@
+📌 Contributors Admin Panel – View System Update & Fix Requirement
+🔹 Current Correct System (Contributor View)
+
+When Contributors enter their Admin Panel, then:
+
+In the Overview section, by clicking the “Admin View” button
+They can view the admin panel based on their own uploaded content
+
+📌 Meaning:
+
+Only their own uploaded content is shown
+Only their assigned permissions are applied
+Dashboard is fully based on their personal data
+🔹 Required Same System (Admin / Owner / Super Owner)
+
+In the website Admin Dashboard → Top Contributors section:
+
+When Super Owner / Owner / Admin clicks on any contributor account
+👉 it should open that contributor’s admin panel view
+
+📌 This panel must behave like:
+
+It is the contributor’s own login session
+Only that contributor’s uploaded content is visible
+Based on their assigned role and permissions
+Fully restricted access system
+❗ Current Problem
+
+Right now the issue is:
+
+When Super Owner / Owner / Admin opens any contributor account
+👉 it is showing total website content instead of that contributor’s data
+
+📌 Problems:
+
+❌ Contributor-specific filtering is not working
+❌ Global data is being loaded
+❌ Proper impersonation system is missing
+🎯 Required Fix
+🔹 1. Proper Impersonation Mode
+
+When any admin (Super Owner / Owner / Admin):
+
+Opens a contributor account
+
+👉 System must behave like:
+
+That contributor is directly logged in
+🔹 2. Content Filtering Rule
+
+In that panel, it should show ONLY:
+
+That contributor’s uploaded Articles
+Motivational Stories
+Duas
+Books
+Analytics & activity
+
+❌ No other users’ or global website data should be shown
+
+🔹 3. Role & Permission Based Access
+Only permissions assigned to that contributor should apply
+Restricted modules must be hidden
+Access must be role-based only
+🔹 4. Dashboard Consistency Rule
+
+Impersonated view must match:
+
+Real contributor login experience
+Same UI structure
+Same data format
+Same restrictions
+🚨 Current Bug Summary
+Admin/Owner/Super Owner → seeing full system content
+❌ This is incorrect behavior
+❌ Proper RBAC filtering is missing
+✅ Expected Final Behavior
+
+When opening a contributor from Top Contributors:
+
+👉 It must show:
+
+Only that contributor’s content
+Only their uploaded data
+Only their analytics
+Only their allowed modules
+
+✔ No global data
+✔ Fully isolated user view
+✔ Proper RBAC security enforced
+
+🔥 Priority
+
+This is a critical Role-Based Access Control (RBAC) and impersonation issue
+👉 Must be fixed to ensure correct data isolation and security.

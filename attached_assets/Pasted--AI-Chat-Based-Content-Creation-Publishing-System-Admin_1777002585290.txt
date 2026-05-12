@@ -1,0 +1,219 @@
+📌 AI Chat-Based Content Creation & Publishing System
+(Admin Panel – All-in-One AI Content Studio)
+🎯 Overview
+
+Inside the Admin Panel, a ChatGPT-style AI Chat System will be developed where you can directly:
+
+✍️ Write articles
+🖼️ Generate cover/banner images
+📂 Organize content by category/page
+🚀 Publish content instantly
+
+👉 Everything will be managed from one place (All-in-One Content Studio)
+👉 No need for external tools or manual workflow
+
+💬 1) AI Chat Interface (Core System)
+✅ Features:
+✔ Modern ChatGPT-like chat interface
+✔ Prompt-based interaction to:
+Generate articles
+Explain topics
+Create SEO-friendly content
+✔ Supports follow-up conversations (context-aware)
+🎯 Smart Behavior:
+
+If you write:
+“Write about Islamic history of Umar (RA)”
+
+👉 The AI will automatically:
+
+Generate a structured article
+Add headings and subheadings
+Maintain a natural human-like tone
+Follow your website’s existing writing style
+🧠 Smart Writing Mode:
+✔ Learns and matches your website’s content style
+✔ Tone control options:
+Formal
+Storytelling
+Islamic tone
+✔ SEO-optimized content generation
+🧠 2) Multi-LLM Model Support
+✅ System Capability:
+✔ Multiple AI models can be connected
+✔ Model types:
+Text generation (articles)
+Image generation (cover/banner)
+(Future: audio/video models)
+🎛️ Usage:
+✔ Admin can manually select a model
+✔ Or system can auto-select the best model (smart routing)
+📌 Example:
+Text Model → Article writing
+Image Model → Cover image generation
+🖼️ 3) Image Generation System
+✅ Features:
+✔ Generate cover/banner images based on article
+✔ Multiple variations
+✔ Preview before selection
+⭐ Extra:
+✔ Bookmark / favorite images
+✔ Save the best option for publishing
+🔖 4) Bookmark & Selection System
+
+Inside the chat:
+
+✔ Bookmark generated articles
+✔ Bookmark generated images
+📌 Final Selection:
+✔ Select article + image
+👉 Publish directly from chat
+🚀 5) One-Click Publishing System
+✅ Workflow:
+Generate article
+Generate image
+Select best version
+Choose category/page
+Click “Publish”
+⚡ Result:
+
+Automatically:
+
+✔ Content is uploaded
+✔ Cover image is assigned
+✔ Published to selected section
+🧩 6) Right Sidebar – Content Control Panel
+
+A vertical control panel will appear on the right side of the chat page.
+
+📂 Category & Page Selection:
+✔ Sahaba
+✔ Awliya
+✔ Karamat
+✔ History
+✔ Stories
+✔ Duas
+✔ Books
+✔ All Articles
+🏗️ Advanced Controls:
+✔ Select existing content
+✔ Create new:
+Parts
+Sub-parts / Pages
+✔ Direct content insertion
+🧱 7) Content Structure Builder
+
+You will be able to:
+
+✔ Split articles into multiple parts
+✔ Divide parts into multiple pages
+
+👉 Ideal for large or series-based content
+
+🎬 8) Media Handling System
+✔ Article + image → auto upload
+✔ Video / audio:
+❗ Manual upload via edit section
+🔑 9) API Integration System (Settings Panel)
+
+A new section in Settings:
+
+⚙️ “AI Model Integration”
+✅ Admin Input:
+✔ Model name
+✔ Model type (Text / Image)
+✔ API key / token
+🔄 System Behavior:
+✔ Models connect automatically after saving
+✔ Multiple APIs supported
+✔ Enable / disable toggle available
+🎛️ 10) Model Selection in Chat
+
+Inside the chat UI:
+
+✔ Model selection dropdown
+✔ Manual selection option
+✔ Auto mode (system decides best model)
+✏️ 11) Post Editing System
+✔ Edit after publishing
+✔ Add manually:
+Video
+Audio
+Additional formatting
+📊 12) Final Workflow
+
+Admin process:
+
+Enter prompt in chat
+Generate article
+Generate image
+Bookmark/select
+Choose category
+Publish
+🎯 Result:
+✔ Fully structured article
+✔ Optimized cover image
+✔ Automatically published content
+💡 Extra Suggested Features (Highly Recommended)
+🔍 1) SEO Optimization Panel
+Auto meta title
+Meta description
+Keyword suggestions
+SEO scoring
+🔁 2) Content Rewrite / Improve
+Rewrite button
+Tone adjustment
+Humanization feature
+📊 3) Plagiarism Checker
+Ensures unique content
+🌍 4) Multi-language Support
+Bengali ↔ English ↔ Arabic
+🕓 5) Draft & Auto-Save System
+Prevents data loss
+Saves unfinished content
+🔐 6) Role-Based Access Control
+Admin → Full access
+Contributor → Limited access
+📈 7) Content Performance Tracking
+Track top-performing articles
+AI suggests new topics
+🧠 8) AI Memory System (Advanced)
+Remembers writing style
+Maintains consistent tone
+🔌 9) Plugin / Extension System (Future)
+Add new AI tools
+Support external integrations
+🚀 Final Result
+
+👉 A Powerful AI-powered CMS (Content Management System)
+
+Where:
+
+Idea → AI → Content → Image → Select → Publish
+
+Everything happens in one place.
+
+🔥 Outcome
+
+You will get:
+
+⚡ Faster content creation
+🤖 Automated workflow
+📈 Higher productivity
+🏆 Professional-grade platform
+⚠️ Final Recommendation (Important)
+
+Do NOT build everything at once ❌
+Follow a phased approach:
+
+Phase 1:
+Chat system
+Article generation
+Manual publishing
+Phase 2:
+Image generation
+Bookmark system
+Phase 3:
+Multi-model + API integration
+Phase 4:
+SEO + analytics + advanced AI features

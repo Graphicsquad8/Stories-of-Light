@@ -1,0 +1,84 @@
+You are a senior full-stack Next.js developer with expertise in building inspirational content platforms, user engagement features, and admin dashboards.
+
+Continue / extend the existing English Islamic stories website (Next.js 14+ App Router, TypeScript, Tailwind v4 + shadcn/ui, protected /admin dashboard, existing books and articles sections).
+
+Now add a brand new page: Islamic Motivational Stories. The page will contain motivational Islamic stories to guide people toward Islam, daily life rulings, halal business success, and building a complete Islamic lifestyle.
+
+Page Name Suggestion: "Islamic Motivational Stories" (route: /motivational-stories)
+
+Implement the entire feature exactly as described below. Build incrementally, pause after each major milestone, and ask for confirmation.
+
+Core Requirements:
+
+1. Page Layout – /motivational-stories (Main List Page)
+   - Hero Section:
+     - Full-width background image: Islamic-themed (mosque silhouette, Arabic calligraphy, open Quran with light rays, or serene Islamic pattern – calm green/gold tones)
+     - Title: "Islamic Motivational Stories"
+     - Subtitle: "Learn, Reflect, and Live by Islamic Guidance – Daily Life, Business, Spirituality & Dawah"
+     - Responsive, next/image optimized, subtle dark gradient overlay for text readability
+   - Search & Filter Bar:
+     - Search by title or keyword
+     - Category filter dropdown (e.g., Daily Life Guidance, Business & Ethics, Spiritual Motivation, Islamic History & Lessons, Dawah & Conversion)
+     - Sort: Popularity (views), Rating, Newest
+   - Story Listing:
+     - Grid of cards (responsive: 1–4 cols)
+     - Each card: Title, short description (2–3 lines), category badge, views count, rating stars (average)
+   - Pagination or infinite scroll (shadcn/ui Pagination)
+
+2. Story Detail Page – /motivational-stories/[slug]
+   - Left Sidebar: Collapsible list of Lessons/Sections/Chapters (like books page)
+     - Click lesson → load its content/pages in main viewer
+     - Support multi-page navigation (Next/Prev buttons, page numbers)
+   - Main Content: Rich text story (Tiptap or ReactMarkdown), images if added
+   - Metadata: Views count, average rating, total reviews
+   - Extra: Bookmark button (for logged-in users), Share buttons, Related stories (same category)
+
+3. DB Models
+   - MotivationalStory:
+     - id, title, slug (unique), content (text), category (string), views (Int default 0)
+     - averageRating (Float), totalRatings (Int)
+     - published (Boolean default false), createdAt, updatedAt
+   - Lesson (optional relation): For multi-chapter stories
+     - id, storyId, title, order (Int), content (text), pageCount or pages (array)
+
+4. Admin Panel – /admin/motivational-stories
+   - Full CRUD: Create, Edit, Duplicate, Delete
+   - List: DataTable with title, category, views, rating, published, actions
+   - Form: Title, slug (auto), category select, rich editor for content, lessons/chapters manager (add/edit/delete)
+   - Manage Categories: Simple CRUD for categories (stored in DB or config)
+
+5. Extra Features
+   - Bookmark & Continue Reading: Logged-in users bookmark stories + resume from last lesson/page
+   - User Review System: 5-star rating + short comment on detail page (update averageRating)
+   - Recommendation Engine: Basic – "You May Also Like" (same category or high-rated)
+   - Popular Stories: Section on main page or sidebar (top views/rating)
+   - Views Tracking: Increment views on detail page load (server action)
+
+Guidelines & Constraints:
+- Use Server Actions for all mutations (bookmark, rating, views)
+- Zod validation on forms
+- Role-based protection (middleware for /admin)
+- Responsive, accessible, calm Islamic aesthetic (green/white/gold)
+- No ads on this page (spiritual content – keep clean)
+- Do NOT break existing features (books, articles, auth)
+- Seed with 3–5 demo stories (realistic Islamic motivational content – no fake stories)
+
+First Step:
+Show detailed implementation plan:
+- Folder structure updates (app/motivational-stories, admin/motivational-stories)
+- New DB models (MotivationalStory + optional Lesson)
+- Dependencies needed (if any new)
+- Key routes & components overview (StoryCard, LessonSidebar, etc.)
+
+Once I approve the plan, implement step-by-step:
+1. DB model + migration
+2. Main list page (/motivational-stories) with hero, search/filter, grid
+3. Detail page with left sidebar lessons + multi-page viewer
+4. Admin CRUD + category management
+5. Bookmark, continue reading, reviews, recommendations
+6. Views tracking + popular section
+7. Final polish, SEO, responsiveness
+
+After each step: "Step X completed. Review? Proceed or changes?"
+
+Start now: Show the complete detailed plan before writing any code.

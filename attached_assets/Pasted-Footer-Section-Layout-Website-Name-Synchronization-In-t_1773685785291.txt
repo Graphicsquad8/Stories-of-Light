@@ -1,0 +1,42 @@
+Footer Section Layout & Website Name Synchronization
+
+In the Footer section of the website, the Social Media icons should appear below the description of the “Stories of Light” section. Currently, the Social Media icons are being displayed above the description, which is incorrect. This issue needs to be fixed so that the icons are positioned below the description and aligned from left to right.
+
+Additionally, in the Admin Panel → Footer section, there is a “Website Name” field. If the admin edits or changes the website name from this field, the updated name should automatically reflect in both the Header and Footer of the website.
+Currently, the website name displayed in the Header and Footer is “Stories of Light”, so any change made in the Admin Panel should be synchronized and updated across all relevant sections of the website.
+
+Another feature should be added so that the categories displayed in the Footer’s “Categories” section can be controlled from the Admin Panel. The admin should be able to select which categories will appear in the Footer directly from the Footer Management section in the Admin Panel.
+
+New Page Addition: “Dua” Section
+
+A new page or section called “Dua” should be added to the website. This section will contain Islamic supplications (Duas). The Dua page should be placed after the Stories page in the website’s navigation menu.
+
+The design and core functionality of the Dua page will be similar to the Stories page, but with some structural adjustments suitable for dua content.
+
+Dua Content Structure
+
+Each Dua entry will be organized into multiple Parts, and each Part can contain multiple Pages.
+
+Each Part represents a separate Dua.
+
+Inside each Part, the content will be divided into multiple pages for better structure and readability.
+
+Page Structure:
+
+Page 1
+
+The Dua written in Arabic
+
+Below it, the English translation of the Dua
+
+Page 2
+
+A detailed explanation of the Dua, including:
+
+The virtues (Fazilat) of the Dua
+
+Benefits of reciting the Dua
+
+Additional contextual explanation if needed
+
+If required, additional pages can also be added within each Part to include more detailed explanations.

@@ -1,0 +1,106 @@
+📌 Home Page Management System – Admin Panel Update
+🔧 1) New Option (Category Section)
+
+In the Admin Panel → Category Section:
+
+👉 Add a new option:
+
+Home Page Management
+
+📌 Important Rules:
+
+❌ Must NOT be duplicated
+❌ No other Home Page Management system can be created anywhere else
+✔ Only one (single instance) will exist across the entire system
+🎛️ 2) Full Home Page Control
+
+👉 This option will control the entire Home Page layout and content
+
+📌 नियंत्रण includes:
+
+Section positioning (top / middle / bottom)
+Show / Hide sections
+Ad placement control
+Category section positioning
+📢 3) Home Page Ad Management
+The Home Page has 3 Ad Sections
+
+👉 Admin should be able to:
+
+✔ Upload manual ads per slot
+✔ Support Banner / Motion / Video ads
+
+📌 System behavior:
+
+👉 Same as Ad Management in Categories / Articles
+✔ Same UI + same functionality
+🧩 4) Hero Section Control
+
+👉 The Hero Section must be fully manageable from here
+
+📌 Editable fields:
+
+Title
+Description
+Buttons (2):
+Button Text
+URL/Link
+Full content and layout control
+🗂️ 5) Category Section Control
+Admin can control:
+👉 Number of categories shown
+👉 Position (top/bottom order)
+
+✔ Fully manageable from this panel
+
+📚 6) Section Management (Dynamic Layout)
+
+👉 The following sections must be fully controllable:
+
+Featured Stories
+Free Islamic Books
+Islamic Motivational Stories
+Popular Duas
+Latest Stories
+
+📌 Control features:
+
+✔ Section ordering (reorder / drag system)
+✔ Position (which comes first/last)
+✔ Content limit per section
+🎯 7) Section-Level Customization
+
+For each section:
+
+Show / Hide toggle
+Content count control
+Layout positioning
+Dynamic arrangement
+📢 8) Unified Ad Control System
+
+👉 Home Page ad system must support:
+
+✔ Manual Ads
+✔ Third-party Auto Ads
+✔ Per-slot control
+
+📌 Behavior:
+
+👉 Same as Categories Page Ad Management system
+✔ Use similar Ad Management icon & workflow
+✅ Final Result
+Single Home Page Management system
+Full control over layout, sections, and ads
+Fully editable Hero Section
+Dynamic category and content sections
+Complete control over Home Page ads (manual + auto)
+Centralized and scalable system
+🔥 Note
+
+This system will:
+
+Provide centralized control of the entire Home Page
+Improve flexibility and scalability
+Make admin management much easier
+
+👉 Result: A powerful, fully customizable, and professional Home Page control system 🚀

@@ -1,0 +1,95 @@
+📌 Overview Section – UI & Functional Update (Contributor Panel)
+🔹 Top Header Section
+A Search Bar will be placed at the top of the Overview section
+On the right side of the search bar, there will be:
+Profile Photo
+Contributor Name and Email Address
+
+📌 Display format:
+
+Name and Email will be shown in a vertical layout
+Name on top
+Email below
+🔹 Profile Click Behavior
+The Name and Email will work as a clickable button
+On click, a popup modal will open
+
+📌 Inside the popup:
+
+Contributor Profile Overview (same as current design)
+
+❌ This overview must NOT include:
+
+Message icon
+Notification icon
+📊 Main Stats Section (Updated Structure)
+🔹 Remove Existing 4 Options
+
+❌ The previous four options must be removed
+
+🔹 New 5 Statistics Options (Live Data Based)
+
+Add the following five options:
+
+My Articles
+My Motivational
+My Duas
+My Books
+Total Views
+
+📌 Important:
+
+All data must be live synced
+Based only on the individual contributor’s own uploaded content
+No data from other contributors should be included
+📊 Dashboard Style Section (Below Stats)
+
+This section will be divided into two parts (similar to the admin dashboard design)
+
+🔹 Right Side Section
+
+Includes:
+
+Trending Content
+Recent Activity
+Most Bookmarked
+My Content Overview
+
+📌 Rules:
+
+All data must be contributor-specific only
+Based only on their own uploaded content
+No other contributors’ data should be shown
+🔹 Left Side Section
+
+Includes:
+
+Access Permissions
+Active Visitors
+
+📌 Active Visitors:
+
+Most visited users appear at the top
+Sorted by highest activity
+Same behavior as Admin Dashboard (Top Contributors / Active Users section)
+⚙️ System Behavior (Critical Rules)
+All overview data must be real-time (live updates)
+Each contributor can only access:
+Their own content
+Their own activity
+Their assigned permissions
+
+📌 Contributors can:
+
+View, edit, update, and delete content based on their role permissions
+
+❌ No access to other contributors’ data at any level
+
+✅ Summary
+Search bar added at top
+Profile photo + name/email clickable popup
+5 new live stats replacing old ones
+Dashboard-style split layout (left & right)
+Fully role-based + self-data only system
+Real-time updates per contributor
+No messages or notifications in overview popup

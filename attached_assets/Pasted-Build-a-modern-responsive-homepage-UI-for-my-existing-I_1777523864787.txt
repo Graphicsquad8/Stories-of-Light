@@ -1,0 +1,173 @@
+Build a modern, responsive homepage UI for my existing Islamic website "Stories of Light".
+
+⚠️ CRITICAL INSTRUCTIONS (MUST FOLLOW STRICTLY):
+
+1. ONLY change the UI DESIGN (visual layer).
+2. DO NOT modify:
+   - Any existing content/data
+   - Any database structure
+   - Any backend logic
+   - Any API endpoints
+   - Any admin panel functionality
+   - Any content upload system
+
+3. This is a PURE UI CONVERSION task:
+   - Convert current UI → new design (light + dark mode)
+   - Keep ALL content EXACTLY as it is
+
+4. Admin Panel MUST remain 100% unchanged:
+   - No field changes
+   - No schema changes
+   - No new required inputs
+   - No modification in content upload flow
+
+5. Dynamic content must be rendered from existing sources only.
+   ❌ Do NOT hardcode new demo content
+   ✅ Use existing data bindings
+
+-----------------------------------
+
+🎨 DESIGN REQUIREMENTS:
+
+Apply new UI style based on provided reference:
+
+1. Light Mode:
+   - Soft cream background
+   - Green + gold accents
+   - Clean cards, soft shadows
+
+2. Dark Mode:
+   - Deep navy/black gradient
+   - Gold highlights
+   - Subtle glow effects
+
+Include:
+- Theme toggle (light/dark)
+- Smooth transitions
+- Islamic aesthetic (patterns, lantern lighting feel)
+
+-----------------------------------
+
+📌 HEADER (UPDATE UI ONLY, NOT LOGIC):
+
+Menu items:
+- Home
+- Sahaba
+- Awilya
+- Karamat
+- History
+- Stories
+- Duas
+- Books
+
+Keep routing unchanged.
+
+-----------------------------------
+
+📌 HERO SECTION:
+
+Keep existing content but redesign UI:
+- Large visual hero
+- Title + subtitle (dynamic)
+- CTA buttons (same functionality)
+
+-----------------------------------
+
+📌 BANNER SYSTEM (ADD UI ONLY):
+
+Total 3 banners required:
+1. Below hero
+2. Mid page
+3. Between Latest Stories & Community section
+
+⚠️ These must NOT affect backend
+
+-----------------------------------
+
+📌 EXPLORE BY CATEGORY:
+
+ONLY update UI design.
+
+Categories:
+- Sahaba
+- Awilya
+- Karamat
+- History
+- Duas
+- Books
+
+⚠️ Use existing category data source
+
+-----------------------------------
+
+📌 CONTENT SECTIONS:
+
+Keep all existing sections:
+- Featured Stories
+- Islamic Books
+- Motivational Stories
+- Popular Duas
+- Latest Stories
+
+⚠️ DO NOT change:
+- Data source
+- Query logic
+- Content structure
+
+-----------------------------------
+
+📌 COMMUNITY SECTION:
+
+UI only:
+- Title
+- Email input
+- Subscribe button
+
+⚠️ Keep existing subscription logic unchanged
+
+-----------------------------------
+
+📌 FOOTER (IMPORTANT):
+
+- Full width (no boxed container)
+- Add spacing from above section
+
+4 columns:
+1. Logo + description
+2. Categories
+3. Explore
+4. About
+
+-----------------------------------
+
+📌 RIGHT SIDE FOOTER ADD:
+
+Add Quran verse UI ONLY (no logic):
+
+Arabic:
+رَبِّ زِدْنِي عِلْمًا
+
+Translation:
+"My Lord, increase me in knowledge."
+(Qur'an 20:114)
+
+⚠️ Position: RIGHT SIDE of footer
+⚠️ Do NOT place above footer
+
+-----------------------------------
+
+📌 TECH IMPLEMENTATION:
+
+- Keep existing framework (React / HTML / etc.)
+- Modify ONLY styling layer (CSS / Tailwind / UI components)
+- Do not refactor backend
+
+-----------------------------------
+
+📌 FINAL GOAL:
+
+✔ Same website functionality  
+✔ Same admin panel  
+✔ Same content system  
+✔ Only upgraded UI (light + dark)  
+✔ Clean, professional Islamic design  

@@ -1,0 +1,57 @@
+You are a senior Next.js developer with strong UI/UX and Tailwind expertise.
+
+Continue / extend the existing Islamic stories website (Next.js 14+ App Router, TypeScript, Tailwind v4 + shadcn/ui, books section at /books).
+
+Now update and enhance the Books section exactly according to these specifications. Focus ONLY on the following improvements. Build incrementally and pause after each major part for confirmation.
+
+Target Improvements:
+
+1. Hero Section on /books Page
+   - Add a beautiful, full-width background image for the hero section.
+   - The image should be responsive (auto-adjust for mobile, tablet, desktop).
+   - Apply a subtle dark/light gradient overlay (e.g., linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.1))) so text remains highly readable.
+   - Hero content: Keep existing title/subtitle (or suggest better), overlay text should be white/contrast color.
+   - Make the background image editable from Admin Panel:
+     - Add a new field in a global Settings or BooksSettings model: heroBackgroundUrl (string)
+     - Admin route (e.g., /admin/settings or /admin/books-settings) → upload field for hero image
+     - Fetch this URL server-side and use in /books page via next/image (optimized)
+   - Tech: next/image with priority + fill + objectFit="cover" + responsive sizes
+
+2. Button Styling Consistency
+   - Current "Read Online" button is green – make "Buy on Amazon" button match the same green style.
+   - Create a reusable button component or Tailwind class for primary action buttons:
+     - Base: bg-green-600 hover:bg-green-700 text-white font-medium rounded-md px-6 py-3 transition-all
+     - Hover effect: slight scale (scale-105) or shadow increase
+     - Disabled state: opacity-60 cursor-not-allowed
+   - Apply to:
+     - "Read Online" (free books)
+     - "View Sample" / "Preview" (paid books)
+     - "Buy on Amazon" (paid books)
+   - Ensure all buttons across the site (where appropriate) can reuse this style in future.
+   - Tech: Create components/ui/Button.tsx (shadcn/ui style) or a global utility class (e.g., .btn-primary)
+
+Guidelines:
+- Use Server Components where possible
+- Optimize images with next/image
+- Keep calm, spiritual aesthetic (soft green tones consistent with site theme)
+- Responsive everywhere (mobile-first)
+- Do NOT change core logic of free/paid books, reader, or admin – only UI/hero/button enhancements
+- If Admin settings model does not exist, suggest creating a simple Settings table/model for hero image
+
+First Step:
+Show detailed implementation plan:
+- Folder updates (components/ui/Button.tsx, app/books/page.tsx changes, admin settings route if needed)
+- New DB field (if adding hero image to DB)
+- Dependencies (if any)
+- Key code structure overview (hero JSX, button component)
+
+Once I approve the plan, implement step-by-step:
+1. Create reusable Button component / style
+2. Update all action buttons on /books and book detail pages
+3. Add & implement hero background image (with overlay)
+4. Add Admin field for hero image upload & integration
+5. Final polish (responsiveness, hover effects, accessibility)
+
+After each step: "Step X completed. Review? Proceed or changes?"
+
+Start now: Show the complete detailed plan before writing any code.

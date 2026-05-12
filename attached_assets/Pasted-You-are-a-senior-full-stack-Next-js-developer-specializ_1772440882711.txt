@@ -1,0 +1,91 @@
+You are a senior full-stack Next.js developer specializing in content platforms with authentication, role-based access, monetization, and rich media features.
+
+Continue / extend the existing English Islamic stories blog website (Next.js 14+ App Router, TypeScript, Tailwind v4 + shadcn/ui, articles, books section, protected /admin dashboard).
+
+Implement the following features together in a clean, incremental way. Build step-by-step and pause after each major milestone for confirmation.
+
+1. Authentication & User System (Shared for users & admin)
+   - Use Lucia auth (preferred) or Auth.js / NextAuth v5.
+   - Routes: /signup (email + password + name optional), /signin (email + password)
+   - Hardcoded initial admin account (only for setup – do NOT expose in frontend):
+     Email:    muktadirhoshin@gmail.com
+     Password: AnTofl0m@0u3R
+   - User model: Add role field ("user" default, "admin" for the hardcoded account)
+   - On signup → role = "user"
+   - On login → check credentials + assign role
+   - Forgot Password flow:
+     - "Forgot Password?" link on signin page
+     - Send reset email (use Resend.com or Nodemailer)
+     - Secure token + expiry (1 hour)
+     - Route: /reset-password/[token]
+   - Middleware protection for /profile, /admin, etc.
+
+2. Header Enhancements (After Login)
+   - In main header (layout.tsx or Header component):
+     - Light/dark mode toggle (already present or add)
+     - Immediately beside it: If logged-in AND role === "admin" → show Admin icon (lucide-react LayoutDashboard or ShieldCheck icon)
+     - Click icon → go to /admin dashboard
+     - Non-admin logged-in users see only theme toggle (no admin icon)
+     - Unauthenticated users see Sign In / Sign Up links/buttons
+
+3. User Profile / Dashboard (/profile – protected)
+   - Show: Name, email, join date
+   - "Last Read Article": Link to most recently viewed article (title, timestamp)
+   - "Bookmarked Articles": Paginated list of saved articles (title, excerpt, remove button)
+   - Tech: Server component + session check
+
+4. Bookmark & Reading History
+   - Article page (/stories/[slug]):
+     - Bookmark button (heart icon) → toggle save (DB: Bookmark table {userId, articleId})
+     - Auto-track view → update user.lastReadArticleId + lastReadAt
+   - New DB fields in User: lastReadArticleId (relation), lastReadAt (Date)
+
+5. Books Section – Advanced Implementation
+   - /books page with tabs: Free Books | Paid Books | All Books
+   - Book model fields:
+     - type: "free" | "paid" (required)
+     - price?: number (paid only)
+     - coverUrl: string
+     - previewPages: string[] (1–2 image URLs or PDF page thumbnails)
+     - fullContentUrl?: string (free only – secure streaming URL, NEVER public direct link)
+     - amazonAffiliateLink?: string (paid only)
+     - description, category, averageRating, totalRatings, views
+   - Free books:
+     - "Read Online" button → /books/[slug]/read
+     - Full online reader (react-pdf / @react-pdf-viewer) – disable download/print/copy
+     - No ads on reader page
+   - Paid books:
+     - "Preview Sample" button → modal with only 1–2 preview pages (no ads)
+     - "Buy on Amazon" button
+   - Rating: 5-star input + comment on book detail page
+   - Admin /admin/books: Full CRUD + stats (views, ratings, top books)
+   - Homepage: "Featured Free Reads" carousel (random free books)
+
+Guidelines & Best Practices:
+- Use Server Actions for all mutations (bookmark, rating, password reset, uploads)
+- Zod validation everywhere
+- Role-based middleware & conditional rendering
+- Toast notifications (sonner) for feedback
+- Responsive, accessible, calm spiritual aesthetic
+- No public direct PDF links (use protected endpoints)
+- Do NOT break existing features
+
+First Step:
+Show detailed implementation plan:
+- Folder structure updates
+- New/updated DB models (User role, Bookmark, Book fields)
+- Dependencies to add/install
+- Key routes, components, middleware overview
+
+Once I approve the plan, implement step-by-step:
+1. Authentication (signup/signin/logout + hardcoded admin + role system)
+2. Forgot password + reset flow
+3. Header conditional admin icon
+4. User profile + last read & bookmark features
+5. Books section updates (model, free/paid logic, reader/preview)
+6. Admin books CRUD + stats
+7. Final polish, toasts, security checks
+
+After each step: "Step X completed. Review? Proceed or changes?"
+
+Start now: Show the complete detailed plan before writing any code.

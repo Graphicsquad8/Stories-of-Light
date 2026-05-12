@@ -1,0 +1,226 @@
+📌 Admin Panel UI & API System Update (Structured)
+
+🎨 1) Home Page Management – UI Size Update
+👉 Admin Panel → Category Section → Home Page Management
+📌 Current Issue:
+
+
+The Home Page Management interface appears too narrow on the right side
+
+
+
+✅ Required Update:
+
+
+👉 Increase the width of the Home Page Management panel (expand right side)
+
+
+👉 It should open in the same size/layout as:
+
+
+✔ All Articles → Edit Details page
+
+
+
+
+📌 Layout Requirements:
+
+
+Wider main content area
+
+
+Balanced spacing (sidebar + content)
+
+
+Comfortable editing experience
+
+
+📌 Result:
+
+
+Cleaner UI
+
+
+Easier content editing
+
+
+No cramped layout
+
+
+
+⚙️ 2) API Generator – Location Change
+👉 Current:
+
+
+API Generator exists in another section
+
+
+❌ Remove it from the current location
+✅ Add it to:
+👉 Admin Panel → Settings Section
+
+🔗 3) Advanced API Generator System (App Integration Ready)
+👉 The API Generator must support full Website ↔ Mobile App integration
+
+✅ Key Features
+🔑 1) App Connection API
+
+
+Generate a secure API key/token
+
+
+This key will allow:
+
+
+👉 Mobile app to connect with the website
+
+
+
+
+
+🔄 2) Two-Way Sync System
+👉 Website ↔ App synchronization:
+
+
+✔ Content upload (Articles, Stories, Books, Duas)
+
+
+✔ Update / Edit
+
+
+✔ Publish / Draft
+
+
+📌 Behavior:
+
+
+App → upload → instantly يظهر on Website
+
+
+Website → upload → instantly يظهر on App
+
+
+
+✍️ 3) Content Management via API
+API must support:
+
+
+Create Article
+
+
+Update Article
+
+
+Delete Content
+
+
+Upload Media (Image / Video)
+
+
+👉 Full control from the mobile app
+
+📚 4) Multi-Section Support
+API should cover:
+
+
+All Articles (Sahaba, Awliya, Karamat, History)
+
+
+Motivational Stories
+
+
+Duas
+
+
+Books
+
+
+
+🔐 5) Security System
+
+
+✔ API Key / Token authentication
+
+
+✔ Role-based permissions (Admin / Contributor)
+
+
+✔ Secure data handling
+
+
+
+⚡ 6) Real-Time Sync
+
+
+✔ Instant updates
+
+
+✔ No manual refresh required
+
+
+✔ Live sync between:
+
+
+Website
+
+
+Mobile App
+
+
+
+
+
+🧪 7) Developer-Friendly Features
+
+
+API testing interface
+
+
+Example request/response
+
+
+Easy integration setup
+
+
+
+✅ Final Result
+🧩 Home Page Management:
+
+
+Larger, cleaner, professional UI
+
+
+Same layout as Edit Article page
+
+
+🔗 API Generator:
+
+
+Moved to Settings section
+
+
+Supports full mobile app integration
+
+
+Two-way sync (App ↔ Website)
+
+
+Real-time content control
+
+
+
+🚀 Final Outcome
+👉 Admin can:
+
+
+Manage homepage with a better UI
+
+
+Connect mobile app via API
+
+
+Control content from both app and website
+
+
+👉 Result:
+A fully integrated Web + App ecosystem with powerful and scalable control system 🚀

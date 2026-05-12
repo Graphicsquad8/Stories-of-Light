@@ -1,0 +1,115 @@
+## 📌 AI Model Integration – UI Structure & Functionality Update
+
+The **AI Model Integration** feature inside the Admin Panel → Settings section needs to be restructured and enhanced with new functionality.
+
+---
+
+## 🔧 1) Position & Navigation Update
+
+* 👉 Move **AI Model Integration** from its current position
+* 👉 Place it under **“API Generator and Apple Integration”** (as the 2nd item)
+
+📌 Open Behavior:
+
+* ✔ It should **not open as a popup**
+* ✔ It must open as a **full page**
+* ✔ Same behavior as “API Generator and Apple Integration”
+
+---
+
+## 🎛️ 2) Enable / Disable System
+
+Add an **On/Off toggle button** inside AI Model Integration.
+
+### ✅ Behavior:
+
+#### 🔹 When ON:
+
+* ✔ AI Studio chat system will use the connected APIs (LLM models)
+* ✔ AI will generate content/articles normally
+
+#### 🔹 When OFF:
+
+* ❌ No AI model will respond
+* ❌ Even if APIs are connected, they will not be used
+* 👉 AI Studio chat becomes inactive
+
+---
+
+## 🧠 3) System Message (Prompt Control)
+
+Add a **System Message input field**.
+
+### 📌 Purpose:
+
+* Admin can define a **custom prompt/instruction**
+* AI will generate content based on this instruction
+
+### 📝 Use Cases:
+
+* Define writing tone (Islamic, storytelling, formal)
+* Set article structure (title, intro, sections, conclusion)
+* Control writing style and format
+
+👉 AI will always follow this system message while generating content
+
+---
+
+## 🔌 4) Webhook Mode (When AI System is OFF)
+
+📌 When AI Model Integration is turned OFF, a new option becomes active:
+
+### 🔹 Webhooks URL Input System
+
+#### ✔ Two separate input fields:
+
+1. **Text Webhook URL** → For article/content generation
+2. **Image Webhook URL** → For image generation
+
+---
+
+### ⚙️ How It Works:
+
+* 👉 Admin inputs webhook URLs (e.g., from N8N workflows)
+
+* 👉 When a request is made from AI Studio:
+
+  * Text requests → sent to Text Webhook
+  * Image requests → sent to Image Webhook
+
+* 👉 Then:
+
+  * N8N receives the data
+  * AI agent processes it
+  * Response is sent back to the system
+
+---
+
+### 📌 Concept Example:
+
+👉 Similar to how webhook systems work in messaging platforms:
+
+Message → Webhook → AI Agent → Response
+
+✔ Same flow here:
+AI Studio → Webhook → N8N → AI Agent → Response
+
+---
+
+## 🎯 Final Result
+
+✔ AI Model Integration placed correctly
+✔ Opens as a full-page interface (not popup)
+✔ Toggle to enable/disable AI system
+✔ System Message to control AI behavior
+✔ Webhook mode for external AI automation (N8N)
+
+---
+
+## 🚀 Outcome
+
+👉 Flexible AI system (internal + external integration)
+👉 Full control over AI-generated content
+👉 Scalable automation-ready architecture
+
+🔥 Result: **Professional and powerful AI-powered content system**

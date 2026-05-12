@@ -1,0 +1,197 @@
+📌 Home Page Management – Critical Fix & Category Display Update
+
+🔧 1) Home Page Management Not Working (Core Issue)
+📌 Current Problem:
+👉 Admin Panel → Category Section → Home Page Management
+
+
+❌ Edits are not applying
+
+
+❌ Add / Delete / Update actions are not reflected on the website
+
+
+❌ Some options are not functioning
+
+
+
+✅ Required Fix:
+📡 Backend Fix
+
+
+✔ Ensure all settings are properly saved in the database
+
+
+✔ Store each section (Hero, Page Section, Categories, Ads) as structured configs
+
+
+✔ Verify update APIs (PUT/PATCH) are working correctly
+
+
+
+🔄 Frontend Sync Fix
+
+
+✔ Ensure updated data is properly fetched
+
+
+✔ Refresh UI/state after form submission
+
+
+✔ Handle API responses correctly
+
+
+
+⚡ Real-Time Apply
+
+
+✔ Any admin change must:
+
+
+👉 Reflect instantly on the homepage
+
+
+
+
+✔ No manual reload should be required
+
+
+
+🧠 Cache Fix
+
+
+✔ If caching exists:
+
+
+👉 Invalidate homepage cache after updates
+
+
+
+
+✔ Trigger revalidation for SSR/static setups
+
+
+
+🧭 2) “Explore by Category” – Selection Not Working
+📌 Current Problem:
+👉 Even after selecting categories manually:
+
+
+❌ Homepage still shows only default categories:
+
+
+Sahaba
+
+
+Awliya
+
+
+Karamat
+
+
+History
+
+
+
+
+
+✅ Required Fix:
+
+
+✔ Render only admin-selected categories
+
+
+✔ Remove all hardcoded category logic
+
+
+✔ Implement dynamic rendering
+
+
+📌 Ensure:
+
+
+Selected categories are saved in DB
+
+
+Frontend uses that list for rendering
+
+
+
+🔢 3) Category Article Count – Remove
+📌 Current Problem:
+👉 Homepage displays counts like:
+
+
+Sahaba – 2 stories
+
+
+Awliya – 1 story
+
+
+Karamat – 1 story
+
+
+History – 2 stories
+
+
+❌ This count must be removed
+
+✅ Required Update:
+
+
+❌ Remove “X stories” or any count display
+
+
+✅ Show only category names
+
+
+📌 Example (Final UI):
+
+
+Sahaba
+
+
+Awliya
+
+
+Karamat
+
+
+History
+
+
+
+✅ Final Expected Behavior
+🧩 Home Page Management:
+
+
+All options fully functional
+
+
+Add / Edit / Delete → apply instantly
+
+
+🧭 Explore by Category:
+
+
+Only selected categories are shown
+
+
+No default/hardcoded categories
+
+
+🔢 Category Display:
+
+
+No story counts
+
+
+Clean category-only layout
+
+
+
+🚀 Final Result
+👉 Fully functional Home Page Management system
+👉 Dynamic category control
+👉 Clean and professional homepage UI
+👉 Result: Bug-free, real-time, admin-controlled homepage system 🚀

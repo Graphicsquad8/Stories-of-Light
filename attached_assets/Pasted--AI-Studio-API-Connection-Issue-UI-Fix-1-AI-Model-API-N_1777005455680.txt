@@ -1,0 +1,135 @@
+## 📌 AI Studio – API Connection Issue & UI Fix
+
+---
+
+## 🔧 1) AI Model API Not Connecting (Critical Fix)
+
+📌 Current Issues:
+
+* API keys added in Settings are **not connecting in AI Studio** ❌
+* Even after adding multiple models, **no models are being detected/listed** ❌
+* Model selection dropdown is not working ❌
+
+---
+
+### ✅ Required Fix:
+
+#### 🔹 Backend Fix:
+
+* ✔ When saving API:
+
+  * Model Name
+  * Model Type (Text / Image)
+  * API Key
+    👉 Must be correctly stored in the database
+
+* ✔ When AI Studio loads:
+
+  * 👉 Fetch all active models from Settings
+  * 👉 Run API validation check
+
+---
+
+#### 🔹 API Validation System:
+
+* ✔ Validate API key using a test request
+* ✔ If invalid → show error
+* ✔ If valid → add to model list
+
+---
+
+#### 🔹 Model Listing Fix:
+
+* ✔ All connected models must appear in dropdown
+* ✔ Example:
+
+  * GPT → Text model
+  * Gemini → Text model
+  * DALL·E → Image model
+
+---
+
+#### 🔹 Model Selection System:
+
+* ✔ User can manually select a model
+* ✔ Optional: Auto model selection feature
+
+---
+
+## ⚠️ Error Handling Fix
+
+📌 Issue: Error appears after connecting AI model
+
+### ✅ Fix:
+
+* ✔ Check API endpoint
+* ✔ Fix incorrect base URL
+* ✔ Resolve CORS issues
+* ✔ Handle timeout / rate limits
+* ✔ Show clear error messages:
+
+  * “Invalid API Key”
+  * “Connection Failed”
+  * “Model Not Available”
+
+---
+
+## 📊 Expected Result:
+
+* ✔ Models appear instantly after API is added
+* ✔ AI Studio shows available models in dropdown
+* ✔ User can select and generate content
+
+---
+
+## 🎛️ 2) Conversations Sidebar Minimize Issue
+
+📌 Current Issue:
+👉 The **Conversations panel (left sidebar)** cannot be minimized ❌
+
+---
+
+### ✅ Required Fix:
+
+#### 🔹 UI Update:
+
+* ✔ Add a **toggle/minimize button** to the sidebar
+* ✔ On click:
+
+  * 👉 Sidebar collapses
+  * 👉 Only icons remain visible
+
+---
+
+#### 🔹 Minimized Behavior:
+
+* ✔ Chat area expands to full width
+* ✔ Optional: Hover to expand sidebar
+
+---
+
+#### 🔹 UX Enhancement:
+
+* ✔ Smooth animation (slide effect)
+* ✔ Save state using local storage
+
+  * 👉 Remains minimized after refresh
+
+---
+
+## 🎯 Final Result
+
+* ✔ API connection reflects instantly in AI Studio
+* ✔ Multiple models detected & selectable
+* ✔ Errors properly handled
+* ✔ Sidebar can be minimized
+
+---
+
+## 🚀 Outcome
+
+👉 Stable AI integration
+👉 Smooth model switching
+👉 Improved UI/UX
+
+👉 Result: **Fully functional AI Studio system** 🚀

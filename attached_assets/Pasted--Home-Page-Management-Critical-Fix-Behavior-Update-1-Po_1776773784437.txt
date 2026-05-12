@@ -1,0 +1,202 @@
+📌 Home Page Management – Critical Fix & Behavior Update
+🔧 1) Popup → Full Page View (UI Fix)
+👉 Admin Panel → Category Section → Home Page Management
+❌ Current Behavior:
+
+
+Opens as a popup/modal
+
+
+✅ Required Update:
+
+
+Remove popup behavior completely
+
+
+👉 It must open as a full page (normal route/page view)
+
+
+📌 Expected Behavior:
+
+
+Click → /admin/homepage-management (example route)
+
+
+Opens as a full page with normal layout (header, sidebar intact)
+
+
+
+⚙️ 2) Hero Section & Page Section – Not Working (Critical Fix)
+👉 Current Issues:
+
+
+❌ Adding data does not work
+
+
+❌ Updating does not reflect on the website
+
+
+❌ ON/OFF toggle does not apply
+
+
+
+✅ Required Fix (Core Functionality)
+📡 1) Backend Fix
+✔ Ensure:
+
+
+Data is properly saved in the database
+
+
+Update APIs are working correctly
+
+
+Hero Section and Page Section configs are stored properly
+
+
+📌 Must check:
+
+
+POST / PUT requests
+
+
+Validation errors
+
+
+Database schema consistency
+
+
+
+🔄 2) Frontend Data Binding Fix
+✔ Ensure:
+
+
+Frontend correctly:
+
+
+fetches data
+
+
+renders updated content
+
+
+
+
+📌 Must fix:
+
+
+State update issues (especially in React)
+
+
+Proper handling of API responses
+
+
+Instant UI update after form submission
+
+
+
+⚡ 3) Real-Time Apply (Important)
+👉 When Admin:
+
+
+Adds content
+
+
+Edits content
+
+
+Toggles ON/OFF
+
+
+✅ Then:
+
+
+Changes must reflect instantly on the website
+
+
+No manual reload required
+
+
+
+🧠 4) Cache Handling Fix
+✔ If caching exists:
+
+
+Invalidate or refresh cache on update
+
+
+📌 Examples:
+
+
+Clear homepage cache after update
+
+
+Revalidate if using SSR/static rendering
+
+
+
+🔘 5) Toggle System Fix (ON/OFF)
+✔ Ensure:
+
+
+ON/OFF toggles correctly:
+
+
+Save boolean values in DB
+
+
+Control frontend visibility
+
+
+
+
+
+🚫 Issues That Must Be Eliminated
+
+
+❌ Data saves but does not display
+
+
+❌ Updates do not reflect
+
+
+❌ Toggle not working
+
+
+❌ Popup-based UI
+
+
+
+✅ Final Expected Behavior
+👉 Home Page Management:
+
+
+Opens as a full page (no popup)
+
+
+👉 Hero Section & Page Section:
+
+
+Add / Edit / Toggle → works instantly
+
+
+👉 Website:
+
+
+All changes reflect in real-time
+
+
+
+🚀 Final Result
+
+
+Smooth admin experience
+
+
+Fully functional dynamic homepage control
+
+
+No sync or update issues
+
+
+👉 Result: A stable, real-time Home Page Management System

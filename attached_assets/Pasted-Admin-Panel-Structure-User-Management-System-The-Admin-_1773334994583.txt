@@ -1,0 +1,63 @@
+Admin Panel Structure & User Management System
+
+The Admin Panel menu structure should be organized so that the “All Articles” section appears after the “Categories” section.
+Additionally, the “Trash” option should be placed before the “Settings” option.
+
+User Account Management
+
+If any user creates an account on the website, the admin should be able to view the user’s account details from the Admin Panel.
+
+The admin should also have the ability to perform the following actions on user accounts:
+
+Edit – Modify user information
+
+Update – Update account details
+
+Delete – Remove a user account if necessary
+
+Moderator & Role Management System
+
+The admin should be able to add moderators to help manage the website. These moderators can have different roles, such as:
+
+Admin
+
+Editor
+
+Viewer
+
+The admin should be able to manually select which sections each moderator can access.
+For example, the admin can decide whether a moderator can access Articles, Books, Stories, or other sections.
+
+Moderator Account Creation System
+
+Moderator accounts will be created directly by the admin.
+
+When adding a moderator, the admin will enter the moderator’s email address and set a password manually. After the account is created, the moderator can log in to the Admin Panel using that email and password.
+
+However, the moderator will only be able to access the specific sections that the admin has granted permission to.
+
+Moderator Account Management
+
+After adding moderators, the admin will be able to fully manage their accounts from the Admin Panel. This includes the ability to:
+
+View the moderator’s email and password
+
+Edit the moderator’s information
+
+Update the account details
+
+Delete the moderator account
+
+The admin will also be able to see which email and password are assigned to each moderator account.
+
+Moderator Listing
+
+All moderators who are given permission to manage the website will appear in a separate section in the Admin Panel, such as “Website Moderators.”
+
+If a regular user account is promoted to a moderator, that account will be converted from the normal user list to the moderator list.
+
+Admin Panel Menu Order
+
+The User and Moderator Management sections should appear above the “Trash” option, and the “Settings” option should remain at the bottom of the Admin Panel menu.
+
+This structure will make the Admin Panel more organized, secure, and easier to manage.

@@ -1,0 +1,134 @@
+📌 All Articles & Categories – Manual Ad Upload System (Critical Fix Required)
+🔧 Current Setup
+
+Inside the All Articles (Sahaba, Awliya, Karamat, History) content pages, the following Ad Slots are used:
+
+AdSense Placeholder — 300×250 (A)
+AdSense Placeholder — 300×250 (B)
+AdSense Placeholder — 300×600
+❗ Current Problem
+
+The Manual Ad system is currently incomplete:
+
+📢 Banner Ads (image-based) → Working ✅
+🎞️ Motion Ads (GIF / animated / HTML5) → Not working ❌
+🎥 Video Ads (MP4 / embedded video) → Not working ❌
+
+👉 Meaning:
+The system only supports image ads and fails for GIF, HTML5, and Video ads.
+
+🎯 Required Fix (Full Manual Ad Support)
+
+The Manual Ad system must fully support all three ad types:
+
+📢 1. Banner Ads (Image-based)
+JPG / PNG / WebP upload
+Image URL support
+🎞️ 2. Motion Ads (GIF / HTML5 / Animated)
+GIF upload support
+HTML5 ads (iframe / script / embed code) support
+Proper animation rendering on frontend
+🎥 3. Video Ads (MP4 / Embedded)
+MP4 upload support
+YouTube / external video link support
+Embed video support
+
+📌 Video behavior:
+
+Must render as a video player (same as regular website videos)
+Auto-play and loop (configurable)
+Smooth playback without breaking UI
+🔗 Upload Flexibility (Important)
+
+For every ad type, admin must be able to:
+
+Upload files directly
+OR paste URL / embed link
+⚙️ Ad Slot Behavior (Per Slot Control)
+When a Manual Ad is set in a specific Ad Slot:
+Auto Ad must be disabled only for that slot
+Other Ad Slots must remain unchanged
+🔄 Hybrid Ad System
+
+Each Ad Slot must support:
+
+Auto Ads
+Manual Ads
+Switching between Auto ↔ Manual
+
+📌 Meaning:
+👉 Auto Ads and Manual Ads must coexist on the same page
+
+🌐 Global Rule (Very Important)
+
+Wherever Manual Ad upload is available in the website:
+
+👉 The same rules must be applied everywhere
+
+📌 Applies To:
+All Pages
+All Category Pages
+All Content / Articles (Articles, Stories, Duas, Books, etc.)
+Every Ad Slot location
+📌 Mandatory Ad Rules (Everywhere)
+
+In every Manual Ad upload system:
+
+📢 Banner Ads (image-based)
+🎞️ Motion Ads (GIF / animated / HTML5)
+🎥 Video Ads (MP4 / embedded video)
+
+👉 All three ad types must be supported everywhere
+
+📌 Meaning:
+Any Ad Slot in any page or content must support all three types without limitation
+
+🔗 Custom Company Ads Integration
+
+If there is a partnership with external ad providers:
+
+Admin must be able to:
+
+Use image / GIF / video / script ads
+Place them in specific Ad Slots
+
+✅ No limitations
+✅ Full control remains with admin
+
+🚨 Critical Fix Checklist (For Developers)
+
+Ensure the following:
+
+Image upload works ✔
+GIF + animation works ✔
+HTML5 ad renders correctly ✔
+MP4 video plays correctly ✔
+YouTube/embed video works ✔
+URL-based input works ✔
+Data saves correctly in DB ✔
+Frontend rendering works ✔
+Slot-based behavior is correct ✔
+
+❌ Must NOT happen:
+
+Ads uploaded but not displayed
+Empty or missing ads
+Partial or broken support
+✅ Final Expected Result
+
+👉 Across the entire website:
+
+Manual Ad upload works everywhere
+All 3 ad types are fully supported
+Each Ad Slot is independently controllable
+UI and functionality are fully consistent
+🚨 Priority Note
+
+🔥 This is a core monetization feature
+
+👉 If this system does not work properly:
+
+External companies will not run ads on the platform
+Revenue will be impacted
+
+📌 This must be treated as a high-priority fix

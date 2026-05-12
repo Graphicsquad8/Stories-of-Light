@@ -1,0 +1,56 @@
+📌 Dashboard – Overview Section Enhancement
+In the Admin Panel Dashboard, add a new option in the first section:
+Total Website Views (total number of views across the entire website)
+The design and presentation of this section should follow the provided reference image.
+📌 Trending Content Section Update
+Replace the text “Top Performing Content” with “Trending Content”.
+In this section:
+There will be 5 total contents (Trending Five)
+Only 3 contents will be visible at a time on the dashboard
+The remaining 2 contents will be accessible via an icon/slider button
+Clicking the button will slide in the remaining content from right to left
+📌 Trending Content Filter & View All Feature
+Add a “View All” button on the right side of the Trending Content title
+When clicking this button, the following 4 filter options should appear:
+Article
+Motivational
+Duas
+Books
+Based on the selected option:
+Show 3 contents from the Top 5 trending items of that category
+The currently selected category:
+Should be displayed as an icon/button on the left side of the “View All” button
+This should update dynamically when another category is selected
+📌 Top Contributor Section
+Add a new section on the right side of the Trending Content section:
+Title: Top Contributor
+This section will display:
+Top 5 contributors from Moderators, Editors, and Admins
+For each contributor, show:
+Profile image
+Name
+Join date
+On clicking a contributor:
+Open a detailed view, including:
+Join Date
+Number of Articles/Stories/Books published
+Views received by category
+Overall performance data
+📌 Active Users Section
+Add another section below Top Contributor:
+Title: Active Users
+This section will display:
+The most active users on the website
+Users who spend the most time or read the most content
+📌 Left Side Sections (Content & Activity)
+On the left side of the Dashboard, below the Top Content section:
+Add a new section titled Recent Activity
+It should follow the same layout and functionality as Top Content
+Below that, add another section:
+Title: Most Bookmarked
+This section should also follow the same behavior as Top Content / Recent Activity
+📌 Important Note
+The overall design and structure can follow the provided reference image
+However, no content should be copied directly from the image—only the layout and concept should be used
+
+👉 In short, the Dashboard should be transformed into a dynamic, data-driven, and professional analytics system, where content, users, and performance are clearly visualized in one place.

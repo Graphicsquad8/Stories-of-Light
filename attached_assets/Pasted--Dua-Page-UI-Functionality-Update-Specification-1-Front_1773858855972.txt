@@ -1,0 +1,99 @@
+🔹 Dua Page – UI & Functionality Update Specification
+1️⃣ Frontend Content Layout (User View)
+
+After opening each Dua, the texts “Dua Translation” and “English Translation” should be completely removed.
+
+Currently, the Dua content is displayed in two boxes (Arabic + English). This needs to be updated to a cleaner layout with three separate boxes:
+
+✅ Updated Content Structure:
+
+Box 1: Arabic Dua
+
+Box 2: Transliteration (Pronunciation)
+
+Box 3: English Translation
+
+👉 Benefits:
+
+Users can easily read, pronounce, and understand the Dua
+
+The UI becomes more structured, clean, and readable
+
+Additionally, the extra whitespace on the left and right sides of the page should be reduced, and the content area should be expanded to improve readability and focus.
+
+2️⃣ Admin Panel Control (Dua Management + Transliteration Support)
+
+The Dua management system must be fully dynamic and user-friendly.
+
+🔧 Required Features:
+
+Clicking the “New Dua” button should open a clean and structured form
+
+The form should be similar to the “Add Story” form used in the Story section
+
+A “Create Dua” submit button must be placed at the bottom of the form
+
+The form should be static (not drag-dependent) and easy to use
+
+🆕 Transliteration Support:
+
+Add a new input field in both “New Dua” and “Edit Dua” forms:
+👉 Transliteration Input Field
+
+📌 The admin should be able to:
+
+Add / Edit / Update Transliteration easily
+
+Save the data, which will be displayed in the frontend as Box 2
+
+⚙️ Each Dua item should also support:
+
+Edit
+
+Delete
+
+Duplicate
+
+Preview / View
+
+3️⃣ Inner Page Layout (Dua Detail View)
+
+After opening a Dua, the inner layout should follow the same structure as the Story Detail Page to maintain design consistency.
+
+📐 Layout Structure:
+
+🔹 Left Sidebar:
+
+Displays a list of all Parts
+
+Each Part contains multiple Pages
+
+🔹 Main Content Area:
+
+Displays the selected Page content
+
+Content is shown in 3 sections:
+
+Arabic
+
+Transliteration
+
+English Translation
+
+🔄 Navigation System:
+Users should be able to easily navigate:
+
+From one Part to another
+
+From one Page to another
+
+4️⃣ Design Consistency & Content Area Size
+
+The content container size (after opening a Dua) should match the Story Detail Page layout
+
+Reduce unnecessary side spacing to give more focus to the content
+
+The content itself will remain unchanged—only layout and presentation will be improved
+
+✅ Final Goal:
+The Dua page should be as clean, structured, scalable, and user-friendly as the Story page, ensuring a smooth reading and navigation experience for users.

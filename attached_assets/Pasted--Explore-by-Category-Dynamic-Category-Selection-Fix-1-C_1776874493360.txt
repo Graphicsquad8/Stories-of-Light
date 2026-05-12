@@ -1,0 +1,197 @@
+📌 Explore by Category – Dynamic Category Selection Fix
+
+🔧 1) Current Problem
+👉 Admin Panel → Category Section → Home Page Management → Explore by Category
+
+
+❌ Only 4 categories are showing:
+
+
+Sahaba
+
+
+Awilya
+
+
+Karamat
+
+
+History
+
+
+
+
+❌ Other pages/categories are NOT visible:
+
+
+Stories
+
+
+Duas
+
+
+Books
+
+
+Any newly created categories
+
+
+
+
+
+✅ 2) Required Update (Dynamic Category System)
+👉 Replace the current hardcoded category list with a fully dynamic system
+
+🧭 A) Fetch All Categories Dynamically
+✔ The system must:
+
+
+Load all categories/pages from the database
+
+
+Include:
+
+
+Default categories
+
+
+Custom/newly created categories
+
+
+
+
+📌 Final List Should Include:
+
+
+Sahaba
+
+
+Awilya
+
+
+Karamat
+
+
+History
+
+
+Stories
+
+
+Duas
+
+
+Books
+
+
+
+
+Any newly created categories
+
+
+
+
+
+🎯 B) Categories to Display (Selectable System)
+👉 Inside “Categories to Display”:
+
+
+✔ Show ALL available categories
+
+
+✔ Allow admin to:
+
+
+Select multiple categories
+
+
+Deselect any category
+
+
+
+
+📌 Behavior:
+
+
+Admin-selected categories → Only those appear on homepage
+
+
+
+🔄 C) Save & Render Logic
+✔ Ensure:
+
+
+Selected categories are saved in the database
+
+
+Homepage uses this saved list to render
+
+
+📌 Flow:
+
+
+Admin নির্বাচন করবে → Save হবে → Homepage-এ reflect হবে
+
+
+
+➕ D) Auto-Include New Categories
+👉 When admin creates a new category:
+
+
+✔ It must automatically appear in:
+
+
+“Categories to Display” list
+
+
+
+
+📌 No manual update needed
+📌 Fully dynamic system
+
+⚡ E) Real-Time Apply
+
+
+✔ After selecting categories:
+
+
+Changes must reflect instantly on homepage
+
+
+
+
+✔ No hardcoded fallback allowed
+
+
+
+🚫 3) Remove Limitation
+
+
+❌ Fixed 4-category restriction remove করতে হবে
+
+
+❌ Hardcoded logic remove করতে হবে
+
+
+
+✅ Final Expected Behavior
+
+
+All categories (existing + new) appear in selection list
+
+
+Admin selects specific categories
+
+
+Only selected categories show on homepage
+
+
+Fully dynamic and scalable system
+
+
+
+🚀 Final Result
+👉 Flexible category management
+👉 No limitation on category count
+👉 ভবিষ্যতে নতুন category add করলেও auto কাজ করবে
+👉 Result: Dynamic, admin-controlled Explore by Category system 🔥
