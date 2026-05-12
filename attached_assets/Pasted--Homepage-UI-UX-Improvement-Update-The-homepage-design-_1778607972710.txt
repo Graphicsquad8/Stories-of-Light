@@ -1,0 +1,136 @@
+📌 Homepage UI & UX Improvement Update
+
+The homepage design of my website needs to be updated to make it more professional, Islamic-style, modern, and user-friendly. The entire website should remain in Light Mode (White Theme), and the design should meet international-quality standards, especially for users from the United States and Europe.
+
+📌 Hero Section Design Update
+
+Currently, the homepage Hero Section is too large vertically, with excessive top and bottom spacing. Because of this, it takes up almost the entire screen and looks unprofessional.
+
+✅ Hero Section Update Requirements:
+Reduce the height and spacing of the Hero Section to create a more balanced layout.
+The design should:
+Look professional on Full HD monitors
+Feel like a modern Islamic-style website
+Keep the content more visually focused and organized
+✅ Background Update:
+Replace the current Hero background with a professional Islamic-style background image.
+The background image should:
+Not be overly dark
+Match the Light Theme design
+Provide a clean, elegant, and premium appearance
+
+📌 The entire website background theme must remain White / Light Mode.
+
+📌 Explore by Category Section Fix
+
+Inside the homepage “Explore by Category” section, the following description:
+
+“Discover content that inspires, educates, and strengthens your faith.”
+
+is currently breaking into two lines. Specifically, the word “faith” moves to the next line.
+
+✅ Fix:
+The entire description should remain on a single line
+The text should not break unnecessarily, even on responsive layouts
+📌 Section Spacing & Layout Optimization
+
+Currently, there is too much spacing:
+
+Between the “Explore by Category” section and the “Featured Stories” section
+Above the “Books” and “Latest Stories” sections
+✅ Update:
+
+Reduce the excessive spacing to create a more:
+
+Balanced
+Clean
+Professional
+User-friendly
+
+layout.
+
+📌 The current spacing makes the website look visually inconsistent and unbalanced, which needs to be fixed.
+
+📌 Featured Stories Section Update
+
+Currently, the Featured Stories section only has two navigation dots/pagination indicators.
+
+✅ Update:
+
+Add a total of 4 pagination dots.
+
+✅ Functionality:
+Clicking the first dot → shows the first 4 articles
+Clicking the second dot → shows the next 4 articles
+The third and fourth dots should continue displaying additional articles in the same way
+
+📌 This section should display only:
+
+Most Viewed Articles
+📌 Latest Stories Section Update
+
+The Latest Stories section should also have the same type of dot navigation / pagination system as Featured Stories.
+
+✅ Functionality:
+Clicking the first dot → shows the latest 5 uploaded articles
+Clicking the second dot → shows the next 5 uploaded articles
+Additional dots should continue showing more articles sequentially
+
+📌 This section should display only:
+
+Latest Uploaded Articles
+📌 Homepage UI Card & Section Improvement
+
+Every card/box-based section on the homepage such as:
+
+Article Section
+Book Section
+Story Section
+
+should be redesigned so that:
+
+Each section is visually separated and easy to identify
+The website looks modern and professional
+The UI feels more premium and user-friendly
+✅ UI Improvements Should Include:
+Better contrast
+Soft shadows
+Clean borders
+Balanced padding and spacing
+Modern card design
+
+📌 Some sections are currently not standing out properly against the light background, so the UI needs to be more polished and visually refined.
+
+📌 Important Notes
+⚠️ Important:
+No content should be changed
+No unnecessary changes should be made to the admin panel
+Existing features and functionality must remain intact
+
+📌 The final design update should make the website:
+
+More modern
+More premium
+More Islamic in style
+More user-friendly
+Suitable for an international audience
+📌 Bookmark System Update
+
+The Bookmark Icon inside each homepage article should only be visible and active when a user is logged in.
+
+✅ Rules:
+Only logged-in users can bookmark articles
+Guest users should not see or access the bookmark feature
+📌 Category Visibility Bug Fix
+
+In the admin panel’s Category Section, when a category page is changed from:
+
+Active ➜ Inactive
+
+it should automatically be hidden from the website.
+
+However, the category is still visible on the frontend.
+
+✅ Required Fix:
+Inactive category pages must no longer appear on the website
+Category visibility status must sync and function correctly across the system

@@ -174,9 +174,9 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
   const navLinks = [
     { label: "Home", href: "/" },
     ...(categoryData ?? []).map((cat) => ({ label: cat.name, href: `/${cat.urlSlug || cat.slug}` })),
-    { label: motivationalPage?.name || "Stories", href: "/motivational-stories" },
-    { label: duaPage?.name || "Duas", href: "/duas" },
-    { label: bookPage?.name || "Books", href: "/books" },
+    ...(!allCategoryData || motivationalPage ? [{ label: motivationalPage?.name || "Stories", href: "/motivational-stories" }] : []),
+    ...(!allCategoryData || duaPage ? [{ label: duaPage?.name || "Duas", href: "/duas" }] : []),
+    ...(!allCategoryData || bookPage ? [{ label: bookPage?.name || "Books", href: "/books" }] : []),
   ];
 
   const handleSearch = (e: React.FormEvent) => {
