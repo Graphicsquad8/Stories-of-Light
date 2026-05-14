@@ -1,0 +1,178 @@
+Article Page UI & Ad System Update Requirements
+Stories of Light — Developer-Friendly Specification
+The current Article Details Page of the website needs to be completely redesigned based on the provided UI reference. The new design should follow a modern Islamic aesthetic style with a premium storytelling experience.
+The layout, spacing, typography, colors, ad placements, video preview system, sidebar structure, and overall visual hierarchy should closely match the reference UI.
+1. Article Hero Section Redesign
+The current article cover section needs to be redesigned to match the reference UI.
+Required Layout
+The hero section should include:
+Breadcrumb navigation
+Category badge
+Article title
+Subtitle/short description
+Author information
+Publish date
+Reading time
+View count
+Action buttons:
+Listen
+Video Play
+Font Resize
+Share
+2. Cover Image + Video Play System
+The current article cover image system needs to be upgraded.
+New System
+Initially, a large featured cover image should be displayed.
+A centered Play Icon should appear on top of the cover image.
+When the user clicks the Play button:
+The cover image should be replaced with an embedded video player.
+The video should play in the exact same area.
+The player should have a cinematic full-width layout.
+The system must be fully responsive and mobile optimized.
+Additional Requirements
+Auto-generated video thumbnails
+Support for both YouTube and self-hosted videos
+Smooth fade transition animations
+Custom play overlay design
+3. Banner Ad Below Cover Section
+A banner advertisement section should appear directly below the cover image/video section.
+Replace Existing System
+Current placeholder:
+Plain text
+AdSense Placeholder - 300×600
+This should be removed and replaced with a modern banner ad section.
+New Banner Ad Section
+Requirements:
+Full-width horizontal banner ad
+Islamic-themed UI card design
+Rounded corners
+Soft shadows
+Visible “Ad” badge/tag
+Admin Panel Integration
+The admin panel must support:
+Manual ad upload
+Enable/Disable controls
+Automatic ads support
+Ad scheduling
+Ad priority management
+All existing functionalities must remain intact.
+4. Sidebar Ad Replacement System
+Replace Existing:
+Plain text
+AdSense Placeholder - 300×300 (A)
+New Placement
+Replace it with the ad design shown in the reference UI:
+“Islamic Books Special Offer”
+Location:
+Below the “Related Stories” section
+Replace Existing:
+Plain text
+AdSense Placeholder - 300×300 (B)
+New Placement
+Replace it with the ad design shown in the reference UI:
+“Listen to Islamic Stories on the Go”
+Location:
+Below the “Share This Article” section
+5. Multiple Manual Ads Upload System (Slider Ads)
+Currently, only one manual ad can be uploaded per ad slot.
+This system needs to be upgraded.
+New Requirements
+Each manual ad section should support:
+Multiple ad uploads
+Image ads
+Video ads
+HTML ads
+Frontend Display System
+Ads should appear as:
+Auto-playing sliders/carousels
+One-by-one transitions
+Infinite looping
+Smooth fade or slide animations
+Example
+If the admin uploads:
+2 banner ads
+Then:
+The first ad should display first
+After a few seconds, the second ad should appear
+The ads should continue rotating automatically
+Additional Controls
+Adjustable autoplay speed
+Pause on hover
+Navigation dots
+Manual next/previous controls
+6. Category Visibility System Fix
+Currently, when a category is marked as inactive in the admin panel, it still appears on the frontend.
+This issue must be fixed.
+Required Behavior
+If:
+Plain text
+Category Status = Inactive
+Then:
+The category must be hidden from the frontend
+Removed from the navigation menu
+The category page should become inaccessible
+Articles from that category should not appear publicly
+Example
+If:
+Plain text
+Prophets = Inactive
+Then:
+The “Prophets” category must disappear from the website
+It should be removed from the navbar
+Direct URL access should be blocked
+Related content sections should not display it
+7. UI Design & Styling Requirements
+Important
+The overall article page design must closely follow the provided reference UI.
+Color Style
+Use:
+Warm white backgrounds
+Soft beige gradients
+Elegant dark typography
+Minimal green accents only where necessary
+Avoid:
+Oversaturated green colors
+Random accent colors
+Harsh contrasts
+Design Style
+The UI should feel like:
+A modern Islamic digital magazine
+A premium storytelling platform
+A clean and elegant reading experience
+Visual Requirements
+Soft shadows
+Clean spacing
+Rounded cards
+Elegant typography hierarchy
+High-quality modern background styling
+8. Responsive Requirements
+The entire page must be fully optimized for:
+Desktop
+Laptop
+Tablet
+Mobile devices
+9. Performance Requirements
+The implementation should include:
+Lazy-loaded images
+Optimized ad loading
+Fast video rendering
+SEO-friendly structure
+Smooth animations without lag
+10. Tech Stack Requirements
+Frontend
+Preferred technologies:
+React
+Tailwind CSS
+Framer Motion (optional)
+SwiperJS or Embla Carousel
+Backend Compatibility
+The redesign must remain compatible with:
+Existing admin panel
+Existing article system
+Existing ad management system
+11. Final Goal
+The final article experience should feel like:
+A premium Islamic storytelling platform
+A modern multimedia article experience
+A high-quality digital Islamic magazine
+The design and interaction system should closely match the provided reference UI while maintaining excellent performance and responsiveness.

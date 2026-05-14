@@ -13,6 +13,7 @@ import {
   ArrowLeft, Clock, Tag, Share2, Bookmark, BookmarkCheck,
   ChevronLeft, ChevronRight, Video, Headphones, Menu, X,
   PanelLeftClose, PanelLeftOpen, PlayCircle, PauseCircle, Star, Loader2,
+  Eye, User, Play, Link2, Home,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import type { StoryWithCategory, StoryPartWithPages } from "@shared/schema";
@@ -21,6 +22,23 @@ import { useAuth } from "@/lib/auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState, useCallback } from "react";
+
+/* ── Helpers ── */
+function calcReadingTime(content: string): number {
+  const text = (content || "").replace(/<[^>]*>/g, "");
+  const words = text.split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.ceil(words / 200));
+}
+function formatViews(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return String(n || 0);
+}
+function extractHeadings(html: string): string[] {
+  return [...(html || "").matchAll(/<h([23])[^>]*?>(.*?)<\/h\1>/gis)]
+    .map(m => m[2].replace(/<[^>]*>/g, "").trim())
+    .filter(Boolean);
+}
 
 function BookmarkButton({ storyId }: { storyId: string }) {
   const { user } = useAuth();
@@ -81,73 +99,215 @@ function RelatedStories({ storyId }: { storyId: string }) {
     },
   });
 
-  if (isLoading) {
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {[1, 2].map((i) => (
-          <Card key={i} className="overflow-hidden">
-            <Skeleton className="aspect-[16/10] w-full" />
-            <div className="p-4 space-y-2">
-              <Skeleton className="h-5 w-20" />
-              <Skeleton className="h-5 w-full" />
-            </div>
-          </Card>
-        ))}
-      </div>
-    );
-  }
-
-  if (!related || related.length === 0) return null;
-
   return (
-    <section className="mt-12" data-testid="section-related">
-      <h2 className="font-serif text-2xl font-bold mb-6">Related Stories</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {related.map((story) => (
-          <Link key={story.id} href={`/stories/${story.slug}`}>
-            <Card className="group overflow-hidden cursor-pointer hover-elevate" data-testid={`card-related-${story.slug}`}>
-              <div className="aspect-[16/10] overflow-hidden">
-                <img
-                  src={story.thumbnail || "/images/category-history.png"}
-                  alt={story.title}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
+    <div data-testid="section-related">
+      <h2 className="font-serif text-sm font-bold mb-3 text-foreground">Related Stories</h2>
+      {isLoading ? (
+        <div className="space-y-3">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="flex gap-3">
+              <Skeleton className="w-[72px] h-[72px] rounded-lg shrink-0" />
+              <div className="flex-1 space-y-1.5 pt-1">
+                <Skeleton className="h-3.5 w-full" />
+                <Skeleton className="h-3.5 w-4/5" />
+                <Skeleton className="h-3 w-16 mt-1" />
               </div>
-              <div className="p-4">
-                {story.category && (
-                  <Badge variant="secondary" className="mb-2">{story.category.name}</Badge>
-                )}
-                <h3 className="font-serif font-semibold line-clamp-2" dangerouslySetInnerHTML={{ __html: story.title }} />
+            </div>
+          ))}
+        </div>
+      ) : !related || related.length === 0 ? null : (
+        <div className="space-y-3">
+          {related.slice(0, 4).map(story => (
+            <Link key={story.id} href={`/stories/${story.slug}`}>
+              <div className="flex gap-3 group cursor-pointer" data-testid={`card-related-${story.slug}`}>
+                <div className="w-[72px] h-[72px] rounded-lg overflow-hidden shrink-0 border border-border/40">
+                  <img
+                    src={story.thumbnail || "/images/category-history.png"}
+                    alt=""
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                </div>
+                <div className="flex-1 min-w-0 pt-0.5">
+                  <p
+                    className="text-sm font-medium text-foreground line-clamp-2 group-hover:text-primary transition-colors leading-snug"
+                    dangerouslySetInnerHTML={{ __html: story.title }}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {calcReadingTime(story.content || "")} min read
+                  </p>
+                </div>
               </div>
-            </Card>
-          </Link>
-        ))}
-      </div>
-    </section>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
-function SidebarAds({ adSlotsMap, contentId, contentType }: { adSlotsMap: Record<string, any>; contentId?: string; contentType?: string }) {
+/* ── Sidebar widgets ── */
+
+function IslamicBooksAdCard({ adSlotsMap, contentId, contentType }: { adSlotsMap: Record<string, any>; contentId: string; contentType: string }) {
   return (
-    <aside className="hidden lg:block lg:col-span-1" data-testid="sidebar-ads">
-      <div className="sticky top-20 space-y-4">
-        {adSlotsMap["sidebar-small"] !== false && (
-          <div className="w-[300px] h-[250px] flex overflow-hidden">
-            <AdSlot slot="sidebar-small" label="AdSense Placeholder — 300×250" className="w-full h-full" contentId={contentId} contentType={contentType} contentManualMode={adSlotsMap["sidebar-small_mode"] === "manual"} />
-          </div>
-        )}
-        {adSlotsMap["sidebar-small-2"] !== false && (
-          <div className="w-[300px] h-[250px] flex overflow-hidden">
-            <AdSlot slot="sidebar-small-2" label="AdSense Placeholder — 300×250 (B)" className="w-full h-full" contentId={contentId} contentType={contentType} contentManualMode={adSlotsMap["sidebar-small-2_mode"] === "manual"} />
-          </div>
-        )}
-        {adSlotsMap["sidebar-large"] !== false && (
-          <div className="w-[300px] h-[600px] flex overflow-hidden">
-            <AdSlot slot="sidebar-large" label="AdSense Placeholder — 300×600" className="w-full h-full" contentId={contentId} contentType={contentType} contentManualMode={adSlotsMap["sidebar-large_mode"] === "manual"} />
-          </div>
-        )}
+    <div className="relative overflow-hidden rounded-xl" data-testid="ad-islamic-books">
+      <div
+        className="rounded-xl p-5 relative overflow-hidden min-h-[190px] flex flex-col justify-between"
+        style={{ background: "radial-gradient(circle at 88% 45%, hsl(42 80% 55% / 0.28) 0%, transparent 55%), hsl(155 56% 13%)" }}
+      >
+        <span className="absolute top-2.5 right-2.5 text-[9px] font-bold bg-white/15 text-white/80 px-1.5 py-0.5 rounded uppercase tracking-wide">AD</span>
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 w-24 h-24 rounded-full border border-yellow-400/20 opacity-70 pointer-events-none" />
+        <div className="absolute right-7 top-1/2 -translate-y-1/2 w-14 h-14 rounded-full border border-yellow-300/15 pointer-events-none" />
+        <div className="absolute right-11 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-yellow-400/10 pointer-events-none" />
+        <div className="relative z-10">
+          <p className="text-emerald-300 text-[10px] font-semibold mb-1 uppercase tracking-widest">Special Offer</p>
+          <h3 className="text-white font-bold text-lg leading-tight">Islamic Books</h3>
+        </div>
+        <div className="relative z-10">
+          <p className="text-white/65 text-xs leading-relaxed mb-4 max-w-[58%]">Get up to 30% off on selected Islamic books.</p>
+          <Button size="sm" className="bg-white text-emerald-900 hover:bg-white/90 rounded-lg font-semibold text-xs px-4 h-8">Shop Now</Button>
+        </div>
       </div>
-    </aside>
+      {adSlotsMap["sidebar-small"] !== false && (
+        <div className="absolute inset-0 z-20">
+          <AdSlot slot="sidebar-small" className="w-full h-full" disabled={adSlotsMap["sidebar-small"] === false} contentId={contentId} contentType={contentType} contentManualMode={adSlotsMap["sidebar-small_mode"] === "manual"} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ListenToStoriesAdCard({ adSlotsMap, contentId, contentType }: { adSlotsMap: Record<string, any>; contentId: string; contentType: string }) {
+  return (
+    <div className="relative overflow-hidden rounded-xl" data-testid="ad-listen-stories">
+      <div
+        className="rounded-xl p-5 relative overflow-hidden min-h-[160px]"
+        style={{ background: "linear-gradient(135deg, hsl(220 30% 14%) 0%, hsl(220 25% 21%) 100%)" }}
+      >
+        <span className="absolute top-2.5 right-2.5 text-[9px] font-bold bg-white/15 text-white/80 px-1.5 py-0.5 rounded uppercase tracking-wide">AD</span>
+        <div className="absolute right-2 bottom-2 text-white/8 pointer-events-none">
+          <Headphones className="w-20 h-20" />
+        </div>
+        <div className="relative z-10 max-w-[68%]">
+          <h3 className="text-white font-bold text-sm leading-snug mb-1">Listen to Islamic Stories on the Go</h3>
+          <p className="text-white/55 text-xs mb-4">Audiobooks now available!</p>
+          <Button size="sm" className="bg-primary text-white hover:bg-primary/90 rounded-lg font-semibold text-xs px-4 h-8">Listen Now</Button>
+        </div>
+      </div>
+      {adSlotsMap["sidebar-small-2"] !== false && (
+        <div className="absolute inset-0 z-20">
+          <AdSlot slot="sidebar-small-2" className="w-full h-full" disabled={adSlotsMap["sidebar-small-2"] === false} contentId={contentId} contentType={contentType} contentManualMode={adSlotsMap["sidebar-small-2_mode"] === "manual"} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+const QURAN_VERSE = {
+  arabic: "وَاصْبِرُوا ۚ إِنَّ ٱللَّهَ مَعَ ٱلصَّٰبِرِينَ",
+  translation: '"And be patient; for, indeed, Allah is with the patient."',
+  reference: "— Surah Al-Anfal (8:46)",
+};
+
+function QuranVerseWidget() {
+  return (
+    <div className="rounded-xl border border-border/60 bg-card p-4" data-testid="quran-verse-widget">
+      <h3 className="font-serif text-sm font-bold mb-3 text-foreground">Quran Verses</h3>
+      <p className="text-lg text-right leading-loose text-foreground font-medium" dir="rtl" lang="ar">{QURAN_VERSE.arabic}</p>
+      <p className="text-xs text-muted-foreground italic leading-relaxed mt-2">{QURAN_VERSE.translation}</p>
+      <p className="text-xs text-primary/70 font-medium mt-1">{QURAN_VERSE.reference}</p>
+      <div className="mt-3 flex justify-end opacity-10">
+        <svg viewBox="0 0 64 28" className="w-16 h-7 fill-primary">
+          <path d="M0,28 L0,18 Q4,4 8,18 L8,13 Q13,3 18,13 L18,18 Q21,8 24,4 Q27,8 30,18 L30,13 Q35,3 40,13 L40,18 Q45,4 50,18 L50,28 L56,28 L56,16 Q60,3 64,16 L64,28 Z"/>
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+function InThisArticle({ headings }: { headings: string[] }) {
+  return (
+    <div className="rounded-xl border border-amber-200/60 bg-amber-50/50 dark:bg-amber-950/10 dark:border-amber-900/30 p-5 mb-6" data-testid="in-this-article">
+      <h3 className="font-serif text-sm font-semibold mb-3 text-foreground">In This Article</h3>
+      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
+        {headings.map((h, i) => (
+          <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+            <span className="text-primary/60 mt-0.5 shrink-0 leading-none">•</span>
+            <span className="line-clamp-1 leading-snug">{h}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function QuickNavigation({ headings }: { headings: string[] }) {
+  return (
+    <div className="rounded-xl border border-border/60 bg-card p-4" data-testid="quick-nav">
+      <h3 className="font-serif text-sm font-bold mb-3 text-foreground">Quick Navigation</h3>
+      <div className="space-y-0.5">
+        {headings.map((h, i) => (
+          <div key={i} className="flex items-center justify-between group py-1.5 px-2 rounded-lg hover:bg-muted/60 transition-colors cursor-pointer">
+            <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors line-clamp-1 leading-snug">{h}</span>
+            <ChevronRight className="w-3 h-3 text-muted-foreground/40 group-hover:text-primary shrink-0 ml-2 transition-colors" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ShareArticle({ title }: { title: string }) {
+  const [copied, setCopied] = useState(false);
+  const url = typeof window !== "undefined" ? window.location.href : "";
+  const enc = encodeURIComponent;
+  const handleCopy = () => {
+    navigator.clipboard?.writeText(url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1800); }).catch(() => {});
+  };
+  return (
+    <div className="rounded-xl border border-border/60 bg-card p-4" data-testid="share-article">
+      <h3 className="font-serif text-sm font-bold mb-3 text-foreground">Share this article</h3>
+      <div className="flex items-center gap-2.5">
+        <a href={`https://www.facebook.com/sharer/sharer.php?u=${enc(url)}`} target="_blank" rel="noopener noreferrer"
+          className="w-9 h-9 rounded-full border border-border/60 flex items-center justify-center hover:bg-muted transition-colors text-[#1877F2]" title="Share on Facebook">
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+        </a>
+        <a href={`https://twitter.com/intent/tweet?url=${enc(url)}&text=${enc(title)}`} target="_blank" rel="noopener noreferrer"
+          className="w-9 h-9 rounded-full border border-border/60 flex items-center justify-center hover:bg-muted transition-colors text-foreground" title="Share on X (Twitter)">
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        </a>
+        <a href={`https://wa.me/?text=${enc(title + " " + url)}`} target="_blank" rel="noopener noreferrer"
+          className="w-9 h-9 rounded-full border border-border/60 flex items-center justify-center hover:bg-muted transition-colors text-[#25D366]" title="Share on WhatsApp">
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        </a>
+        <button onClick={handleCopy}
+          className="w-9 h-9 rounded-full border border-border/60 flex items-center justify-center hover:bg-muted transition-colors text-muted-foreground" title="Copy link">
+          <Link2 className="w-4 h-4" />
+        </button>
+        {copied && <span className="text-xs text-primary font-medium">Copied!</span>}
+      </div>
+    </div>
+  );
+}
+
+function InArticleBannerAd({ adSlotsMap, contentId, contentType }: { adSlotsMap: Record<string, any>; contentId: string; contentType: string }) {
+  return (
+    <div className="relative rounded-xl overflow-hidden mb-6" data-testid="banner-ad-inline">
+      <div className="border border-border/60 bg-card rounded-xl shadow-sm p-4 flex items-center gap-4">
+        <span className="absolute top-2.5 right-2.5 text-[9px] font-bold bg-muted text-muted-foreground/70 px-1.5 py-0.5 rounded uppercase tracking-wide">AD</span>
+        <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/15 flex items-center justify-center shrink-0">
+          <Home className="w-5 h-5 text-primary" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-sm text-foreground">Support Stories of Light</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">Ads help us keep creating authentic Islamic content for everyone.</p>
+        </div>
+        <Button size="sm" className="shrink-0 rounded-lg">Learn More</Button>
+      </div>
+      <div className="absolute inset-0 z-10">
+        <AdSlot slot="banner" className="w-full h-full" disabled={adSlotsMap["banner"] === false} contentId={contentId} contentType={contentType} contentManualMode={adSlotsMap["banner_mode"] === "manual"} />
+      </div>
+    </div>
   );
 }
 
@@ -614,152 +774,259 @@ function StoryAdBand({ adSlotsMap, contentId, contentType }: { adSlotsMap: Recor
 
 function LegacyView({ story }: { story: StoryWithCategory }) {
   const adSlotsMap: Record<string, any> = (() => { try { return JSON.parse((story as any).adSlots || "{}"); } catch { return {}; } })();
-  const categoryHref = story.category
-    ? `/${(story.category as any).urlSlug || story.category.slug}`
-    : "/";
+  const categoryHref = story.category ? `/${(story.category as any).urlSlug || story.category.slug}` : "/";
+  const [showVideo, setShowVideo] = useState(false);
+  const [fontScale, setFontScale] = useState(0);
+
+  const readingTime = calcReadingTime(story.content || "");
+  const views = (story as any).views || 0;
+  const headings = extractHeadings(story.content || "");
+  const authorName = (story as any).authorName || "Stories of Light Team";
+  const proseSizes = ["", "prose-lg", "prose-xl"];
+  const proseSize = proseSizes[fontScale];
 
   return (
-    <div data-testid="legacy-story-view">
-      {/* ── Hero Section ── */}
-      {story.thumbnail ? (
-        <section className="relative overflow-hidden" data-testid="section-story-hero">
-          <div className="absolute inset-0">
-            <img
-              src={story.thumbnail}
-              alt=""
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/45 to-black/65" />
-          </div>
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
-            <Link href="/">
-              <Button variant="ghost" size="sm" className="mb-6 text-white/80 hover:text-white hover:bg-white/10" data-testid="button-back">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Stories
-              </Button>
+    <div data-testid="legacy-story-view" className="bg-background">
+
+      {/* ── Light Article Header ── */}
+      <div className="border-b bg-background">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-7">
+
+          {/* Breadcrumb */}
+          <nav className="flex items-center gap-1.5 text-xs text-muted-foreground mb-4 flex-wrap" aria-label="Breadcrumb">
+            <Link href="/" className="hover:text-foreground transition-colors flex items-center gap-1">
+              <Home className="w-3 h-3" />
+              Home
             </Link>
-            <div className="max-w-3xl">
-              <div className="flex items-center gap-3 mb-4 flex-wrap">
-                {story.category && (
-                  <Link href={categoryHref}>
-                    <Badge variant="secondary" data-testid="badge-story-category">{story.category.name}</Badge>
-                  </Link>
-                )}
+            <ChevronRight className="w-3 h-3 shrink-0 opacity-50" />
+            {story.category && (
+              <>
+                <Link href={categoryHref} className="hover:text-foreground transition-colors">{story.category.name}</Link>
+                <ChevronRight className="w-3 h-3 shrink-0 opacity-50" />
+              </>
+            )}
+            <span className="text-foreground/55 truncate max-w-[180px]" dangerouslySetInnerHTML={{ __html: story.title }} />
+          </nav>
+
+          {/* Category badge */}
+          {story.category && (
+            <Link href={categoryHref}>
+              <Badge className="mb-3 bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 cursor-pointer font-medium" data-testid="badge-story-category">
+                {story.category.name}
+              </Badge>
+            </Link>
+          )}
+
+          {/* Title */}
+          <h1
+            className="font-serif text-2xl sm:text-3xl lg:text-[2rem] xl:text-[2.25rem] font-bold text-foreground leading-[1.2] mb-3 max-w-3xl"
+            dangerouslySetInnerHTML={{ __html: story.title }}
+            data-testid="text-story-title"
+          />
+
+          {/* Excerpt */}
+          {story.excerpt && (
+            <p
+              className="text-[15px] text-muted-foreground leading-relaxed mb-5 max-w-2xl"
+              dangerouslySetInnerHTML={{ __html: story.excerpt }}
+              data-testid="text-story-excerpt"
+            />
+          )}
+
+          {/* Author + Meta row */}
+          <div className="flex items-center gap-3 mb-5 flex-wrap">
+            <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/15 flex items-center justify-center shrink-0">
+              <User className="w-4 h-4 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground leading-none">{authorName}</p>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 flex-wrap">
                 {story.publishedAt && (
-                  <span className="text-sm text-white/70 flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5" />
-                    {format(new Date(story.publishedAt), "MMMM d, yyyy")}
-                  </span>
+                  <span>{format(new Date(story.publishedAt), "MMM d, yyyy")}</span>
                 )}
+                <span className="opacity-40">·</span>
+                <span>{readingTime} min read</span>
+                <span className="opacity-40">·</span>
+                <span className="flex items-center gap-1">
+                  <Eye className="w-3 h-3" />
+                  {formatViews(views)} views
+                </span>
                 {(story as any).ratingEnabled && (story as any).totalRatings > 0 && (
-                  <div className="flex items-center gap-1 text-sm text-white/80" data-testid="text-story-avg-rating">
-                    <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                    <span className="font-medium">{((story as any).averageRating || 0).toFixed(1)}</span>
-                    <span className="text-white/60">({(story as any).totalRatings})</span>
-                  </div>
+                  <>
+                    <span className="opacity-40">·</span>
+                    <span className="flex items-center gap-1" data-testid="text-story-avg-rating">
+                      <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                      {((story as any).averageRating || 0).toFixed(1)} ({(story as any).totalRatings})
+                    </span>
+                  </>
                 )}
               </div>
-              <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-4 text-white" data-testid="text-story-title" dangerouslySetInnerHTML={{ __html: story.title }} />
-              {story.excerpt && (
-                <p className="text-lg text-white/80 leading-relaxed max-w-2xl" data-testid="text-story-excerpt" dangerouslySetInnerHTML={{ __html: story.excerpt }} />
-              )}
             </div>
+            <BookmarkButton storyId={story.id} />
           </div>
-        </section>
-      ) : (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-2">
-          <Link href="/">
-            <Button variant="ghost" size="sm" className="mb-6" data-testid="button-back">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Stories
-            </Button>
-          </Link>
-          <header className="mb-6 max-w-3xl">
-            <div className="flex items-center gap-3 mb-4 flex-wrap">
-              {story.category && (
-                <Link href={categoryHref}>
-                  <Badge data-testid="badge-story-category">{story.category.name}</Badge>
-                </Link>
-              )}
-              {story.publishedAt && (
-                <span className="text-sm text-muted-foreground flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5" />
-                  {format(new Date(story.publishedAt), "MMMM d, yyyy")}
-                </span>
-              )}
-              {(story as any).ratingEnabled && (story as any).totalRatings > 0 && (
-                <div className="flex items-center gap-1 text-sm" data-testid="text-story-avg-rating">
-                  <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                  <span className="font-medium">{((story as any).averageRating || 0).toFixed(1)}</span>
-                  <span className="text-muted-foreground">({(story as any).totalRatings})</span>
-                </div>
-              )}
-            </div>
-            <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-4" data-testid="text-story-title" dangerouslySetInnerHTML={{ __html: story.title }} />
-            {story.excerpt && (
-              <p className="text-lg text-muted-foreground leading-relaxed" data-testid="text-story-excerpt" dangerouslySetInnerHTML={{ __html: story.excerpt }} />
-            )}
-          </header>
-        </div>
-      )}
 
-      {/* ── Top Banner Ad Band ── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <StoryAdBand adSlotsMap={adSlotsMap} contentId={story.id} contentType="story" />
+          {/* Action buttons */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full gap-1.5 text-xs h-8 px-3"
+              disabled={!story.audioUrl}
+            >
+              <Headphones className="w-3.5 h-3.5" />
+              Listen
+            </Button>
+            <Button
+              variant={showVideo ? "default" : "outline"}
+              size="sm"
+              className="rounded-full gap-1.5 text-xs h-8 px-3"
+              disabled={!story.youtubeUrl}
+              onClick={() => setShowVideo(v => !v)}
+            >
+              <Play className="w-3.5 h-3.5" />
+              {showVideo ? "Stop Video" : "Play Video"}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full gap-1.5 text-xs h-8 px-3"
+              onClick={() => setFontScale(f => (f + 1) % 3)}
+              title={["Default size", "Large size", "Extra large size"][fontScale]}
+            >
+              <span className="font-bold text-sm leading-none select-none">Aa</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full gap-1.5 text-xs h-8 px-3"
+              onClick={() => navigator.share?.({ title: story.title, url: window.location.href }).catch(() => {})}
+              data-testid="button-share"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              Share
+            </Button>
+          </div>
+        </div>
       </div>
 
-      {/* ── Article + Sidebar ── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          <article className="lg:col-span-3">
+      {/* ── Main Content + Sidebar ── */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-10">
+
+          {/* ── Article Column ── */}
+          <article>
+
+            {/* Cover image with centered play button overlay */}
+            {story.thumbnail && (
+              <div className="relative rounded-xl overflow-hidden mb-6 shadow-sm" data-testid="section-story-cover">
+                {showVideo && story.youtubeUrl ? (
+                  <div className="aspect-video w-full">
+                    <VideoPlayer url={story.youtubeUrl} wrapperClassName="w-full h-full" />
+                  </div>
+                ) : (
+                  <>
+                    <img src={story.thumbnail} alt="" className="w-full aspect-video object-cover block" loading="lazy" />
+                    {story.youtubeUrl && (
+                      <button
+                        className="absolute inset-0 flex items-center justify-center group"
+                        onClick={() => setShowVideo(true)}
+                        data-testid="button-play-video"
+                        aria-label="Play video"
+                      >
+                        <div className="absolute inset-0 bg-black/15 group-hover:bg-black/25 transition-colors" />
+                        <div className="relative w-16 h-16 rounded-full bg-white shadow-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                          <Play className="w-7 h-7 text-primary fill-primary ml-0.5" />
+                        </div>
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Audio player */}
             {story.audioUrl && (
-              <div className="mb-8">
+              <div className="mb-6">
                 <AudioPlayer url={story.audioUrl} title={`Listen: ${story.title}`} />
               </div>
             )}
 
-            {story.youtubeUrl && (
-              <div className="mb-8">
+            {/* Video with no thumbnail fallback */}
+            {story.youtubeUrl && !story.thumbnail && (
+              <div className="mb-6 rounded-xl overflow-hidden shadow-sm">
                 <VideoPlayer url={story.youtubeUrl} />
               </div>
             )}
 
+            {/* Banner ad below cover */}
+            <InArticleBannerAd adSlotsMap={adSlotsMap} contentId={story.id} contentType="story" />
+
+            {/* In This Article */}
+            {headings.length > 1 && <InThisArticle headings={headings} />}
+
+            {/* Article content */}
             <div
-              className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-serif prose-p:leading-relaxed prose-p:text-foreground/90"
+              className={`prose dark:prose-invert max-w-none prose-headings:font-serif prose-p:leading-relaxed prose-p:text-foreground/90 ${proseSize}`}
               dangerouslySetInnerHTML={{ __html: story.content || "" }}
               data-testid="content-story"
             />
 
+            {/* Tags */}
             {story.tags && story.tags.length > 0 && (
               <div className="flex items-center gap-2 mt-8 pt-8 border-t flex-wrap" data-testid="section-tags">
                 <Tag className="w-4 h-4 text-muted-foreground" />
-                {story.tags.map((tag) => (
+                {story.tags.map(tag => (
                   <Badge key={tag} variant="secondary">{tag}</Badge>
                 ))}
               </div>
             )}
 
-            <div className="flex items-center justify-between gap-4 mt-8 pt-8 border-t">
-              <div className="flex items-center gap-2">
-                <BookmarkButton storyId={story.id} />
-                <Button variant="ghost" size="sm" onClick={() => navigator.share?.({ title: story.title, url: window.location.href }).catch(() => {})} data-testid="button-share">
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Share
-                </Button>
-              </div>
+            {/* Bottom actions */}
+            <div className="flex items-center gap-2 mt-8 pt-8 border-t">
+              <BookmarkButton storyId={story.id} />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigator.share?.({ title: story.title, url: window.location.href }).catch(() => {})}
+                data-testid="button-share-bottom"
+              >
+                <Share2 className="w-4 h-4 mr-2" />
+                Share
+              </Button>
             </div>
 
-            {/* ── Bottom Banner Ad Band ── */}
+            {/* Bottom banner ad */}
             <div className="mt-8">
               <StoryAdBand adSlotsMap={adSlotsMap} contentId={story.id} contentType="story" />
             </div>
 
             <StoryRatingSection story={story} />
 
-            <RelatedStories storyId={story.id} />
+            {/* Mobile: related stories at bottom of article */}
+            <div className="lg:hidden mt-10 pt-8 border-t">
+              <h2 className="font-serif text-xl font-bold mb-5">Related Stories</h2>
+              <RelatedStories storyId={story.id} />
+            </div>
           </article>
 
-          <SidebarAds adSlotsMap={adSlotsMap} contentId={story.id} contentType="story" />
+          {/* ── Right Sidebar ── */}
+          <aside className="hidden lg:block" data-testid="sidebar-story">
+            <div className="sticky top-20 space-y-5">
+              <div className="rounded-xl border border-border/60 bg-card p-4">
+                <RelatedStories storyId={story.id} />
+              </div>
+              <IslamicBooksAdCard adSlotsMap={adSlotsMap} contentId={story.id} contentType="story" />
+              <QuranVerseWidget />
+              {headings.length > 0 && <QuickNavigation headings={headings} />}
+              <ShareArticle title={story.title} />
+              <ListenToStoriesAdCard adSlotsMap={adSlotsMap} contentId={story.id} contentType="story" />
+              {adSlotsMap["sidebar-large"] !== false && (
+                <div className="w-full h-[600px] flex overflow-hidden">
+                  <AdSlot slot="sidebar-large" label="Ad Space — 300×600" className="w-full h-full" contentId={story.id} contentType="story" contentManualMode={adSlotsMap["sidebar-large_mode"] === "manual"} />
+                </div>
+              )}
+            </div>
+          </aside>
         </div>
       </div>
     </div>
@@ -829,6 +1096,22 @@ export default function StoryPage() {
             <p className="text-muted-foreground mb-6">The story you're looking for doesn't exist or has been removed.</p>
             <Link href="/">
               <Button data-testid="button-go-home">Go Home</Button>
+            </Link>
+          </Card>
+        </div>
+      </PublicLayout>
+    );
+  }
+
+  if (story.category && (story.category as any).isActive === false) {
+    return (
+      <PublicLayout>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <Card className="p-12 text-center max-w-lg mx-auto" data-testid="card-category-inactive">
+            <h2 className="font-serif text-2xl font-bold mb-3">Content Unavailable</h2>
+            <p className="text-muted-foreground mb-6">This story is in a category that is currently not available to the public.</p>
+            <Link href="/">
+              <Button data-testid="button-go-home-inactive">Return to Home</Button>
             </Link>
           </Card>
         </div>
