@@ -581,7 +581,10 @@ export class DatabaseStorage implements IStorage {
     if (opts?.userId) conditions.push(uidCond(stories.userId, opts.userId, opts.includeNullUser));
     if (opts?.startDate) conditions.push(gte(stories.createdAt, new Date(opts.startDate)));
     if (opts?.endDate) conditions.push(lte(stories.createdAt, new Date(opts.endDate)));
-    if (opts?.activeOnly) conditions.push(eq(stories.isActive, true));
+    if (opts?.activeOnly) {
+      conditions.push(eq(stories.isActive, true));
+      conditions.push(or(isNull(stories.categoryId), eq(categories.isActive, true)));
+    }
 
     const orderCol = opts?.sortBy === "views" ? desc(stories.views) : desc(stories.createdAt);
 
@@ -689,8 +692,10 @@ export class DatabaseStorage implements IStorage {
   async getRelatedStories(storyId: string, categoryId: string | null, limit = 4): Promise<StoryWithCategory[]> {
     const conditions = [
       eq(stories.status, "published"),
+      eq(stories.isActive, true),
       isNull(stories.deletedAt),
       sql`${stories.id} != ${storyId}`,
+      or(isNull(stories.categoryId), eq(categories.isActive, true)),
     ];
     if (categoryId) conditions.push(eq(stories.categoryId, categoryId));
 
