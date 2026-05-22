@@ -1,0 +1,33 @@
+You need to completely redesign the articles inside my website’s **Sahaba Article Category Page** by following the second UI design I provided exactly. Especially after opening an article, the way the cover image, video play section, sidebar, and advertisement sections are displayed must be fully updated according to the new UI design, including the style, spacing, layout, and visual presentation. However, all existing functionalities must remain unchanged.
+
+Currently, when users click the play icon on the article cover image, the video playback or full-screen media system works properly. That functionality should remain exactly the same. Only the UI/UX design should be changed to match my provided reference design.
+
+A new **Banner Advertisement Section** must be added below the article cover image. The current `AdSense Placeholder - 300×600` should be completely replaced with this new Banner Ad Section. This means the same way the `AdSense Placeholder - 300×600` is currently controlled from the Admin Panel — including manual upload, enable/disable, and automatic control — the new Banner Ad should also be controlled in the exact same way.
+
+Special attention must be given so that the Banner Advertisement remains visible directly below the article cover image, and also below the video whenever the cover image is replaced by video playback inside the article.
+
+Additionally, the current AdSense placeholders used inside the article sidebar must be replaced according to the new UI structure:
+
+* `AdSense Placeholder - 300×300 (A)` should be replaced with the **“Islamic Book Special Offer”** advertisement shown in my provided UI, positioned below the “Related Stories” section.
+* `AdSense Placeholder - 300×300 (B)` should be replaced with the **“Listen to Islamic Stories on the Go”** advertisement shown in my provided UI, positioned below the “Share This Article” section.
+
+All of these advertisement sections must continue to support Manual Upload, Enable/Disable, and Automatic Control from the Admin Panel exactly like before. Only the placeholder positions and UI structure will be replaced.
+
+Another important requirement is that currently, each Manual Ad Upload Section on the website only supports uploading a single advertisement. This system now needs to be upgraded to support **Multiple Ads Upload** functionality.
+
+This means the Admin Panel should allow uploading multiple banners/ads for a specific ad section, and those advertisements should appear on the website in a Slider/Carousel format, automatically rotating one after another after a certain interval.
+
+For example:
+If 2 banner ads are uploaded to the Article Banner Ad Section from the Admin Panel, the website should first display the first banner, then after a few seconds automatically transition to the second banner using a slider effect, and this process should continue in a loop.
+
+Another important issue that needs to be fixed is in the **Category Management System**.
+
+Currently, even if a Category Page is marked as Inactive from the Admin Panel’s Category Section, it still remains visible on the website. This issue must be completely fixed.
+
+The updated system should work like this:
+Whenever a Category Page is marked as Inactive from the Admin Panel, that category should instantly become hidden from the website, and no user should be able to view it anymore.
+
+Example:
+If a category named `Prophets` is marked as Inactive from the Admin Panel, then that category page must be completely hidden from the Website Navigation, Category List, and all Public Views.
+
+Finally, the entire design and functionality should be implemented in a way that delivers a modern, professional, premium Islamic Story & Article Platform experience, while remaining fully mobile responsive and user-friendly.

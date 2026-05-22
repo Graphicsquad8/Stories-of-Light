@@ -648,14 +648,9 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
                   )}
 
                   {showVideo && activePart.videoUrl ? (
-                    <>
-                      <div className="my-4 rounded-xl overflow-hidden" data-testid="video-embed-container">
-                        <VideoPlayer url={activePart.videoUrl} wrapperClassName="aspect-video w-full" />
-                      </div>
-                      <div className="my-5">
-                        <AdSlot slot="in-article" className="w-full" disabled={adSlotsMap["in-article"] === false} contentId={story.id} contentType="story" contentManualMode={adSlotsMap["in-article_mode"] === "manual"} />
-                      </div>
-                    </>
+                    <div className="my-4 rounded-xl overflow-hidden" data-testid="video-embed-container">
+                      <VideoPlayer url={activePart.videoUrl} wrapperClassName="aspect-video w-full" />
+                    </div>
                   ) : (
                     activePart.coverImage && (
                       <div className="my-4 rounded-xl overflow-hidden" data-testid="cover-photo-container">
@@ -669,6 +664,7 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
                       </div>
                     )
                   )}
+                  <InArticleBannerAd adSlotsMap={adSlotsMap} contentId={story.id} contentType="story" />
                 </div>
               )}
 
@@ -741,16 +737,10 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
 
           <aside className={`hidden xl:block w-[300px] shrink-0 border-l ${!sidebarOpen ? "mr-4" : ""}`} data-testid="sidebar-ads-right">
             <div className="sticky top-[4.5rem] p-3 space-y-4">
-              {adSlotsMap["sidebar-small"] !== false && (
-                <div className="w-[300px] h-[250px] flex overflow-hidden">
-                  <AdSlot slot="sidebar-small" label="AdSense Placeholder — 300×250" className="w-full h-full" contentId={story.id} contentType="story" contentManualMode={adSlotsMap["sidebar-small_mode"] === "manual"} />
-                </div>
-              )}
-              {adSlotsMap["sidebar-small-2"] !== false && (
-                <div className="w-[300px] h-[250px] flex overflow-hidden">
-                  <AdSlot slot="sidebar-small-2" label="AdSense Placeholder — 300×250 (B)" className="w-full h-full" contentId={story.id} contentType="story" contentManualMode={adSlotsMap["sidebar-small-2_mode"] === "manual"} />
-                </div>
-              )}
+              <IslamicBooksAdCard adSlotsMap={adSlotsMap} contentId={story.id} contentType="story" />
+              <QuranVerseWidget />
+              <ShareArticle title={story.title} />
+              <ListenToStoriesAdCard adSlotsMap={adSlotsMap} contentId={story.id} contentType="story" />
             </div>
           </aside>
         </div>
