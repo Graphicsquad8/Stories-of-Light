@@ -390,7 +390,7 @@ function SlotSection({ slotId, slotLabel, slotDescription, settings, onSaveSetti
   const handleOpenCreate = () => { setEditAd(null); setDialogOpen(true); };
   const handleOpenEdit = (ad: ManualAd) => { setEditAd(ad); setDialogOpen(true); };
 
-  const activeAd = ads.find(a => a.isActive);
+  const activeAds = ads.filter(a => a.isActive);
 
   return (
     <div className="border rounded-xl p-4 space-y-4">
@@ -430,13 +430,16 @@ function SlotSection({ slotId, slotLabel, slotDescription, settings, onSaveSetti
 
       {mode === "manual" && (
         <>
-          {activeAd && (
+          {activeAds.length > 0 && (
             <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 text-xs text-green-800 dark:text-green-300">
               <div className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
-              Displaying: <span className="font-medium">{activeAd.name}</span>
+              {activeAds.length === 1
+                ? <>Displaying: <span className="font-medium">{activeAds[0].name}</span></>
+                : <><span className="font-medium">{activeAds.length} ads</span> rotating as carousel (every 5 s)</>
+              }
             </div>
           )}
-          {!activeAd && (
+          {activeAds.length === 0 && (
             <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-300">
               <AlertCircle className="w-3.5 h-3.5 shrink-0" />
               No active ad — slot will be empty. Add and enable an ad below.

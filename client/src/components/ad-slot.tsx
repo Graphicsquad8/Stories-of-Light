@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useLocation } from "wouter";
 
 export type AdSlotType = "banner" | "display" | "in-article" | "in-feed" | "story-bottom" | "sidebar-small" | "sidebar-small-2" | "sidebar-large";
@@ -153,6 +153,39 @@ function ManualAdRenderer({ ad, className }: { ad: ManualAdRecord; className: st
   return <div ref={containerRef} className={`overflow-hidden ${className}`} data-ad-slot={ad.slot} />;
 }
 
+function ManualAdCarousel({ ads, className }: { ads: ManualAdRecord[]; className: string }) {
+  const [current, setCurrent] = useState(0);
+
+  useEffect(() => {
+    if (ads.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrent((i) => (i + 1) % ads.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [ads.length]);
+
+  if (!ads.length) return null;
+  if (ads.length === 1) return <ManualAdRenderer ad={ads[0]} className={className} />;
+
+  return (
+    <div className={`relative overflow-hidden ${className}`}>
+      {ads.map((ad, i) => (
+        <div
+          key={ad.id}
+          className="absolute inset-0"
+          style={{
+            opacity: i === current ? 1 : 0,
+            transition: "opacity 0.7s ease-in-out",
+            zIndex: i === current ? 1 : 0,
+          }}
+        >
+          <ManualAdRenderer ad={ad} className="w-full h-full" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function AdSlot({ slot, className = "", label, disabled, contentId, contentType, contentManualMode }: AdSlotProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [location] = useLocation();
@@ -171,32 +204,26 @@ export function AdSlot({ slot, className = "", label, disabled, contentId, conte
   const slotMode = settings ? (settings[`adSlotMode_${slot}`] || "auto") : "auto";
   const isGlobalManualMode = slotMode === "manual";
 
-  const { data: globalManualAd } = useQuery<ManualAdRecord | null>({
+  const { data: globalManualAds } = useQuery<ManualAdRecord[]>({
     queryKey: ["/api/manual-ads/slot", slot],
     queryFn: () => fetch(`/api/manual-ads/slot/${slot}`).then(r => r.json()),
     enabled: isGlobalManualMode,
     staleTime: 30_000,
   });
 
-  // Always fetch content-specific manual ad when content info is available.
-  // This ensures the ad displays even if the parent's adSlotsMap is stale.
-  const { data: contentManualAd, isLoading: contentAdLoading } = useQuery<ManualAdRecord | null>({
+  const { data: contentManualAds, isLoading: contentAdLoading } = useQuery<ManualAdRecord[]>({
     queryKey: ["/api/manual-ads/content", contentType, contentId, slot],
     queryFn: () => fetch(`/api/manual-ads/content/${contentType}/${contentId}/slot/${slot}`).then(r => r.json()),
     enabled: !!(contentId && contentType),
     staleTime: 30_000,
   });
 
-  // Priority: active content ad > content manual mode suppression > global manual > auto
-  const hasActiveContentAd = !!(contentManualAd && contentManualAd.isActive);
+  const hasActiveContentAd = !!(contentManualAds && contentManualAds.length > 0);
   const isManualMode = hasActiveContentAd || contentManualMode || isGlobalManualMode;
-  // If a content-specific ad exists and is active, it wins.
-  // If slot is in manual mode (even with no ad yet), fall through to null.
-  // Global manual ad only fires when there's no content override.
-  const manualAd = hasActiveContentAd ? contentManualAd : (isGlobalManualMode ? globalManualAd : null);
+  const activeAds: ManualAdRecord[] = hasActiveContentAd
+    ? (contentManualAds || [])
+    : (isGlobalManualMode ? (globalManualAds || []) : []);
 
-  // While the content manual ad check is still in-flight, hold rendering to prevent
-  // a flash where the auto ad briefly appears before the manual ad is confirmed.
   const contentAdPending = !!(contentId && contentType && contentAdLoading);
 
   const platform = settings?.adPlatform || "";
@@ -256,12 +283,11 @@ export function AdSlot({ slot, className = "", label, disabled, contentId, conte
 
   if (!globalEnabled || !pageEnabled || !slotEnabled || disabled) return null;
 
-  // Hold rendering while the content manual ad check is still in-flight
   if (contentAdPending) return null;
 
   if (isManualMode) {
-    if (!manualAd) return null;
-    return <ManualAdRenderer ad={manualAd} className={className} />;
+    if (!activeAds.length) return null;
+    return <ManualAdCarousel ads={activeAds} className={className} />;
   }
 
   if (!platform || !code) {

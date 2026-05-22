@@ -2454,14 +2454,14 @@ export async function registerRoutes(
   app.use("/uploads/ads", express.static(adsDir));
 
   app.get("/api/manual-ads/slot/:slot", async (req, res) => {
-    const ad = await storage.getActiveManualAdBySlot(req.params.slot);
-    res.json(ad || null);
+    const ads = await storage.getActiveManualAdBySlot(req.params.slot);
+    res.json(ads);
   });
 
   app.get("/api/manual-ads/content/:contentType/:contentId/slot/:slot", async (req, res) => {
     const { contentType, contentId, slot } = req.params;
-    const ad = await storage.getActiveManualAdForContent(contentType, contentId, slot);
-    res.json(ad || null);
+    const ads = await storage.getActiveManualAdForContent(contentType, contentId, slot);
+    res.json(ads);
   });
 
   app.get("/api/admin/manual-ads", requireAuth, async (req, res) => {

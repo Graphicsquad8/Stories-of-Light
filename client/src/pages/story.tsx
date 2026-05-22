@@ -305,7 +305,7 @@ function InArticleBannerAd({ adSlotsMap, contentId, contentType }: { adSlotsMap:
         <Button size="sm" className="shrink-0 rounded-lg">Learn More</Button>
       </div>
       <div className="absolute inset-0 z-10">
-        <AdSlot slot="banner" className="w-full h-full" disabled={adSlotsMap["banner"] === false} contentId={contentId} contentType={contentType} contentManualMode={adSlotsMap["banner_mode"] === "manual"} />
+        <AdSlot slot="sidebar-large" className="w-full h-full" disabled={adSlotsMap["sidebar-large"] === false} contentId={contentId} contentType={contentType} contentManualMode={adSlotsMap["sidebar-large_mode"] === "manual"} />
       </div>
     </div>
   );
@@ -751,11 +751,6 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
                   <AdSlot slot="sidebar-small-2" label="AdSense Placeholder — 300×250 (B)" className="w-full h-full" contentId={story.id} contentType="story" contentManualMode={adSlotsMap["sidebar-small-2_mode"] === "manual"} />
                 </div>
               )}
-              {adSlotsMap["sidebar-large"] !== false && (
-                <div className="w-[300px] h-[600px] flex overflow-hidden">
-                  <AdSlot slot="sidebar-large" label="AdSense Placeholder — 300×600" className="w-full h-full" contentId={story.id} contentType="story" contentManualMode={adSlotsMap["sidebar-large_mode"] === "manual"} />
-                </div>
-              )}
             </div>
           </aside>
         </div>
@@ -1020,11 +1015,6 @@ function LegacyView({ story }: { story: StoryWithCategory }) {
               {headings.length > 0 && <QuickNavigation headings={headings} />}
               <ShareArticle title={story.title} />
               <ListenToStoriesAdCard adSlotsMap={adSlotsMap} contentId={story.id} contentType="story" />
-              {adSlotsMap["sidebar-large"] !== false && (
-                <div className="w-full h-[600px] flex overflow-hidden">
-                  <AdSlot slot="sidebar-large" label="Ad Space — 300×600" className="w-full h-full" contentId={story.id} contentType="story" contentManualMode={adSlotsMap["sidebar-large_mode"] === "manual"} />
-                </div>
-              )}
             </div>
           </aside>
         </div>

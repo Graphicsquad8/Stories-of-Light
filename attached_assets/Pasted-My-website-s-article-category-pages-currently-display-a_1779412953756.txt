@@ -1,0 +1,25 @@
+My website’s article category pages currently display articles in a specific viewing/play system when users open them. I want this entire system to be redesigned exactly like the UI design I provided. The core functionality will remain the same — meaning the article cover photo, play icon, and the system where clicking the icon plays a video or opens the full feature/content should continue working as it currently does. However, the overall style, layout, and UI design must be changed to match the provided design exactly.
+
+Below the article cover photo, a banner advertisement section must be added. This banner ad will replace the current “AdSense Placeholder - 300×600” ad placement inside the article. In the admin panel, wherever the “AdSense Placeholder - 300×600” ad is currently managed, it should now control this new banner ad section below the article cover image. The ad management system must continue working exactly as before — including manual upload, enable/disable options, and automatic display settings — but instead of showing the old 300×600 ad placement, it will now display the new banner ad design from the provided UI.
+
+Additionally, inside the article content, the current “AdSense Placeholder - 300×300 (A)” ad placement must be replaced with the “Islamic Book Special Offer” ad section shown below the “Related Stories” section in the provided UI design.
+
+Similarly, the existing “AdSense Placeholder - 300×300 (B)” ad placement inside the article must be replaced with the “Listen to Islamic Stories on the Go” ad section shown below the “Share This Article” section in the provided UI design.
+
+All these replacements must remain fully connected to the existing ad management functionality in the admin panel. The admin should still be able to manage these ads exactly the same way as before, but the frontend design and placement will follow the new UI.
+
+Another important feature request is related to manual ad uploads. Currently, every manual ad upload section only allows uploading a single advertisement. I want to upgrade this system so that multiple ads can be uploaded into each ad placement section. These multiple ads should automatically appear as a slider/carousel on the website.
+
+For example:
+If there is a banner ad section inside an article and the admin uploads two banner ads from the admin panel, then the website should first display Banner Ad 1, and after a few seconds automatically slide/show Banner Ad 2. This process should continue in a loop like a rotating slider.
+
+Finally, there is an issue in the admin panel category management system that needs to be fixed.
+
+Inside the admin panel’s category section, if any category page is marked as “Inactive,” that category should immediately become hidden from the website frontend and should no longer be visible to users.
+
+Currently, even after marking a category as inactive, the category page is still appearing on the website.
+
+For example:
+If I mark the “Prophets” category as inactive from the admin panel, then the “Prophets” category page should automatically disappear from the website, and no users should be able to view or access that category page.
+
+Please organize, structure, and implement all these requirements in a clean, professional, developer-friendly way while maintaining a premium Islamic article website experience and modern UI consistency.

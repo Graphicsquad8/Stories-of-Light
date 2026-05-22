@@ -275,8 +275,8 @@ export interface IStorage {
 
   getManualAds(slot?: string): Promise<ManualAd[]>;
   getManualAdsForContent(contentType: string, contentId: string): Promise<ManualAd[]>;
-  getActiveManualAdBySlot(slot: string): Promise<ManualAd | undefined>;
-  getActiveManualAdForContent(contentType: string, contentId: string, slot: string): Promise<ManualAd | undefined>;
+  getActiveManualAdBySlot(slot: string): Promise<ManualAd[]>;
+  getActiveManualAdForContent(contentType: string, contentId: string, slot: string): Promise<ManualAd[]>;
   createManualAd(data: InsertManualAd): Promise<ManualAd>;
   updateManualAd(id: string, data: Partial<InsertManualAd>): Promise<ManualAd | undefined>;
   deleteManualAd(id: string): Promise<boolean>;
@@ -1889,25 +1889,21 @@ export class DatabaseStorage implements IStorage {
       .orderBy(asc(manualAds.slot), asc(manualAds.sortOrder), desc(manualAds.createdAt));
   }
 
-  async getActiveManualAdBySlot(slot: string): Promise<ManualAd | undefined> {
-    const [ad] = await db.select().from(manualAds)
+  async getActiveManualAdBySlot(slot: string): Promise<ManualAd[]> {
+    return db.select().from(manualAds)
       .where(and(eq(manualAds.slot, slot), eq(manualAds.isActive, true), sql`content_id IS NULL`))
-      .orderBy(asc(manualAds.sortOrder), desc(manualAds.createdAt))
-      .limit(1);
-    return ad;
+      .orderBy(asc(manualAds.sortOrder), desc(manualAds.createdAt));
   }
 
-  async getActiveManualAdForContent(contentType: string, contentId: string, slot: string): Promise<ManualAd | undefined> {
-    const [ad] = await db.select().from(manualAds)
+  async getActiveManualAdForContent(contentType: string, contentId: string, slot: string): Promise<ManualAd[]> {
+    return db.select().from(manualAds)
       .where(and(
         eq(manualAds.slot, slot),
         eq(manualAds.isActive, true),
         eq(manualAds.contentType, contentType),
         eq(manualAds.contentId, contentId),
       ))
-      .orderBy(asc(manualAds.sortOrder), desc(manualAds.createdAt))
-      .limit(1);
-    return ad;
+      .orderBy(asc(manualAds.sortOrder), desc(manualAds.createdAt));
   }
 
   async createManualAd(data: InsertManualAd): Promise<ManualAd> {
