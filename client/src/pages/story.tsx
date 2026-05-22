@@ -404,7 +404,8 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
   const [activePageIndex, setActivePageIndex] = useState(0);
   const [showVideo, setShowVideo] = useState(false);
   const [showAudio, setShowAudio] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(() => typeof window !== "undefined" && window.innerWidth >= 1024);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [fontScale, setFontScale] = useState(0);
   const [autoPlay, setAutoPlay] = useState(false);
   const [autoPlaySeconds] = useState(30);
 
@@ -413,6 +414,12 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
   const totalPages = activePart?.pages?.length || 0;
   const isFirstPage = activePageIndex === 0;
   const pageHeadings = extractHeadings(activePage?.content || "");
+  const readingTime = calcReadingTime(story.content || activePage?.content || "");
+  const views = (story as any).views || 0;
+  const authorName = (story as any).authorName || "Stories of Light Team";
+  const categoryHref = story.category ? `/${(story.category as any).urlSlug || story.category.slug}` : "/";
+  const proseSizes = ["", "prose-lg", "prose-xl"];
+  const proseSize = proseSizes[fontScale];
 
   const { data: progress } = useQuery<any>({
     queryKey: ["/api/stories", story.id, "reading-progress"],
@@ -489,257 +496,260 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
 
   return (
     <div data-testid="multi-part-story">
-      <div className="border-b bg-background/95 backdrop-blur sticky top-0 z-50">
-        <div className="mx-auto px-4 sm:px-6 lg:px-8 py-3" style={{ maxWidth: "1400px" }}>
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3 min-w-0">
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="shrink-0 lg:hidden"
-                data-testid="button-toggle-sidebar"
-              >
-                {sidebarOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+
+      {/* ── Slide-out Parts Navigation Panel ── */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-50 flex">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
+          <aside className="relative w-72 max-w-[85vw] bg-background shadow-2xl flex flex-col z-10">
+            <div className="flex items-center justify-between px-4 py-3 border-b bg-primary/5">
+              <div className="min-w-0 flex-1 pr-3">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-0.5">Article Parts</p>
+                <h2 className="font-serif font-bold text-sm truncate" dangerouslySetInnerHTML={{ __html: story.title }} />
+              </div>
+              <Button size="icon" variant="ghost" className="h-8 w-8 shrink-0" onClick={() => setSidebarOpen(false)}>
+                <X className="w-4 h-4" />
               </Button>
-              <div className="min-w-0">
-                <h1 className="font-serif text-lg sm:text-xl font-bold truncate" data-testid="text-story-title" dangerouslySetInnerHTML={{ __html: story.title }} />
-                <div className="flex items-center gap-3 text-sm flex-wrap">
-                  {story.category && (
-                    <Link href={`/${(story.category as any).urlSlug || story.category.slug}`}>
-                      <Badge variant="secondary" data-testid="badge-story-category">{story.category.name}</Badge>
-                    </Link>
-                  )}
-                  <span className="text-muted-foreground" data-testid="text-part-page-indicator">
-                    Part {activePartIndex + 1} — Page {activePageIndex + 1}/{totalPages}
-                  </span>
-                  {(story as any).ratingEnabled && (story as any).totalRatings > 0 && (
-                    <div className="flex items-center gap-1 text-sm" data-testid="text-story-avg-rating">
-                      <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                      <span className="font-medium">{((story as any).averageRating || 0).toFixed(1)}</span>
-                      <span className="text-muted-foreground">({(story as any).totalRatings})</span>
-                    </div>
-                  )}
-                </div>
+            </div>
+            <ScrollArea className="flex-1">
+              <div className="p-3 space-y-0.5">
+                {parts.map((part, i) => (
+                  <button
+                    key={part.id}
+                    onClick={() => { navigateTo(i, 0); setSidebarOpen(false); }}
+                    className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                      activePartIndex === i
+                        ? "bg-primary text-primary-foreground font-medium"
+                        : "hover:bg-muted text-foreground"
+                    }`}
+                    data-testid={`sidebar-part-${part.id}`}
+                  >
+                    <span className="text-xs opacity-60 mr-2">{i + 1}.</span>
+                    <span dangerouslySetInnerHTML={{ __html: part.title }} />
+                  </button>
+                ))}
+              </div>
+            </ScrollArea>
+          </aside>
+        </div>
+      )}
+
+      {/* ── Article Header ── */}
+      <div className="border-b bg-background">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-7">
+
+          {/* Breadcrumb */}
+          <nav className="flex items-center gap-1.5 text-xs text-muted-foreground mb-5 flex-wrap" aria-label="Breadcrumb">
+            <Link href="/" className="hover:text-foreground transition-colors flex items-center gap-1">
+              <Home className="w-3 h-3" />Home
+            </Link>
+            <ChevronRight className="w-3 h-3 shrink-0 opacity-50" />
+            {story.category && (
+              <>
+                <Link href={categoryHref} className="hover:text-foreground transition-colors">{story.category.name}</Link>
+                <ChevronRight className="w-3 h-3 shrink-0 opacity-50" />
+              </>
+            )}
+            <span className="text-foreground/55 truncate max-w-[200px]" dangerouslySetInnerHTML={{ __html: story.title }} />
+          </nav>
+
+          {/* Category badge */}
+          {story.category && (
+            <Link href={categoryHref}>
+              <Badge className="mb-3 bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 cursor-pointer font-medium" data-testid="badge-story-category">
+                {story.category.name}
+              </Badge>
+            </Link>
+          )}
+
+          {/* Title */}
+          <h1
+            className="font-serif text-2xl sm:text-3xl lg:text-[2rem] xl:text-[2.25rem] font-bold text-foreground leading-[1.2] mb-3 max-w-3xl"
+            dangerouslySetInnerHTML={{ __html: story.title }}
+            data-testid="text-story-title"
+          />
+
+          {/* Excerpt / Part summary */}
+          {(activePart.summary || story.excerpt) && (
+            <p className="text-[15px] text-muted-foreground leading-relaxed mb-5 max-w-2xl" data-testid="text-story-excerpt">
+              {activePart.summary || story.excerpt}
+            </p>
+          )}
+
+          {/* Author + Meta + Bookmark */}
+          <div className="flex items-center gap-3 mb-5 flex-wrap">
+            <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/15 flex items-center justify-center shrink-0">
+              <User className="w-4 h-4 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground leading-none">{authorName}</p>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 flex-wrap">
+                {story.publishedAt && <span>{format(new Date(story.publishedAt), "MMM d, yyyy")}</span>}
+                <span className="opacity-40">·</span>
+                <span>{readingTime} min read</span>
+                <span className="opacity-40">·</span>
+                <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{formatViews(views)} views</span>
+                {(story as any).ratingEnabled && (story as any).totalRatings > 0 && (
+                  <>
+                    <span className="opacity-40">·</span>
+                    <span className="flex items-center gap-1" data-testid="text-story-avg-rating">
+                      <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                      {((story as any).averageRating || 0).toFixed(1)} ({(story as any).totalRatings})
+                    </span>
+                  </>
+                )}
               </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <BookmarkButton storyId={story.id} />
-              <Link href="/">
-                <Button size="icon" variant="ghost" data-testid="button-back-home">
-                  <ArrowLeft className="w-4 h-4" />
-                </Button>
-              </Link>
-            </div>
+            <BookmarkButton storyId={story.id} />
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {parts.length > 1 && (
+              <Button variant="outline" size="sm" className="rounded-full gap-1.5 text-xs h-8 px-3"
+                onClick={() => setSidebarOpen(true)} data-testid="button-parts-menu">
+                <Menu className="w-3.5 h-3.5" />
+                Parts {activePartIndex + 1}/{parts.length}
+              </Button>
+            )}
+            <Button variant={showAudio ? "default" : "outline"} size="sm" className="rounded-full gap-1.5 text-xs h-8 px-3"
+              disabled={!activePart.audioUrl} onClick={() => { setShowAudio(v => !v); setShowVideo(false); }}
+              data-testid="button-toggle-audio">
+              <Headphones className="w-3.5 h-3.5" />
+              {showAudio ? "Hide Audio" : "Listen"}
+            </Button>
+            <Button variant={showVideo ? "default" : "outline"} size="sm" className="rounded-full gap-1.5 text-xs h-8 px-3"
+              disabled={!activePart.videoUrl} onClick={() => { setShowVideo(v => !v); setShowAudio(false); }}
+              data-testid="button-toggle-video">
+              <Play className="w-3.5 h-3.5" />
+              {showVideo ? "Stop Video" : "Play Video"}
+            </Button>
+            <Button variant="outline" size="sm" className="rounded-full gap-1.5 text-xs h-8 px-3"
+              onClick={() => setFontScale(f => (f + 1) % 3)}
+              title={["Default size", "Large size", "Extra large size"][fontScale]}>
+              <span className="font-bold text-sm leading-none select-none">Aa</span>
+            </Button>
+            <Button variant="outline" size="sm" className="rounded-full gap-1.5 text-xs h-8 px-3"
+              onClick={() => navigator.share?.({ title: story.title, url: window.location.href }).catch(() => {})}
+              data-testid="button-share">
+              <Share2 className="w-3.5 h-3.5" />Share
+            </Button>
           </div>
         </div>
       </div>
 
-      <div className="mx-auto" style={{ maxWidth: "1400px" }}>
-        <div className="flex min-h-[calc(100vh-12rem)]">
-          <aside
-            className={`${sidebarOpen ? "w-48 lg:w-48" : "w-0 overflow-hidden"} shrink-0 border-r bg-muted/30 transition-all duration-300`}
-            data-testid="parts-sidebar"
-          >
-            <div className="sticky top-[4.5rem]">
-              <div className="p-2 px-3 border-b flex items-center justify-between">
-                <h2 className="font-semibold text-sm">Parts</h2>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-6 w-6 shrink-0 hidden lg:flex"
-                  onClick={() => setSidebarOpen(false)}
-                  data-testid="button-collapse-sidebar"
-                >
-                  <PanelLeftClose className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-              <ScrollArea className="h-[calc(100vh-10rem)]">
-                <div className="p-1.5 space-y-0.5">
-                  {parts.map((part, i) => (
-                    <button
-                      key={part.id}
-                      onClick={() => {
-                        navigateTo(i, 0);
-                        if (window.innerWidth < 1024) setSidebarOpen(false);
-                      }}
-                      className={`w-full text-left px-2.5 py-1.5 rounded-md text-sm transition-colors ${
-                        activePartIndex === i
-                          ? "bg-primary text-primary-foreground"
-                          : "hover:bg-muted"
-                      }`}
-                      data-testid={`sidebar-part-${part.id}`}
-                    >
-                      <span className="text-xs opacity-60 mr-1.5">{i + 1}.</span>
-                      <span dangerouslySetInnerHTML={{ __html: part.title }} />
-                    </button>
-                  ))}
-                </div>
-              </ScrollArea>
-            </div>
-          </aside>
+      {/* ── Main Content + Sidebar ── */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-10">
 
-          {!sidebarOpen && (
-            <div className="shrink-0 hidden lg:block">
-              <div className="sticky top-[4.5rem] pt-3 pl-1">
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-7 w-7"
-                  onClick={() => setSidebarOpen(true)}
-                  data-testid="button-expand-sidebar"
-                >
-                  <PanelLeftOpen className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          )}
+          {/* ── Article Column ── */}
+          <article>
 
-          <main className="flex-1 min-w-0">
-            <div className={`px-4 sm:px-6 py-8 ${sidebarOpen ? "max-w-4xl" : ""}`}>
-              {isFirstPage && (
-                <div className="mb-8">
-                  <h2 className="font-serif text-3xl sm:text-4xl font-bold mb-3 text-center" data-testid="text-part-title">
-                    {activePart.title}
-                  </h2>
-                  {activePart.summary && (
-                    <p className="text-muted-foreground leading-relaxed mb-5 text-base" data-testid="text-part-summary">
-                      {activePart.summary}
-                    </p>
-                  )}
+            {/* First-page media: audio, cover/video, banner ad */}
+            {isFirstPage && (
+              <>
+                {showAudio && activePart.audioUrl && (
+                  <div className="mb-5">
+                    <AudioPlayer url={activePart.audioUrl} title={`Listen: ${activePart.title}`} />
+                  </div>
+                )}
 
-                  {(activePart.audioUrl || activePart.videoUrl) && (
-                    <div className="flex items-center gap-3 mb-5" data-testid="media-controls">
+                {showVideo && activePart.videoUrl ? (
+                  <div className="relative rounded-xl overflow-hidden mb-5 shadow-sm" data-testid="video-embed-container">
+                    <VideoPlayer url={activePart.videoUrl} wrapperClassName="aspect-video w-full" />
+                  </div>
+                ) : activePart.coverImage ? (
+                  <div className="relative rounded-xl overflow-hidden mb-5 shadow-sm" data-testid="cover-photo-container">
+                    {activePart.videoUrl && (
                       <button
-                        disabled={!activePart.audioUrl}
-                        onClick={() => { setShowAudio(!showAudio); setShowVideo(false); }}
-                        className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${
-                          activePart.audioUrl
-                            ? showAudio
-                              ? "text-primary underline underline-offset-2"
-                              : "text-primary hover:underline hover:underline-offset-2"
-                            : "text-muted-foreground cursor-not-allowed opacity-50"
-                        }`}
-                        data-testid="button-toggle-audio"
+                        className="absolute inset-0 flex items-center justify-center group z-10"
+                        onClick={() => { setShowVideo(true); setShowAudio(false); }}
+                        data-testid="button-play-video"
+                        aria-label="Play video"
                       >
-                        <Headphones className="w-4 h-4" />
-                        {showAudio ? "Hide Audio" : "Listen"}
+                        <div className="absolute inset-0 bg-black/15 group-hover:bg-black/25 transition-colors" />
+                        <div className="relative w-16 h-16 rounded-full bg-white shadow-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                          <Play className="w-7 h-7 text-primary fill-primary ml-0.5" />
+                        </div>
                       </button>
-                      {activePart.videoUrl && (
-                        <>
-                          <span className="text-muted-foreground/40 select-none">|</span>
-                          <Button
-                            variant={showVideo ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => { setShowVideo(!showVideo); setShowAudio(false); }}
-                            data-testid="button-toggle-video"
-                          >
-                            <Video className="w-4 h-4 mr-2" />
-                            {showVideo ? "Hide Video" : "Watch"}
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  )}
+                    )}
+                    <img src={activePart.coverImage} alt={activePart.title}
+                      className="w-full aspect-video object-cover block" loading="lazy"
+                      data-testid="img-part-cover" />
+                  </div>
+                ) : null}
 
-                  {showAudio && activePart.audioUrl && (
-                    <div className="mb-5">
-                      <AudioPlayer url={activePart.audioUrl} title={`Listen: ${activePart.title}`} />
-                    </div>
-                  )}
+                <InArticleBannerAd adSlotsMap={adSlotsMap} contentId={story.id} contentType="story" />
+              </>
+            )}
 
-                  {showVideo && activePart.videoUrl ? (
-                    <div className="my-4 rounded-xl overflow-hidden" data-testid="video-embed-container">
-                      <VideoPlayer url={activePart.videoUrl} wrapperClassName="aspect-video w-full" />
-                    </div>
-                  ) : (
-                    activePart.coverImage && (
-                      <div className="my-4 rounded-xl overflow-hidden" data-testid="cover-photo-container">
-                        <img
-                          src={activePart.coverImage}
-                          alt={activePart.title}
-                          className="w-full h-auto max-h-[72vh] object-cover block"
-                          loading="lazy"
-                          data-testid="img-part-cover"
-                        />
-                      </div>
-                    )
-                  )}
-                  <InArticleBannerAd adSlotsMap={adSlotsMap} contentId={story.id} contentType="story" />
-                </div>
-              )}
+            {/* In This Article */}
+            {isFirstPage && pageHeadings.length > 1 && (
+              <InThisArticle headings={pageHeadings} />
+            )}
 
-              {activePage?.content ? (
-                <div
-                  className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-serif prose-p:leading-relaxed prose-p:text-foreground/90"
-                  dangerouslySetInnerHTML={{ __html: activePage.content }}
-                  data-testid="content-page"
-                />
-              ) : (
-                <div className="text-center py-12 text-muted-foreground" data-testid="text-no-content">
-                  <p>Content for this page is coming soon.</p>
-                </div>
-              )}
-
-              <div className="flex items-center justify-between gap-4 mt-8 pt-6 border-t">
-                <Button
-                  variant="outline"
-                  disabled={isVeryFirst}
-                  onClick={goToPreviousPage}
-                  data-testid="button-prev-page"
-                >
-                  <ChevronLeft className="w-4 h-4 mr-1" /> Previous
-                </Button>
-                <span className="text-sm text-muted-foreground" data-testid="text-page-progress">
-                  Part {activePartIndex + 1} — Page {activePageIndex + 1}/{totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  disabled={isVeryLast}
-                  onClick={goToNextPage}
-                  data-testid="button-next-page"
-                >
-                  Next <ChevronRight className="w-4 h-4 ml-1" />
-                </Button>
+            {/* Page content */}
+            {activePage?.content ? (
+              <div
+                className={`prose dark:prose-invert max-w-none prose-headings:font-serif prose-p:leading-relaxed prose-p:text-foreground/90 ${proseSize}`}
+                dangerouslySetInnerHTML={{ __html: activePage.content }}
+                data-testid="content-page"
+              />
+            ) : (
+              <div className="text-center py-12 text-muted-foreground" data-testid="text-no-content">
+                <p>Content for this page is coming soon.</p>
               </div>
+            )}
 
-              {activePageIndex === totalPages - 1 && activePartIndex < parts.length - 1 && (
-                <div className="text-center mt-6">
-                  <Button
-                    size="lg"
-                    onClick={() => navigateTo(activePartIndex + 1, 0)}
-                    data-testid="button-next-part"
-                  >
-                    Continue to Part {activePartIndex + 2}: {parts[activePartIndex + 1]?.title}
-                    <ChevronRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </div>
-              )}
-
-              <div className="flex items-center justify-between gap-4 mt-8 pt-8 border-t">
-                <div className="flex items-center gap-2">
-                  <BookmarkButton storyId={story.id} />
-                  <Button variant="ghost" size="sm" onClick={() => navigator.share?.({ title: story.title, url: window.location.href }).catch(() => {})} data-testid="button-share">
-                    <Share2 className="w-4 h-4 mr-2" />
-                    Share
-                  </Button>
-                </div>
-              </div>
-
-              <div className="mt-8">
-                <StoryAdBand adSlotsMap={adSlotsMap} contentId={story.id} contentType="story" />
-              </div>
-
-              <StoryRatingSection story={story} />
-
-              <div className="xl:hidden">
-                <RelatedStories storyId={story.id} />
-              </div>
+            {/* Page navigation */}
+            <div className="flex items-center justify-between gap-4 mt-10 pt-6 border-t">
+              <Button variant="outline" disabled={isVeryFirst} onClick={goToPreviousPage} data-testid="button-prev-page">
+                <ChevronLeft className="w-4 h-4 mr-1" /> Previous
+              </Button>
+              <span className="text-sm text-muted-foreground" data-testid="text-page-progress">
+                Part {activePartIndex + 1} — Page {activePageIndex + 1}/{totalPages}
+              </span>
+              <Button variant="outline" disabled={isVeryLast} onClick={goToNextPage} data-testid="button-next-page">
+                Next <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
             </div>
-          </main>
 
-          <aside className={`hidden xl:block w-[300px] shrink-0 border-l ${!sidebarOpen ? "mr-4" : ""}`} data-testid="sidebar-ads-right">
-            <div className="sticky top-[4.5rem] p-3 space-y-4">
+            {/* Continue to next part */}
+            {activePageIndex === totalPages - 1 && activePartIndex < parts.length - 1 && (
+              <div className="text-center mt-6">
+                <Button size="lg" onClick={() => navigateTo(activePartIndex + 1, 0)} data-testid="button-next-part">
+                  Continue to Part {activePartIndex + 2}: {parts[activePartIndex + 1]?.title}
+                  <ChevronRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            )}
+
+            {/* Bottom actions */}
+            <div className="flex items-center gap-2 mt-8 pt-8 border-t">
+              <BookmarkButton storyId={story.id} />
+              <Button variant="ghost" size="sm"
+                onClick={() => navigator.share?.({ title: story.title, url: window.location.href }).catch(() => {})}
+                data-testid="button-share-bottom">
+                <Share2 className="w-4 h-4 mr-2" />Share
+              </Button>
+            </div>
+
+            <div className="mt-8">
+              <StoryAdBand adSlotsMap={adSlotsMap} contentId={story.id} contentType="story" />
+            </div>
+
+            <StoryRatingSection story={story} />
+
+            {/* Mobile: related stories */}
+            <div className="lg:hidden mt-10 pt-8 border-t">
+              <h2 className="font-serif text-xl font-bold mb-5">Related Stories</h2>
+              <RelatedStories storyId={story.id} />
+            </div>
+          </article>
+
+          {/* ── Right Sidebar ── */}
+          <aside className="hidden lg:block" data-testid="sidebar-ads-right">
+            <div className="sticky top-20 space-y-5">
               <div className="rounded-xl border border-border/60 bg-card p-4">
                 <RelatedStories storyId={story.id} />
               </div>
