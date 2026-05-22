@@ -412,6 +412,7 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
   const activePage = activePart?.pages?.[activePageIndex];
   const totalPages = activePart?.pages?.length || 0;
   const isFirstPage = activePageIndex === 0;
+  const pageHeadings = extractHeadings(activePage?.content || "");
 
   const { data: progress } = useQuery<any>({
     queryKey: ["/api/stories", story.id, "reading-progress"],
@@ -731,7 +732,9 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
 
               <StoryRatingSection story={story} />
 
-              <RelatedStories storyId={story.id} />
+              <div className="xl:hidden">
+                <RelatedStories storyId={story.id} />
+              </div>
             </div>
           </main>
 
@@ -742,6 +745,7 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
               </div>
               <IslamicBooksAdCard adSlotsMap={adSlotsMap} contentId={story.id} contentType="story" />
               <QuranVerseWidget />
+              {pageHeadings.length > 0 && <QuickNavigation headings={pageHeadings} />}
               <ShareArticle title={story.title} />
               <ListenToStoriesAdCard adSlotsMap={adSlotsMap} contentId={story.id} contentType="story" />
             </div>
