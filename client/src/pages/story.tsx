@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   ArrowLeft, Clock, Tag, Share2, Bookmark, BookmarkCheck,
-  ChevronLeft, ChevronRight, Video, Headphones, Menu, X,
+  ChevronLeft, ChevronRight, ChevronDown, Video, Headphones, Menu, X,
   PanelLeftClose, PanelLeftOpen, PlayCircle, PauseCircle, Star, Loader2,
   Eye, User, Play, Link2, Home, Languages,
 } from "lucide-react";
@@ -40,7 +40,7 @@ function extractHeadings(html: string): string[] {
     .filter(Boolean);
 }
 
-function BookmarkButton({ storyId }: { storyId: string }) {
+function BookmarkButton({ storyId, iconOnly }: { storyId: string; iconOnly?: boolean }) {
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -74,17 +74,18 @@ function BookmarkButton({ storyId }: { storyId: string }) {
   return (
     <Button
       variant={isBookmarked ? "default" : "outline"}
-      size="sm"
+      size={iconOnly ? "icon" : "sm"}
       onClick={() => toggleMutation.mutate()}
       disabled={toggleMutation.isPending}
       data-testid="button-bookmark"
+      className={iconOnly ? "rounded-full w-9 h-9 shrink-0" : ""}
     >
       {isBookmarked ? (
-        <BookmarkCheck className="w-4 h-4 mr-2" />
+        <BookmarkCheck className={iconOnly ? "w-4 h-4" : "w-4 h-4 mr-2"} />
       ) : (
-        <Bookmark className="w-4 h-4 mr-2" />
+        <Bookmark className={iconOnly ? "w-4 h-4" : "w-4 h-4 mr-2"} />
       )}
-      {isBookmarked ? "Bookmarked" : "Bookmark"}
+      {!iconOnly && (isBookmarked ? "Bookmarked" : "Bookmark")}
     </Button>
   );
 }
@@ -601,39 +602,45 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
             <span className="text-foreground/55 truncate max-w-[200px]" dangerouslySetInnerHTML={{ __html: story.title }} />
           </nav>
 
-          {/* Title */}
-          <h1
-            className="font-serif text-2xl sm:text-3xl lg:text-[2rem] xl:text-[2.25rem] font-bold text-foreground leading-[1.2] mb-4 max-w-3xl"
-            dangerouslySetInnerHTML={{ __html: story.title }}
-            data-testid="text-story-title"
-          />
+          {/* Two-column: article meta | related stories */}
+          <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
+          <div className="flex-1 min-w-0">
+          {/* Title + Bookmark icon — same flex row */}
+          <div className="flex items-start gap-4 mb-4">
+            <h1
+              className="flex-1 font-serif text-[1.85rem] sm:text-[2.1rem] lg:text-[2.3rem] font-bold text-foreground leading-[1.2]"
+              dangerouslySetInnerHTML={{ __html: story.title }}
+              data-testid="text-story-title"
+            />
+            <BookmarkButton storyId={story.id} iconOnly />
+          </div>
 
-          {/* Excerpt — Parts toggle inline + single-line collapse */}
+          {/* Excerpt — Parts pill + description + Learn More, all inline */}
           {(activePart.summary || story.excerpt) && (
-            <div className="flex items-start gap-2 mb-5">
+            <div className="flex items-center gap-2.5 mb-5 flex-wrap">
               {parts.length > 1 && (
-                <Button variant="outline" size="sm" className="rounded-full gap-1 text-xs h-7 px-2.5 shrink-0 mt-0.5"
+                <Button variant="outline" size="sm"
+                  className="rounded-full gap-1.5 text-xs h-7 px-3 shrink-0 border-muted-foreground/30"
                   onClick={() => setSidebarOpen(true)} data-testid="button-parts-menu">
                   <Menu className="w-3 h-3" />
-                  Parts {activePartIndex + 1}/{parts.length}
+                  Part {activePartIndex + 1}
                 </Button>
               )}
-              <div className="flex-1 min-w-0">
-                <p className={`text-[15px] text-muted-foreground leading-relaxed ${!excerptExpanded ? "line-clamp-1" : ""}`} data-testid="text-story-excerpt">
-                  {activePart.summary || story.excerpt}
-                </p>
-                {!excerptExpanded && (
-                  <button onClick={() => setExcerptExpanded(true)} className="text-xs text-primary hover:underline font-medium mt-0.5">
-                    Learn More
-                  </button>
-                )}
-              </div>
+              <p className={`text-[15px] text-muted-foreground leading-relaxed flex-1 min-w-0 ${!excerptExpanded ? "line-clamp-1" : ""}`} data-testid="text-story-excerpt">
+                {activePart.summary || story.excerpt}
+              </p>
+              {!excerptExpanded && (
+                <button onClick={() => setExcerptExpanded(true)}
+                  className="shrink-0 flex items-center gap-0.5 text-sm text-primary font-medium hover:underline whitespace-nowrap">
+                  Learn More <ChevronDown className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
           )}
 
-          {/* Meta + Actions — one horizontal row */}
+          {/* Meta + Actions — one row, bookmark is above */}
           <div className="flex items-center justify-between gap-4 flex-wrap">
-            {/* Left: Author + meta */}
+            {/* Left: Author avatar + meta */}
             <div className="flex items-center gap-3 shrink-0">
               <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/15 flex items-center justify-center shrink-0">
                 <User className="w-4 h-4 text-primary" />
@@ -642,13 +649,13 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
                 <p className="text-sm font-semibold text-foreground leading-none">{authorName}</p>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 flex-wrap">
                   {story.publishedAt && <span>{format(new Date(story.publishedAt), "MMM d, yyyy")}</span>}
-                  <span className="opacity-40">·</span>
-                  <span>{readingTime} min read</span>
-                  <span className="opacity-40">·</span>
+                  <span className="opacity-30 select-none">|</span>
                   <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{formatViews(views)} views</span>
+                  <span className="opacity-30 select-none">|</span>
+                  <span>{readingTime} min read</span>
                   {(story as any).ratingEnabled && (story as any).totalRatings > 0 && (
                     <>
-                      <span className="opacity-40">·</span>
+                      <span className="opacity-30 select-none">|</span>
                       <span className="flex items-center gap-1" data-testid="text-story-avg-rating">
                         <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                         {((story as any).averageRating || 0).toFixed(1)} ({(story as any).totalRatings})
@@ -658,9 +665,8 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
                 </div>
               </div>
             </div>
-            {/* Right: Bookmark + action buttons */}
+            {/* Right: action buttons */}
             <div className="flex items-center gap-2 flex-wrap">
-              <BookmarkButton storyId={story.id} />
               <Button variant={showAudio ? "default" : "outline"} size="sm" className="rounded-full gap-1.5 text-xs h-8 px-3"
                 disabled={!activePart.audioUrl} onClick={() => { setShowAudio(v => !v); setShowVideo(false); }}
                 data-testid="button-toggle-audio">
@@ -704,6 +710,11 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
                 <Share2 className="w-3.5 h-3.5" />Share
               </Button>
             </div>
+          </div>
+          </div>
+          <div className="hidden lg:block w-[260px] xl:w-[280px] shrink-0">
+            <RelatedStories storyId={story.id} />
+          </div>
           </div>
         </div>
       </div>
@@ -821,9 +832,6 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
           {/* ── Right Sidebar ── */}
           <aside className="hidden lg:block" data-testid="sidebar-ads-right">
             <div className="sticky top-20 space-y-5">
-              <div className="rounded-xl border border-border/60 bg-card p-4">
-                <RelatedStories storyId={story.id} />
-              </div>
               <IslamicBooksAdCard adSlotsMap={adSlotsMap} contentId={story.id} contentType="story" />
               <QuranVerseWidget />
               {pageHeadings.length > 0 && <QuickNavigation headings={pageHeadings} />}
@@ -937,30 +945,34 @@ function LegacyView({ story }: { story: StoryWithCategory }) {
 
             {/* ── Left: Article Meta ── */}
             <div className="flex-1 min-w-0">
-              {/* Title */}
-              {displayTitle ? (
-                <h1 className="font-serif text-2xl sm:text-3xl lg:text-[2rem] xl:text-[2.25rem] font-bold text-foreground leading-[1.2] mb-4" dir={displayDir} data-testid="text-story-title">
-                  {displayTitle}
-                </h1>
-              ) : (
-                <h1 className="font-serif text-2xl sm:text-3xl lg:text-[2rem] xl:text-[2.25rem] font-bold text-foreground leading-[1.2] mb-4" dangerouslySetInnerHTML={{ __html: story.title }} data-testid="text-story-title" />
-              )}
+              {/* Title + Bookmark icon — same flex row */}
+              <div className="flex items-start gap-4 mb-4">
+                {displayTitle ? (
+                  <h1 className="flex-1 font-serif text-[1.85rem] sm:text-[2.1rem] lg:text-[2.3rem] font-bold text-foreground leading-[1.2]" dir={displayDir} data-testid="text-story-title">
+                    {displayTitle}
+                  </h1>
+                ) : (
+                  <h1 className="flex-1 font-serif text-[1.85rem] sm:text-[2.1rem] lg:text-[2.3rem] font-bold text-foreground leading-[1.2]" dangerouslySetInnerHTML={{ __html: story.title }} data-testid="text-story-title" />
+                )}
+                <BookmarkButton storyId={story.id} iconOnly />
+              </div>
 
-              {/* Excerpt — single-line with Learn More expand */}
+              {/* Excerpt — description + Learn More, all inline */}
               {(displayExcerpt || story.excerpt) && (
-                <div className="mb-5">
-                  <p className={`text-[15px] text-muted-foreground leading-relaxed ${!excerptExpanded ? "line-clamp-1" : ""}`} dir={displayDir} data-testid="text-story-excerpt">
+                <div className="flex items-center gap-2.5 mb-5 flex-wrap">
+                  <p className={`text-[15px] text-muted-foreground leading-relaxed flex-1 min-w-0 ${!excerptExpanded ? "line-clamp-1" : ""}`} dir={displayDir} data-testid="text-story-excerpt">
                     {displayExcerpt || story.excerpt}
                   </p>
                   {!excerptExpanded && (
-                    <button onClick={() => setExcerptExpanded(true)} className="text-xs text-primary hover:underline font-medium mt-0.5">
-                      Learn More
+                    <button onClick={() => setExcerptExpanded(true)}
+                      className="shrink-0 flex items-center gap-0.5 text-sm text-primary font-medium hover:underline whitespace-nowrap">
+                      Learn More <ChevronDown className="w-3.5 h-3.5" />
                     </button>
                   )}
                 </div>
               )}
 
-              {/* Meta + Actions — one horizontal row */}
+              {/* Meta + Actions — one row, bookmark is above */}
               <div className="flex items-center justify-between gap-4 flex-wrap">
                 {/* Left: Author + meta */}
                 <div className="flex items-center gap-3 shrink-0">
@@ -973,16 +985,16 @@ function LegacyView({ story }: { story: StoryWithCategory }) {
                       {story.publishedAt && (
                         <span>{format(new Date(story.publishedAt), "MMM d, yyyy")}</span>
                       )}
-                      <span className="opacity-40">·</span>
-                      <span>{readingTime} min read</span>
-                      <span className="opacity-40">·</span>
+                      <span className="opacity-30 select-none">|</span>
                       <span className="flex items-center gap-1">
                         <Eye className="w-3 h-3" />
                         {formatViews(views)} views
                       </span>
+                      <span className="opacity-30 select-none">|</span>
+                      <span>{readingTime} min read</span>
                       {(story as any).ratingEnabled && (story as any).totalRatings > 0 && (
                         <>
-                          <span className="opacity-40">·</span>
+                          <span className="opacity-30 select-none">|</span>
                           <span className="flex items-center gap-1" data-testid="text-story-avg-rating">
                             <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                             {((story as any).averageRating || 0).toFixed(1)} ({(story as any).totalRatings})
@@ -992,9 +1004,8 @@ function LegacyView({ story }: { story: StoryWithCategory }) {
                     </div>
                   </div>
                 </div>
-                {/* Right: Bookmark + action buttons */}
+                {/* Right: action buttons */}
                 <div className="flex items-center gap-2 flex-wrap">
-                  <BookmarkButton storyId={story.id} />
                   <Button
                     variant={showAudio ? "default" : "outline"} size="sm"
                     className="rounded-full gap-1.5 text-xs h-8 px-3"
