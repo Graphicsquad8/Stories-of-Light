@@ -406,6 +406,12 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
   const [showAudio, setShowAudio] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [fontScale, setFontScale] = useState(0);
+  const [excerptExpanded, setExcerptExpanded] = useState(false);
+  const [translateLang, setTranslateLang] = useState<"" | "bn" | "ar">("");
+  const [showTransMenu, setShowTransMenu] = useState(false);
+  const [translating, setTranslating] = useState(false);
+  const [translatedData, setTranslatedData] = useState<Record<string, string>>({});
+  const transMenuRef = useRef<HTMLDivElement>(null);
   const [autoPlay, setAutoPlay] = useState(false);
   const [autoPlaySeconds] = useState(30);
 
@@ -420,6 +426,8 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
   const categoryHref = story.category ? `/${(story.category as any).urlSlug || story.category.slug}` : "/";
   const proseSizes = ["", "prose-lg", "prose-xl"];
   const proseSize = proseSizes[fontScale];
+  const displayContent = translateLang && translatedData[translateLang] ? translatedData[translateLang] : (activePage?.content || "");
+  const displayDir = translateLang === "ar" ? "rtl" : "ltr";
 
   const { data: progress } = useQuery<any>({
     queryKey: ["/api/stories", story.id, "reading-progress"],
@@ -452,6 +460,8 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
     setActivePageIndex(pageIdx);
     setShowVideo(false);
     setShowAudio(false);
+    setTranslateLang("");
+    setTranslatedData({});
     if (user) {
       progressMutation.mutate({ partId: parts[partIdx].id, pageIndex: pageIdx });
     }
@@ -493,6 +503,44 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
     }, autoPlaySeconds * 1000);
     return () => clearInterval(timer);
   }, [autoPlay, activePartIndex, activePageIndex, totalPages, parts.length, isVeryLast, autoPlaySeconds, navigateTo]);
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (transMenuRef.current && !transMenuRef.current.contains(e.target as Node)) {
+        setShowTransMenu(false);
+      }
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
+
+  async function handleTranslate(lang: "" | "bn" | "ar") {
+    setShowTransMenu(false);
+    if (!lang) { setTranslateLang(""); return; }
+    if (translatedData[lang]) { setTranslateLang(lang); return; }
+    setTranslating(true);
+    try {
+      const translateChunk = async (text: string): Promise<string> => {
+        if (!text.trim()) return text;
+        const r = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text.slice(0, 450))}&langpair=en|${lang}`);
+        const d = await r.json();
+        return d.responseData?.translatedText || text;
+      };
+      const div = document.createElement("div");
+      div.innerHTML = activePage?.content || "";
+      const blocks = Array.from(div.querySelectorAll("h1,h2,h3,h4,h5,h6,p,li,blockquote"));
+      await Promise.all(blocks.map(async el => {
+        const t = await translateChunk((el.textContent || "").trim());
+        if (t) el.textContent = t;
+      }));
+      setTranslatedData(prev => ({ ...prev, [lang]: div.innerHTML }));
+      setTranslateLang(lang);
+    } catch {
+      // translation failed silently
+    } finally {
+      setTranslating(false);
+    }
+  }
 
   return (
     <div data-testid="multi-part-story">
@@ -536,7 +584,7 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
 
       {/* ── Article Header ── */}
       <div className="border-b bg-background">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-7">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-7">
 
           {/* Breadcrumb */}
           <nav className="flex items-center gap-1.5 text-xs text-muted-foreground mb-5 flex-wrap" aria-label="Breadcrumb">
@@ -553,94 +601,116 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
             <span className="text-foreground/55 truncate max-w-[200px]" dangerouslySetInnerHTML={{ __html: story.title }} />
           </nav>
 
-          {/* Category badge */}
-          {story.category && (
-            <Link href={categoryHref}>
-              <Badge className="mb-3 bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 cursor-pointer font-medium" data-testid="badge-story-category">
-                {story.category.name}
-              </Badge>
-            </Link>
-          )}
-
           {/* Title */}
           <h1
-            className="font-serif text-2xl sm:text-3xl lg:text-[2rem] xl:text-[2.25rem] font-bold text-foreground leading-[1.2] mb-3 max-w-3xl"
+            className="font-serif text-2xl sm:text-3xl lg:text-[2rem] xl:text-[2.25rem] font-bold text-foreground leading-[1.2] mb-4 max-w-3xl"
             dangerouslySetInnerHTML={{ __html: story.title }}
             data-testid="text-story-title"
           />
 
-          {/* Excerpt / Part summary */}
+          {/* Excerpt — Parts toggle inline + single-line collapse */}
           {(activePart.summary || story.excerpt) && (
-            <p className="text-[15px] text-muted-foreground leading-relaxed mb-5 max-w-2xl" data-testid="text-story-excerpt">
-              {activePart.summary || story.excerpt}
-            </p>
-          )}
-
-          {/* Author + Meta + Bookmark */}
-          <div className="flex items-center gap-3 mb-5 flex-wrap">
-            <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/15 flex items-center justify-center shrink-0">
-              <User className="w-4 h-4 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-foreground leading-none">{authorName}</p>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 flex-wrap">
-                {story.publishedAt && <span>{format(new Date(story.publishedAt), "MMM d, yyyy")}</span>}
-                <span className="opacity-40">·</span>
-                <span>{readingTime} min read</span>
-                <span className="opacity-40">·</span>
-                <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{formatViews(views)} views</span>
-                {(story as any).ratingEnabled && (story as any).totalRatings > 0 && (
-                  <>
-                    <span className="opacity-40">·</span>
-                    <span className="flex items-center gap-1" data-testid="text-story-avg-rating">
-                      <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                      {((story as any).averageRating || 0).toFixed(1)} ({(story as any).totalRatings})
-                    </span>
-                  </>
+            <div className="flex items-start gap-2 mb-5">
+              {parts.length > 1 && (
+                <Button variant="outline" size="sm" className="rounded-full gap-1 text-xs h-7 px-2.5 shrink-0 mt-0.5"
+                  onClick={() => setSidebarOpen(true)} data-testid="button-parts-menu">
+                  <Menu className="w-3 h-3" />
+                  Parts {activePartIndex + 1}/{parts.length}
+                </Button>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className={`text-[15px] text-muted-foreground leading-relaxed ${!excerptExpanded ? "line-clamp-1" : ""}`} data-testid="text-story-excerpt">
+                  {activePart.summary || story.excerpt}
+                </p>
+                {!excerptExpanded && (
+                  <button onClick={() => setExcerptExpanded(true)} className="text-xs text-primary hover:underline font-medium mt-0.5">
+                    Learn More
+                  </button>
                 )}
               </div>
             </div>
-            <BookmarkButton storyId={story.id} />
-          </div>
+          )}
 
-          {/* Action buttons */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {parts.length > 1 && (
-              <Button variant="outline" size="sm" className="rounded-full gap-1.5 text-xs h-8 px-3"
-                onClick={() => setSidebarOpen(true)} data-testid="button-parts-menu">
-                <Menu className="w-3.5 h-3.5" />
-                Parts {activePartIndex + 1}/{parts.length}
+          {/* Meta + Actions — one horizontal row */}
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            {/* Left: Author + meta */}
+            <div className="flex items-center gap-3 shrink-0">
+              <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/15 flex items-center justify-center shrink-0">
+                <User className="w-4 h-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground leading-none">{authorName}</p>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 flex-wrap">
+                  {story.publishedAt && <span>{format(new Date(story.publishedAt), "MMM d, yyyy")}</span>}
+                  <span className="opacity-40">·</span>
+                  <span>{readingTime} min read</span>
+                  <span className="opacity-40">·</span>
+                  <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{formatViews(views)} views</span>
+                  {(story as any).ratingEnabled && (story as any).totalRatings > 0 && (
+                    <>
+                      <span className="opacity-40">·</span>
+                      <span className="flex items-center gap-1" data-testid="text-story-avg-rating">
+                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                        {((story as any).averageRating || 0).toFixed(1)} ({(story as any).totalRatings})
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+            {/* Right: Bookmark + action buttons */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <BookmarkButton storyId={story.id} />
+              <Button variant={showAudio ? "default" : "outline"} size="sm" className="rounded-full gap-1.5 text-xs h-8 px-3"
+                disabled={!activePart.audioUrl} onClick={() => { setShowAudio(v => !v); setShowVideo(false); }}
+                data-testid="button-toggle-audio">
+                <Headphones className="w-3.5 h-3.5" />
+                {showAudio ? "Hide Audio" : "Listen"}
               </Button>
-            )}
-            <Button variant={showAudio ? "default" : "outline"} size="sm" className="rounded-full gap-1.5 text-xs h-8 px-3"
-              disabled={!activePart.audioUrl} onClick={() => { setShowAudio(v => !v); setShowVideo(false); }}
-              data-testid="button-toggle-audio">
-              <Headphones className="w-3.5 h-3.5" />
-              {showAudio ? "Hide Audio" : "Listen"}
-            </Button>
-            <Button variant={showVideo ? "default" : "outline"} size="sm" className="rounded-full gap-1.5 text-xs h-8 px-3"
-              disabled={!activePart.videoUrl} onClick={() => { setShowVideo(v => !v); setShowAudio(false); }}
-              data-testid="button-toggle-video">
-              <Play className="w-3.5 h-3.5" />
-              {showVideo ? "Stop Video" : "Play Video"}
-            </Button>
-            <Button variant="outline" size="sm" className="rounded-full gap-1.5 text-xs h-8 px-3"
-              onClick={() => setFontScale(f => (f + 1) % 3)}
-              title={["Default size", "Large size", "Extra large size"][fontScale]}>
-              <span className="font-bold text-sm leading-none select-none">Aa</span>
-            </Button>
-            <Button variant="outline" size="sm" className="rounded-full gap-1.5 text-xs h-8 px-3"
-              onClick={() => navigator.share?.({ title: story.title, url: window.location.href }).catch(() => {})}
-              data-testid="button-share">
-              <Share2 className="w-3.5 h-3.5" />Share
-            </Button>
+              <Button variant={showVideo ? "default" : "outline"} size="sm" className="rounded-full gap-1.5 text-xs h-8 px-3"
+                disabled={!activePart.videoUrl} onClick={() => { setShowVideo(v => !v); setShowAudio(false); }}
+                data-testid="button-toggle-video">
+                <Play className="w-3.5 h-3.5" />
+                {showVideo ? "Stop Video" : "Play Video"}
+              </Button>
+              <div className="relative" ref={transMenuRef}>
+                <Button variant={translateLang ? "default" : "outline"} size="sm" className="rounded-full gap-1.5 text-xs h-8 px-3"
+                  onClick={() => setShowTransMenu(v => !v)} disabled={translating} title="Translate article">
+                  {translating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Languages className="w-3.5 h-3.5" />}
+                  <span className="select-none">
+                    {translateLang === "bn" ? "বাংলা" : translateLang === "ar" ? "العربية" : "Translate"}
+                  </span>
+                </Button>
+                {showTransMenu && (
+                  <div className="absolute right-0 top-full mt-1.5 bg-background border border-border rounded-xl shadow-lg z-50 py-1 min-w-[170px]">
+                    <button onClick={() => handleTranslate("")}
+                      className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/60 transition-colors rounded-t-xl ${!translateLang ? "font-semibold text-primary" : ""}`}>
+                      🇬🇧 English (Original)
+                    </button>
+                    <button onClick={() => handleTranslate("bn")}
+                      className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/60 transition-colors ${translateLang === "bn" ? "font-semibold text-primary" : ""}`}>
+                      🇧🇩 Bangla
+                    </button>
+                    <button onClick={() => handleTranslate("ar")}
+                      className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/60 transition-colors rounded-b-xl ${translateLang === "ar" ? "font-semibold text-primary" : ""}`}>
+                      🇸🇦 Arabic
+                    </button>
+                  </div>
+                )}
+              </div>
+              <Button variant="outline" size="sm" className="rounded-full gap-1.5 text-xs h-8 px-3"
+                onClick={() => navigator.share?.({ title: story.title, url: window.location.href }).catch(() => {})}
+                data-testid="button-share">
+                <Share2 className="w-3.5 h-3.5" />Share
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* ── Main Content + Sidebar ── */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-8">
 
           {/* ── Article Column ── */}
           <article>
@@ -692,7 +762,8 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
             {activePage?.content ? (
               <div
                 className={`prose dark:prose-invert max-w-none prose-headings:font-serif prose-p:leading-relaxed prose-p:text-foreground/90 ${proseSize}`}
-                dangerouslySetInnerHTML={{ __html: activePage.content }}
+                dir={displayDir}
+                dangerouslySetInnerHTML={{ __html: displayContent }}
                 data-testid="content-page"
               />
             ) : (
@@ -784,6 +855,7 @@ function LegacyView({ story }: { story: StoryWithCategory }) {
   const [translating, setTranslating] = useState(false);
   const [translatedData, setTranslatedData] = useState<Record<string, { title: string; excerpt: string; content: string }>>({});
   const transMenuRef = useRef<HTMLDivElement>(null);
+  const [excerptExpanded, setExcerptExpanded] = useState(false);
 
   const readingTime = calcReadingTime(story.content || "");
   const views = (story as any).views || 0;
@@ -842,7 +914,7 @@ function LegacyView({ story }: { story: StoryWithCategory }) {
 
       {/* ── Article Header ── */}
       <div className="border-b bg-background">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-7">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-7">
 
           {/* Breadcrumb — full width */}
           <nav className="flex items-center gap-1.5 text-xs text-muted-foreground mb-5 flex-wrap" aria-label="Breadcrumb">
@@ -865,135 +937,120 @@ function LegacyView({ story }: { story: StoryWithCategory }) {
 
             {/* ── Left: Article Meta ── */}
             <div className="flex-1 min-w-0">
-              {/* Category badge */}
-              {story.category && (
-                <Link href={categoryHref}>
-                  <Badge className="mb-3 bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 cursor-pointer font-medium" data-testid="badge-story-category">
-                    {story.category.name}
-                  </Badge>
-                </Link>
-              )}
-
               {/* Title */}
               {displayTitle ? (
-                <h1 className="font-serif text-2xl sm:text-3xl lg:text-[2rem] xl:text-[2.25rem] font-bold text-foreground leading-[1.2] mb-3" dir={displayDir} data-testid="text-story-title">
+                <h1 className="font-serif text-2xl sm:text-3xl lg:text-[2rem] xl:text-[2.25rem] font-bold text-foreground leading-[1.2] mb-4" dir={displayDir} data-testid="text-story-title">
                   {displayTitle}
                 </h1>
               ) : (
-                <h1 className="font-serif text-2xl sm:text-3xl lg:text-[2rem] xl:text-[2.25rem] font-bold text-foreground leading-[1.2] mb-3" dangerouslySetInnerHTML={{ __html: story.title }} data-testid="text-story-title" />
+                <h1 className="font-serif text-2xl sm:text-3xl lg:text-[2rem] xl:text-[2.25rem] font-bold text-foreground leading-[1.2] mb-4" dangerouslySetInnerHTML={{ __html: story.title }} data-testid="text-story-title" />
               )}
 
-              {/* Excerpt */}
+              {/* Excerpt — single-line with Learn More expand */}
               {(displayExcerpt || story.excerpt) && (
-                <p className="text-[15px] text-muted-foreground leading-relaxed mb-5" dir={displayDir} data-testid="text-story-excerpt">
-                  {displayExcerpt || story.excerpt}
-                </p>
-              )}
-
-              {/* Author + Meta + Bookmark */}
-              <div className="flex items-center gap-3 mb-5 flex-wrap">
-                <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/15 flex items-center justify-center shrink-0">
-                  <User className="w-4 h-4 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground leading-none">{authorName}</p>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 flex-wrap">
-                    {story.publishedAt && (
-                      <span>{format(new Date(story.publishedAt), "MMM d, yyyy")}</span>
-                    )}
-                    <span className="opacity-40">·</span>
-                    <span>{readingTime} min read</span>
-                    <span className="opacity-40">·</span>
-                    <span className="flex items-center gap-1">
-                      <Eye className="w-3 h-3" />
-                      {formatViews(views)} views
-                    </span>
-                    {(story as any).ratingEnabled && (story as any).totalRatings > 0 && (
-                      <>
-                        <span className="opacity-40">·</span>
-                        <span className="flex items-center gap-1" data-testid="text-story-avg-rating">
-                          <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                          {((story as any).averageRating || 0).toFixed(1)} ({(story as any).totalRatings})
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
-                <BookmarkButton storyId={story.id} />
-              </div>
-
-              {/* Action buttons: Listen | Play | Translate | Share */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <Button
-                  variant={showAudio ? "default" : "outline"}
-                  size="sm"
-                  className="rounded-full gap-1.5 text-xs h-8 px-3"
-                  disabled={!story.audioUrl}
-                  onClick={() => { setShowAudio(v => !v); setShowVideo(false); }}
-                >
-                  <Headphones className="w-3.5 h-3.5" />
-                  {showAudio ? "Hide Audio" : "Listen"}
-                </Button>
-                <Button
-                  variant={showVideo ? "default" : "outline"}
-                  size="sm"
-                  className="rounded-full gap-1.5 text-xs h-8 px-3"
-                  disabled={!story.youtubeUrl}
-                  onClick={() => { setShowVideo(v => !v); setShowAudio(false); }}
-                >
-                  <Play className="w-3.5 h-3.5" />
-                  {showVideo ? "Stop Video" : "Play Video"}
-                </Button>
-
-                {/* Translate dropdown */}
-                <div className="relative" ref={transMenuRef}>
-                  <Button
-                    variant={translateLang ? "default" : "outline"}
-                    size="sm"
-                    className="rounded-full gap-1.5 text-xs h-8 px-3"
-                    onClick={() => setShowTransMenu(v => !v)}
-                    disabled={translating}
-                    title="Translate article"
-                  >
-                    {translating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Languages className="w-3.5 h-3.5" />}
-                    <span className="select-none">
-                      {translateLang === "bn" ? "বাংলা" : translateLang === "ar" ? "العربية" : "AA"}
-                    </span>
-                  </Button>
-                  {showTransMenu && (
-                    <div className="absolute left-0 top-full mt-1.5 bg-background border border-border rounded-xl shadow-lg z-50 py-1 min-w-[170px]">
-                      <button
-                        onClick={() => handleTranslate("")}
-                        className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/60 transition-colors rounded-t-xl ${!translateLang ? "font-semibold text-primary" : ""}`}
-                      >
-                        🇬🇧 English (Original)
-                      </button>
-                      <button
-                        onClick={() => handleTranslate("bn")}
-                        className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/60 transition-colors ${translateLang === "bn" ? "font-semibold text-primary" : ""}`}
-                      >
-                        🇧🇩 Bangla
-                      </button>
-                      <button
-                        onClick={() => handleTranslate("ar")}
-                        className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/60 transition-colors rounded-b-xl ${translateLang === "ar" ? "font-semibold text-primary" : ""}`}
-                      >
-                        🇸🇦 Arabic
-                      </button>
-                    </div>
+                <div className="mb-5">
+                  <p className={`text-[15px] text-muted-foreground leading-relaxed ${!excerptExpanded ? "line-clamp-1" : ""}`} dir={displayDir} data-testid="text-story-excerpt">
+                    {displayExcerpt || story.excerpt}
+                  </p>
+                  {!excerptExpanded && (
+                    <button onClick={() => setExcerptExpanded(true)} className="text-xs text-primary hover:underline font-medium mt-0.5">
+                      Learn More
+                    </button>
                   )}
                 </div>
+              )}
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="rounded-full gap-1.5 text-xs h-8 px-3"
-                  onClick={() => navigator.share?.({ title: story.title, url: window.location.href }).catch(() => {})}
-                  data-testid="button-share"
-                >
-                  <Share2 className="w-3.5 h-3.5" />
-                  Share
-                </Button>
+              {/* Meta + Actions — one horizontal row */}
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                {/* Left: Author + meta */}
+                <div className="flex items-center gap-3 shrink-0">
+                  <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/15 flex items-center justify-center shrink-0">
+                    <User className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground leading-none">{authorName}</p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 flex-wrap">
+                      {story.publishedAt && (
+                        <span>{format(new Date(story.publishedAt), "MMM d, yyyy")}</span>
+                      )}
+                      <span className="opacity-40">·</span>
+                      <span>{readingTime} min read</span>
+                      <span className="opacity-40">·</span>
+                      <span className="flex items-center gap-1">
+                        <Eye className="w-3 h-3" />
+                        {formatViews(views)} views
+                      </span>
+                      {(story as any).ratingEnabled && (story as any).totalRatings > 0 && (
+                        <>
+                          <span className="opacity-40">·</span>
+                          <span className="flex items-center gap-1" data-testid="text-story-avg-rating">
+                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                            {((story as any).averageRating || 0).toFixed(1)} ({(story as any).totalRatings})
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                {/* Right: Bookmark + action buttons */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <BookmarkButton storyId={story.id} />
+                  <Button
+                    variant={showAudio ? "default" : "outline"} size="sm"
+                    className="rounded-full gap-1.5 text-xs h-8 px-3"
+                    disabled={!story.audioUrl}
+                    onClick={() => { setShowAudio(v => !v); setShowVideo(false); }}
+                  >
+                    <Headphones className="w-3.5 h-3.5" />
+                    {showAudio ? "Hide Audio" : "Listen"}
+                  </Button>
+                  <Button
+                    variant={showVideo ? "default" : "outline"} size="sm"
+                    className="rounded-full gap-1.5 text-xs h-8 px-3"
+                    disabled={!story.youtubeUrl}
+                    onClick={() => { setShowVideo(v => !v); setShowAudio(false); }}
+                  >
+                    <Play className="w-3.5 h-3.5" />
+                    {showVideo ? "Stop Video" : "Play Video"}
+                  </Button>
+                  <div className="relative" ref={transMenuRef}>
+                    <Button
+                      variant={translateLang ? "default" : "outline"} size="sm"
+                      className="rounded-full gap-1.5 text-xs h-8 px-3"
+                      onClick={() => setShowTransMenu(v => !v)}
+                      disabled={translating} title="Translate article"
+                    >
+                      {translating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Languages className="w-3.5 h-3.5" />}
+                      <span className="select-none">
+                        {translateLang === "bn" ? "বাংলা" : translateLang === "ar" ? "العربية" : "Translate"}
+                      </span>
+                    </Button>
+                    {showTransMenu && (
+                      <div className="absolute right-0 top-full mt-1.5 bg-background border border-border rounded-xl shadow-lg z-50 py-1 min-w-[170px]">
+                        <button onClick={() => handleTranslate("")}
+                          className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/60 transition-colors rounded-t-xl ${!translateLang ? "font-semibold text-primary" : ""}`}>
+                          🇬🇧 English (Original)
+                        </button>
+                        <button onClick={() => handleTranslate("bn")}
+                          className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/60 transition-colors ${translateLang === "bn" ? "font-semibold text-primary" : ""}`}>
+                          🇧🇩 Bangla
+                        </button>
+                        <button onClick={() => handleTranslate("ar")}
+                          className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/60 transition-colors rounded-b-xl ${translateLang === "ar" ? "font-semibold text-primary" : ""}`}>
+                          🇸🇦 Arabic
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <Button
+                    variant="outline" size="sm"
+                    className="rounded-full gap-1.5 text-xs h-8 px-3"
+                    onClick={() => navigator.share?.({ title: story.title, url: window.location.href }).catch(() => {})}
+                    data-testid="button-share"
+                  >
+                    <Share2 className="w-3.5 h-3.5" />Share
+                  </Button>
+                </div>
               </div>
             </div>
 
@@ -1006,8 +1063,8 @@ function LegacyView({ story }: { story: StoryWithCategory }) {
       </div>
 
       {/* ── Main Content + Sidebar ── */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-8">
 
           {/* ── Article Column ── */}
           <article>

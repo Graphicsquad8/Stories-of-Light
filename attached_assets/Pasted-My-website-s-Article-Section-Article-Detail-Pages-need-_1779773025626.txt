@@ -1,0 +1,158 @@
+My website’s **Article Section Article Detail Pages** need several important UI/UX improvements to make the pages look more professional, clean, and user-friendly.
+
+---
+
+# 📌 Remove Category Button
+
+Currently, each article displays a category button above the article title.
+For example:
+
+* The **“Sahaba”** button above the title inside the Sahaba article pages.
+
+This category button should be completely removed.
+
+📌 The same applies to:
+
+* Awliya
+* Karamat
+* History
+* Prophets
+* And all other article categories
+
+No category button should appear above the article titles anymore.
+
+---
+
+# 📌 Article Description / Summary System
+
+A short **Description / Summary Line** should appear below the article title.
+
+### ✅ Functionality:
+
+* Initially, only a single-line summary should be displayed
+* At the end of the line, there should be a:
+
+  ### **“Learn More”** button
+* When the user clicks “Learn More,” the full description/summary should expand and become visible
+
+---
+
+# 📌 Part Option Position Update
+
+Currently, the **“Part” Option** is displayed inside the Hero Section.
+
+### ✅ New Position:
+
+* Move the Part Option from its current location
+* Place it at the beginning of the Description / Summary line below the title
+* The Description Line should begin immediately from the right side of the Part Option/Icon
+
+📌 In short:
+The Part Option and Description should appear on the same line.
+
+---
+
+# 📌 Article Hero Section Meta Information Layout Update
+
+Currently, the following information is displayed:
+
+* Author Name
+* Publish Date
+* Total Views
+* Reading Time
+
+and the other options appear underneath them.
+
+This layout needs to be updated.
+
+### ✅ New Layout:
+
+Inside the Article Hero Section:
+
+* Author Name
+* Publish Date
+* Total Views
+* Reading Time
+
+should appear on the left side, and directly on the right side in a horizontal layout, these options should appear:
+
+* Listen
+* Play Video
+* Translate Option
+* Share
+
+---
+
+# 📌 Translate Feature Update
+
+Remove the current **“Aa” option** and replace it with a proper **Translate Icon**.
+
+### ✅ Translation Feature:
+
+The article should be translatable into:
+
+* Bangla
+* Arabic
+
+📌 Important:
+
+* The original/default article language will remain:
+
+  ### **English**
+
+---
+
+# 📌 Article Page Width & Alignment Update
+
+The entire Article Page Layout should be aligned so that:
+
+* The left side aligns with the website’s Logo Section
+* The right side aligns with the website’s Profile/Admin Icon Section
+
+📌 The overall layout should look more balanced and professionally structured.
+
+---
+
+# 📌 Increase Article Content Width
+
+Currently, each article page has two main sections:
+
+1. Article Content Section
+2. Right Sidebar Section
+
+   * Ads
+   * Related Stories
+
+### ✅ Update Requirements:
+
+* Increase the width of only the:
+
+  ### **Article Content Section**
+* Keep the current size of the:
+
+  * Ads Section
+  * Related Stories Section
+
+📌 However, the Sidebar Section should shift slightly toward the left so the main article content area becomes larger and more reading-friendly.
+
+---
+
+# 📌 Important Notes
+
+⚠️ Important:
+
+* No existing content should be modified
+* Only the UI / Layout / UX should be updated
+
+The final design should feel:
+
+* Clean
+* Modern
+* Professional
+* Reading-friendly
+
+📌 Special attention should be given to:
+
+* Improving the reading experience
+* Making the layout feel like a professional international blog/story website
+* Maintaining consistency with the Light Theme and Islamic-style design of the website
