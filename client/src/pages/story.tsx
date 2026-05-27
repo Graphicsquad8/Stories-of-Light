@@ -101,48 +101,54 @@ function RelatedStories({ storyId }: { storyId: string }) {
   });
 
   return (
-    <div data-testid="section-related">
-      <h2 className="font-serif text-sm font-bold mb-3 text-foreground">Related Stories</h2>
-      {isLoading ? (
-        <div className="space-y-3">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="flex gap-3">
-              <Skeleton className="w-[72px] h-[72px] rounded-lg shrink-0" />
-              <div className="flex-1 space-y-1.5 pt-1">
-                <Skeleton className="h-3.5 w-full" />
-                <Skeleton className="h-3.5 w-4/5" />
-                <Skeleton className="h-3 w-16 mt-1" />
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : !related || related.length === 0 ? null : (
-        <div className="space-y-3">
-          {related.slice(0, 4).map(story => (
-            <Link key={story.id} href={`/stories/${story.slug}`}>
-              <div className="flex gap-3 group cursor-pointer" data-testid={`card-related-${story.slug}`}>
-                <div className="w-[72px] h-[72px] rounded-lg overflow-hidden shrink-0 border border-border/40">
-                  <img
-                    src={story.thumbnail || "/images/category-history.png"}
-                    alt=""
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                </div>
-                <div className="flex-1 min-w-0 pt-0.5">
-                  <p
-                    className="text-sm font-medium text-foreground line-clamp-2 group-hover:text-primary transition-colors leading-snug"
-                    dangerouslySetInnerHTML={{ __html: story.title }}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    {calcReadingTime(story.content || "")} min read
-                  </p>
+    <div data-testid="section-related" className="rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden">
+      <div className="px-4 pt-4 pb-3 border-b border-border/40">
+        <h2 className="font-serif text-base font-bold text-foreground">Related Stories</h2>
+      </div>
+      <div className="p-4">
+        {isLoading ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="flex gap-3">
+                <Skeleton className="w-[80px] h-[56px] rounded-lg shrink-0" />
+                <div className="flex-1 space-y-1.5 pt-1">
+                  <Skeleton className="h-3.5 w-full" />
+                  <Skeleton className="h-3.5 w-4/5" />
+                  <Skeleton className="h-3 w-16 mt-1" />
                 </div>
               </div>
-            </Link>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        ) : !related || related.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-2">No related stories found.</p>
+        ) : (
+          <div className="space-y-4">
+            {related.slice(0, 4).map(story => (
+              <Link key={story.id} href={`/stories/${story.slug}`}>
+                <div className="flex gap-3 group cursor-pointer" data-testid={`card-related-${story.slug}`}>
+                  <div className="w-[80px] h-[56px] rounded-lg overflow-hidden shrink-0 border border-border/40">
+                    <img
+                      src={story.thumbnail || "/images/category-history.png"}
+                      alt=""
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className="text-sm font-medium text-foreground line-clamp-2 group-hover:text-primary transition-colors leading-snug"
+                      dangerouslySetInnerHTML={{ __html: story.title }}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {calcReadingTime(story.content || "")} min read
+                    </p>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -584,8 +590,8 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
       )}
 
       {/* ── Article Header ── */}
-      <div className="border-b bg-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-7">
+      <div className="bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-7 border-b">
 
           {/* Breadcrumb */}
           <nav className="flex items-center gap-1.5 text-xs text-muted-foreground mb-5 flex-wrap" aria-label="Breadcrumb">
@@ -638,32 +644,33 @@ function MultiPartView({ story, parts }: { story: StoryWithCategory; parts: Stor
             </div>
           )}
 
-          {/* Meta + Actions — one row, bookmark is above */}
+          {/* Meta + Actions — one row */}
           <div className="flex items-center justify-between gap-4 flex-wrap">
-            {/* Left: Author avatar + meta */}
-            <div className="flex items-center gap-3 shrink-0">
-              <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/15 flex items-center justify-center shrink-0">
+            {/* Left: Author + meta all inline */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/15 flex items-center justify-center shrink-0">
                 <User className="w-4 h-4 text-primary" />
               </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground leading-none">{authorName}</p>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 flex-wrap">
-                  {story.publishedAt && <span>{format(new Date(story.publishedAt), "MMM d, yyyy")}</span>}
-                  <span className="opacity-30 select-none">|</span>
-                  <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{formatViews(views)} views</span>
-                  <span className="opacity-30 select-none">|</span>
-                  <span>{readingTime} min read</span>
-                  {(story as any).ratingEnabled && (story as any).totalRatings > 0 && (
-                    <>
-                      <span className="opacity-30 select-none">|</span>
-                      <span className="flex items-center gap-1" data-testid="text-story-avg-rating">
-                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                        {((story as any).averageRating || 0).toFixed(1)} ({(story as any).totalRatings})
-                      </span>
-                    </>
-                  )}
-                </div>
-              </div>
+              <span className="text-sm font-semibold text-foreground">{authorName}</span>
+              {story.publishedAt && (
+                <>
+                  <span className="opacity-30 select-none text-xs">|</span>
+                  <span className="text-xs text-muted-foreground">{format(new Date(story.publishedAt), "MMM d, yyyy")}</span>
+                </>
+              )}
+              <span className="opacity-30 select-none text-xs">|</span>
+              <span className="flex items-center gap-1 text-xs text-muted-foreground"><Eye className="w-3 h-3" />{formatViews(views)} views</span>
+              <span className="opacity-30 select-none text-xs">|</span>
+              <span className="flex items-center gap-1 text-xs text-muted-foreground"><Clock className="w-3 h-3" />{readingTime} min read</span>
+              {(story as any).ratingEnabled && (story as any).totalRatings > 0 && (
+                <>
+                  <span className="opacity-30 select-none text-xs">|</span>
+                  <span className="flex items-center gap-1 text-xs" data-testid="text-story-avg-rating">
+                    <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                    {((story as any).averageRating || 0).toFixed(1)} ({(story as any).totalRatings})
+                  </span>
+                </>
+              )}
             </div>
             {/* Right: action buttons */}
             <div className="flex items-center gap-2 flex-wrap">
@@ -921,8 +928,8 @@ function LegacyView({ story }: { story: StoryWithCategory }) {
     <div data-testid="legacy-story-view" className="bg-background">
 
       {/* ── Article Header ── */}
-      <div className="border-b bg-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-7">
+      <div className="bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-7 border-b">
 
           {/* Breadcrumb — full width */}
           <nav className="flex items-center gap-1.5 text-xs text-muted-foreground mb-5 flex-wrap" aria-label="Breadcrumb">
@@ -972,37 +979,33 @@ function LegacyView({ story }: { story: StoryWithCategory }) {
                 </div>
               )}
 
-              {/* Meta + Actions — one row, bookmark is above */}
+              {/* Meta + Actions — one row */}
               <div className="flex items-center justify-between gap-4 flex-wrap">
-                {/* Left: Author + meta */}
-                <div className="flex items-center gap-3 shrink-0">
-                  <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/15 flex items-center justify-center shrink-0">
+                {/* Left: Author + meta all inline */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/15 flex items-center justify-center shrink-0">
                     <User className="w-4 h-4 text-primary" />
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground leading-none">{authorName}</p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 flex-wrap">
-                      {story.publishedAt && (
-                        <span>{format(new Date(story.publishedAt), "MMM d, yyyy")}</span>
-                      )}
-                      <span className="opacity-30 select-none">|</span>
-                      <span className="flex items-center gap-1">
-                        <Eye className="w-3 h-3" />
-                        {formatViews(views)} views
+                  <span className="text-sm font-semibold text-foreground">{authorName}</span>
+                  {story.publishedAt && (
+                    <>
+                      <span className="opacity-30 select-none text-xs">|</span>
+                      <span className="text-xs text-muted-foreground">{format(new Date(story.publishedAt), "MMM d, yyyy")}</span>
+                    </>
+                  )}
+                  <span className="opacity-30 select-none text-xs">|</span>
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground"><Eye className="w-3 h-3" />{formatViews(views)} views</span>
+                  <span className="opacity-30 select-none text-xs">|</span>
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground"><Clock className="w-3 h-3" />{readingTime} min read</span>
+                  {(story as any).ratingEnabled && (story as any).totalRatings > 0 && (
+                    <>
+                      <span className="opacity-30 select-none text-xs">|</span>
+                      <span className="flex items-center gap-1 text-xs" data-testid="text-story-avg-rating">
+                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                        {((story as any).averageRating || 0).toFixed(1)} ({(story as any).totalRatings})
                       </span>
-                      <span className="opacity-30 select-none">|</span>
-                      <span>{readingTime} min read</span>
-                      {(story as any).ratingEnabled && (story as any).totalRatings > 0 && (
-                        <>
-                          <span className="opacity-30 select-none">|</span>
-                          <span className="flex items-center gap-1" data-testid="text-story-avg-rating">
-                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                            {((story as any).averageRating || 0).toFixed(1)} ({(story as any).totalRatings})
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  </div>
+                    </>
+                  )}
                 </div>
                 {/* Right: action buttons */}
                 <div className="flex items-center gap-2 flex-wrap">

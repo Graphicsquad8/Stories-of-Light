@@ -1,0 +1,136 @@
+The Article Detail Pages inside my website’s Article Section need several important UI/UX layout improvements so the overall design looks more professional, clean, and consistent with the reference image I provided.
+
+---
+
+# 📌 Author Information Layout Update
+
+Currently, the Hero Section displays the text:
+
+### “Stories of Light Team”
+
+This should be replaced with the **actual author name** of the person who wrote the article.
+
+### ✅ Additionally:
+
+The following information currently displayed below the author name:
+
+* Article Publish Date
+* Total Views
+* Estimated Reading Time
+
+should no longer appear underneath the author section.
+
+### ✅ New Layout:
+
+These meta details should appear:
+
+* Directly on the right side of the Author Name
+* In a clean horizontal layout exactly like the reference design
+
+📌 The final structure should look like this:
+
+### Left Side:
+
+* Author Profile / Avatar
+* Author Name
+
+### Right Side:
+
+* Publish Date
+* Total Views
+* Reading Time
+
+---
+
+# 📌 Meta Actions Position Update
+
+The following action buttons:
+
+* Listen
+* Play Video
+* Translate
+
+should remain in the Hero Section.
+
+However, the:
+
+* Publish Date
+* Views
+* Reading Time
+
+meta information should appear directly to the **left side** of these action buttons, exactly like the layout shown in the reference image.
+
+---
+
+# 📌 Divider / Horizontal Line Width Update
+
+Currently, there is a full-width horizontal divider line below the Hero Section that stretches across the entire page.
+
+### ✅ Update Requirement:
+
+* Reduce the width of this divider line
+* The divider should align only with:
+
+  ### The Article Content / Cover Image Section Width
+
+📌 It should no longer stretch across the full page width.
+
+---
+
+# 📌 Related Stories Section Update
+
+The **“Related Stories”** section on the right side should be redesigned as a clean and professional card/box-style layout.
+
+### ✅ Additionally:
+
+This section should display only:
+
+* Related articles
+* Similar category content
+* Relevant topic-based stories
+
+associated with the current article.
+
+📌 The design should feel:
+
+* Clean
+* Modern
+* Professional
+* Reading-friendly
+
+while staying visually consistent with the rest of the website UI.
+
+---
+
+# 📌 Left Divider Line Remove
+
+Currently, there is a vertical divider line on the left side of the Hero Section.
+
+### ✅ Update:
+
+* Completely remove this left-side divider line
+
+📌 However:
+A divider/line may remain only where the main Article Body Content begins, aligned specifically with the content section itself.
+
+---
+
+# 📌 Overall Design Requirement
+
+The entire Article Page UI should:
+
+* Closely follow the visual style of the provided reference image
+* Maintain a clean Islamic-style aesthetic
+* Feel like a modern international story/blog website
+
+### ✅ Special Focus:
+
+* Balanced layout structure
+* Minimal and elegant divider usage
+* Improved reading experience
+* Smooth and premium UI appearance
+
+⚠️ Important:
+
+* No existing content or functionality should be modified
+* Only the UI / Layout / Spacing / Alignment should be updated
