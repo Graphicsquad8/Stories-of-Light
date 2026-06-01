@@ -1,0 +1,64 @@
+The **“Related Stories”** section on the right side of the Article Page needs to be redesigned so it looks cleaner, more professional, and visually consistent with the overall website UI.
+
+Currently, the Related Stories appear too close together, making them feel visually merged into one another. There is not enough spacing between each story card, which makes the UI look cluttered.
+
+# 📌 Related Stories UI Improvement
+
+### ✅ Update Requirements:
+
+* Add proper spacing/gaps between each Related Story
+* Each Story Card should appear visually separate and clearly distinguishable
+* The design should match the premium UI style of the entire website
+
+### ✅ Cover Image Update:
+
+* Slightly increase the size of each Related Story cover image
+* Maintain proper image ratio and spacing so the cards:
+
+  * Look modern
+  * Feel like professional story cards
+  * Improve the reading experience
+
+📌 Additionally:
+
+* Display only:
+
+  ### **4 Related Stories**
+
+---
+
+# 📌 Divider / Underline Width Fix
+
+Currently, the divider/underline below the Hero Section and Article Cover Photo extends too far toward the right side, causing:
+
+* The divider to visually connect with the Related Stories section
+* Unnecessary spacing issues between the Hero Section and Cover Photo
+
+This needs to be fixed.
+
+### ✅ Correct Divider Behavior:
+
+* The divider line should only extend to:
+
+  ### The width of the Article Content / Cover Photo section
+* It should NOT extend into the Related Stories or Ad Section
+
+📌 In other words:
+
+* The divider width should match only the width of the Article Cover Photo / Content area
+* There should be NO divider/underline beneath or between:
+
+  * Related Stories
+  * Ads Section
+
+### ✅ Final Layout Goal:
+
+* The divider should function only as a visual separator for the Article Content area
+* It should have no visual connection with the right sidebar
+* The entire layout should feel cleaner, more balanced, and more professional
+
+⚠️ Important:
+
+* No existing content should be modified
+* Only the UI / Layout / Spacing / Divider Alignment should be updated
+* The final design must remain consistent with the reference style and the website’s existing premium Islamic-style UI design.
